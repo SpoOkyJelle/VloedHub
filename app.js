@@ -117,9 +117,11 @@ var HTML = "<!DOCTYPE html>\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
 "    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-right: 0.5rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
-"    .chart-card { background: #1e293b; border-radius: 10px; padding: 1rem; margin-top: 0.5rem; }\n" +
-"    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }\n" +
-"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; padding: 0.35rem 0.9rem; font-size: 0.8rem; cursor: pointer; }\n" +
+"    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; align-items: start; }\n" +
+"    @media (max-width: 600px) { .bottom-row { grid-template-columns: 1fr; } }\n" +
+"    .chart-card { background: #1e293b; border-radius: 10px; padding: 1rem; }\n" +
+"    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }\n" +
+"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; padding: 0.3rem 0.75rem; font-size: 0.75rem; cursor: pointer; }\n" +
 "    .tab.active { background: #334155; color: #e2e8f0; }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
@@ -155,22 +157,27 @@ var HTML = "<!DOCTYPE html>\n" +
 "\n" +
 "  <p class=\"updated\" id=\"updated\">Waiting for data\u2026</p>\n" +
 "\n" +
-"  <p class=\"section-title\">History</p>\n" +
-"  <div class=\"chart-card\">\n" +
-"    <div class=\"tab-bar\">\n" +
-"      <button class=\"tab active\" onclick=\"loadChart('day',this)\">Day</button>\n" +
-"      <button class=\"tab\" onclick=\"loadChart('week',this)\">Week</button>\n" +
-"      <button class=\"tab\" onclick=\"loadChart('month',this)\">Month</button>\n" +
+"  <div class=\"bottom-row\">\n" +
+"    <div>\n" +
+"      <p class=\"section-title\">History</p>\n" +
+"      <div class=\"chart-card\">\n" +
+"        <div class=\"tab-bar\">\n" +
+"          <button class=\"tab active\" onclick=\"loadChart('day',this)\">Day</button>\n" +
+"          <button class=\"tab\" onclick=\"loadChart('week',this)\">Week</button>\n" +
+"          <button class=\"tab\" onclick=\"loadChart('month',this)\">Month</button>\n" +
+"        </div>\n" +
+"        <canvas id=\"chart\" height=\"180\"></canvas>\n" +
+"      </div>\n" +
 "    </div>\n" +
-"    <canvas id=\"chart\" height=\"120\"></canvas>\n" +
-"  </div>\n" +
-"\n" +
-"  <p class=\"section-title\">Recent readings</p>\n" +
-"  <div class=\"log-wrap\">\n" +
-"  <table>\n" +
-"    <thead><tr><th>Time</th><th>Del. total (kW)</th><th>Ret. total (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
-"    <tbody id=\"rows\"></tbody>\n" +
-"  </table>\n" +
+"    <div>\n" +
+"      <p class=\"section-title\">Recent readings</p>\n" +
+"      <div class=\"log-wrap\">\n" +
+"        <table>\n" +
+"          <thead><tr><th>Time</th><th>Del. (kW)</th><th>Ret. (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
+"          <tbody id=\"rows\"></tbody>\n" +
+"        </table>\n" +
+"      </div>\n" +
+"    </div>\n" +
 "  </div>\n" +
 "\n" +
 "  <script>\n" +
