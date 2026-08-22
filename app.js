@@ -188,9 +188,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "        set('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
 "        set('del-l2', l.power_delivered_l2_kw, 3, 'kW');\n" +
 "        set('del-l3', l.power_delivered_l3_kw, 3, 'kW');\n" +
-"        set('ret-l1', l.power_returned_l1_kw,  3, 'kW');\n" +
-"        set('ret-l2', l.power_returned_l2_kw,  3, 'kW');\n" +
-"        set('ret-l3', l.power_returned_l3_kw,  3, 'kW');\n" +
+ +
 "        set('v-l1', l.voltage_l1, 1, 'V');\n" +
 "        set('v-l2', l.voltage_l2, 1, 'V');\n" +
 "        set('v-l3', l.voltage_l3, 1, 'V');\n" +
