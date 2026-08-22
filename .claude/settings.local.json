@@ -2,6 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(node -e \"var h = require\\('./app.js'\\)\")",
+      "Bash(node --check app.js)"
     ]
   }
 }
