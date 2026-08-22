@@ -68,7 +68,8 @@ function fetchPrices(callback) {
           gas = gp.marketPrice + gp.marketPriceTax + gp.sourcingMarkupPrice + gp.energyTaxPrice;
         }
 
-        var result = { electricity_eur_kwh: elec, gas_eur_m3: gas };
+        var result = { electricity_eur_kwh: elec, gas_eur_m3: gas,
+          electricity_label: "current hour (day-ahead)", gas_label: "today (daily)" };
         priceCache = { data: result, fetchedAt: now };
         callback(null, result);
       } catch (e) {
@@ -176,6 +177,12 @@ var HTML = "<!DOCTYPE html>\n" +
 "    .gas { color: #f59e0b; }\n" +
 "    .voltage { color: #a78bfa; }\n" +
 "    .top-section { flex: 0 0 50%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
+"    .cost-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }\n" +
+"    .cost-table th { text-align: left; padding: 0.2rem 0.5rem; color: #475569; font-weight: 600; border-bottom: 1px solid #1e293b; }\n" +
+"    .cost-table td { padding: 0.2rem 0.5rem; color: #cbd5e1; border-bottom: 1px solid #0f172a; }\n" +
+"    .cost-table tr:last-child td { border-bottom: none; }\n" +
+"    .cost-table .num { text-align: right; font-variant-numeric: tabular-nums; }\n" +
+"    .cost-wrap { background: #1e293b; border-radius: 8px; padding: 0.4rem 0.2rem; }\n" +
 "    .bottom-row { flex: 0 0 50%; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
 "    .bottom-col { display: flex; flex-direction: column; min-height: 0; }\n" +
 "    .chart-card { background: #1e293b; border-radius: 8px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
@@ -222,6 +229,13 @@ var HTML = "<!DOCTYPE html>\n" +
 "      <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "      <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "      <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"    </div>\n" +
+"    <p class=\"section-title\">Estimated costs <span style=\"color:#334155;font-weight:400\">(current prices \u00b7 electricity = current hour, gas = today)</span></p>\n" +
+"    <div class=\"cost-wrap\">\n" +
+"      <table class=\"cost-table\">\n" +
+"        <thead><tr><th>Period</th><th class=\"num\">Elec (kWh)</th><th class=\"num\">Elec cost</th><th class=\"num\">Gas (m\u00b3)</th><th class=\"num\">Gas cost</th></tr></thead>\n" +
+"        <tbody id=\"cost-rows\"><tr><td colspan=\"5\" style=\"color:#475569;padding:0.3rem 0.5rem\">Loading\u2026</td></tr></tbody>\n" +
+"      </table>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
@@ -314,6 +328,24 @@ var HTML = "<!DOCTYPE html>\n" +
 "        });\n" +
 "      }).catch(function() {});\n" +
 "    }\n" +
+"    function eur(v) { return v != null ? '\u20ac' + Number(v).toFixed(2) : '\u2014'; }\n" +
+"    function num(v, d) { return v != null ? Number(v).toFixed(d != null ? d : 3) : '\u2014'; }\n" +
+"    function refreshCosts() {\n" +
+"      fetch('/api/costs').then(function(r) { return r.json(); }).then(function(c) {\n" +
+"        var rows = [['Hour','hour'],['Day','day'],['Week','week'],['Month','month']];\n" +
+"        document.getElementById('cost-rows').innerHTML = rows.map(function(r) {\n" +
+"          var d = c[r[1]];\n" +
+"          return '<tr><td>' + r[0] + '</td>' +\n" +
+"            '<td class=\"num\">' + num(d.elec_kwh) + '</td>' +\n" +
+"            '<td class=\"num\">' + eur(d.elec_cost) + '</td>' +\n" +
+"            '<td class=\"num\">' + num(d.gas_m3)    + '</td>' +\n" +
+"            '<td class=\"num\">' + eur(d.gas_cost)  + '</td></tr>';\n" +
+"        }).join('');\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    refreshCosts();\n" +
+"    setInterval(refreshCosts, 60000);\n" +
+"\n" +
 "    function refreshPrices() {\n" +
 "      fetch('/api/prices').then(function(r) { return r.json(); }).then(function(p) {\n" +
 "        if (p.electricity_eur_kwh != null)\n" +
@@ -370,6 +402,45 @@ var server = http.createServer(function(req, res) {
     fetchPrices(function(err, prices) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(err ? { error: "unavailable" } : prices));
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/costs") {
+    fetchPrices(function(err, prices) {
+      if (err) { prices = {}; }
+      var ep = prices.electricity_eur_kwh || null;
+      var gp = prices.gas_eur_m3 || null;
+      var periods = [
+        { key: "hour",  since: "'-1 hour'" },
+        { key: "day",   since: "'-24 hours'" },
+        { key: "week",  since: "'-7 days'" },
+        { key: "month", since: "'-30 days'" }
+      ];
+      var results = {};
+      var pending = periods.length;
+      periods.forEach(function(p) {
+        db.get(
+          "SELECT AVG(power_delivered_total_kw) as avg_kw," +
+          " (julianday(MAX(received_at)) - julianday(MIN(received_at))) * 24 as hours," +
+          " MAX(gas_m3) - MIN(gas_m3) as gas_used, COUNT(*) as n" +
+          " FROM readings WHERE received_at >= datetime('now', " + p.since + ")",
+          function(err2, row) {
+            var elec_kwh = (row && row.n > 1) ? row.avg_kw * row.hours : null;
+            var gas_m3   = (row && row.n > 1) ? row.gas_used : null;
+            results[p.key] = {
+              elec_kwh:  elec_kwh,
+              elec_cost: (elec_kwh != null && ep != null) ? elec_kwh * ep : null,
+              gas_m3:    gas_m3,
+              gas_cost:  (gas_m3  != null && gp != null) ? gas_m3  * gp : null
+            };
+            if (--pending === 0) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify(results));
+            }
+          }
+        );
+      });
     });
     return;
   }
