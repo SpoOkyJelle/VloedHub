@@ -175,26 +175,25 @@ var HTML = "<!DOCTYPE html>\n" +
 "\n" +
 "  <script>\n" +
 "    function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '\u2014'; }\n" +
-"    function set(id, v, dec, unit) {\n" +
+"    function setCard(id, v, dec, unit) {\n" +
 "      document.getElementById(id).innerHTML = val(v, dec) + '<span class=\"card-unit\">' + unit + '</span>';\n" +
 "    }\n" +
 "    function refresh() {\n" +
 "      fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {\n" +
 "        var l = d.latest;\n" +
 "        if (!l) return;\n" +
-"        set('del-total', l.power_delivered_total_kw, 3, 'kW');\n" +
-"        set('ret-total', l.power_returned_total_kw, 3, 'kW');\n" +
-"        set('gas',       l.gas_m3,                  3, 'm\u00b3');\n" +
-"        set('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
-"        set('del-l2', l.power_delivered_l2_kw, 3, 'kW');\n" +
-"        set('del-l3', l.power_delivered_l3_kw, 3, 'kW');\n" +
- +
-"        set('v-l1', l.voltage_l1, 1, 'V');\n" +
-"        set('v-l2', l.voltage_l2, 1, 'V');\n" +
-"        set('v-l3', l.voltage_l3, 1, 'V');\n" +
-"        set('a-l1', l.current_l1, 0, 'A');\n" +
-"        set('a-l2', l.current_l2, 0, 'A');\n" +
-"        set('a-l3', l.current_l3, 0, 'A');\n" +
+"        setCard('del-total', l.power_delivered_total_kw, 3, 'kW');\n" +
+"        setCard('ret-total', l.power_returned_total_kw, 3, 'kW');\n" +
+"        setCard('gas',       l.gas_m3,                  3, 'm\u00b3');\n" +
+"        setCard('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
+"        setCard('del-l2', l.power_delivered_l2_kw, 3, 'kW');\n" +
+"        setCard('del-l3', l.power_delivered_l3_kw, 3, 'kW');\n" +
+"        setCard('v-l1', l.voltage_l1, 1, 'V');\n" +
+"        setCard('v-l2', l.voltage_l2, 1, 'V');\n" +
+"        setCard('v-l3', l.voltage_l3, 1, 'V');\n" +
+"        setCard('a-l1', l.current_l1, 0, 'A');\n" +
+"        setCard('a-l2', l.current_l2, 0, 'A');\n" +
+"        setCard('a-l3', l.current_l3, 0, 'A');\n" +
 "        document.getElementById('updated').textContent = 'Last updated: ' + new Date(l.received_at).toLocaleTimeString();\n" +
 "        var html = '';\n" +
 "        for (var i = 0; i < d.recent.length; i++) {\n" +
