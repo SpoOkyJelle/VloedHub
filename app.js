@@ -141,12 +141,6 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "  </div>\n" +
-"  <div class=\"cards-3\">\n" +
-"    <div class=\"card\"><div class=\"card-label\">L1 returned</div><div class=\"card-value small returned\" id=\"ret-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L2 returned</div><div class=\"card-value small returned\" id=\"ret-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L3 returned</div><div class=\"card-value small returned\" id=\"ret-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"  </div>\n" +
-"\n" +
 "  <p class=\"section-title\">Per phase \u2014 Voltage &amp; Current</p>\n" +
 "  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
