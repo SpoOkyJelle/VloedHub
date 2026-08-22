@@ -110,7 +110,8 @@ var HTML = "<!DOCTYPE html>\n" +
 "    .returned { color: #60a5fa; }\n" +
 "    .gas { color: #f59e0b; }\n" +
 "    .voltage { color: #a78bfa; }\n" +
-"    .bottom-row { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
+"    .top-section { flex: 0 0 50%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
+"    .bottom-row { flex: 0 0 50%; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
 "    .bottom-col { display: flex; flex-direction: column; min-height: 0; }\n" +
 "    .chart-card { background: #1e293b; border-radius: 8px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
 "    .chart-wrap { position: relative; flex: 1; min-height: 0; }\n" +
@@ -125,36 +126,36 @@ var HTML = "<!DOCTYPE html>\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
 "    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34d399; margin-right: 0.4rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
-"    @media (max-width: 640px) { html, body { height: auto; overflow: auto; } .bottom-row { grid-template-columns: 1fr; } .cards-6 { grid-template-columns: repeat(3, 1fr); } }\n" +
+"    @media (max-width: 640px) { html, body { height: auto; overflow: auto; } .top-section { flex: none; } .bottom-row { flex: none; grid-template-columns: 1fr; } .cards-6 { grid-template-columns: repeat(3, 1fr); } }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
 "<body>\n" +
-"  <div class=\"header\">\n" +
-"    <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
-"    <span class=\"updated\" id=\"updated\">Waiting for data\u2026</span>\n" +
-"  </div>\n" +
-"\n" +
-"  <p class=\"section-title\">Totals</p>\n" +
-"  <div class=\"cards\">\n" +
-"    <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"ret-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">Gas</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
-"  </div>\n" +
-"\n" +
-"  <p class=\"section-title\">Per phase</p>\n" +
-"  <div class=\"cards-3\">\n" +
-"    <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"  </div>\n" +
-"  <div class=\"cards-6\">\n" +
-"    <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"  <div class=\"top-section\">\n" +
+"    <div class=\"header\">\n" +
+"      <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
+"      <span class=\"updated\" id=\"updated\">Waiting for data\u2026</span>\n" +
+"    </div>\n" +
+"    <p class=\"section-title\">Totals</p>\n" +
+"    <div class=\"cards\">\n" +
+"      <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"ret-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">Gas</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
+"    </div>\n" +
+"    <p class=\"section-title\">Per phase</p>\n" +
+"    <div class=\"cards-3\">\n" +
+"      <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    </div>\n" +
+"    <div class=\"cards-6\">\n" +
+"      <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"    </div>\n" +
 "  </div>\n" +
 "\n" +
 "  <div class=\"bottom-row\">\n" +
