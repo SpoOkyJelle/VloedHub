@@ -15,54 +15,83 @@
 const http = require("http");
 const path = require("path");
 const fs = require("fs");
-const Database = require("better-sqlite3");
+const initSqlJs = require("sql.js");
 
 const PORT = 5000;
-const db = new Database(path.join(__dirname, "p1_data.db"));
+const DB_PATH = path.join(__dirname, "p1_data.db");
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS readings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    received_at TEXT NOT NULL,
-    device TEXT,
-    power_delivered_kw REAL,
-    power_returned_kw REAL,
-    gas_m3 REAL,
-    raw TEXT NOT NULL
-  )
-`);
+let db;
+let insertStmt;
+let latestStmt;
+let recentStmt;
 
-const insert = db.prepare(`
-  INSERT INTO readings (received_at, device, power_delivered_kw, power_returned_kw, gas_m3, raw)
-  VALUES (@received_at, @device, @power_delivered_kw, @power_returned_kw, @gas_m3, @raw)
-`);
+function saveDb() {
+  const data = db.export();
+  fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
 
-const getLatest = db.prepare(`
-  SELECT * FROM readings ORDER BY id DESC LIMIT 1
-`);
+initSqlJs().then(function(SQL) {
+  const fileBuffer = fs.existsSync(DB_PATH) ? fs.readFileSync(DB_PATH) : null;
+  db = fileBuffer ? new SQL.Database(fileBuffer) : new SQL.Database();
 
-const getRecent = db.prepare(`
-  SELECT received_at, power_delivered_kw, power_returned_kw, gas_m3
-  FROM readings ORDER BY id DESC LIMIT 20
-`);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS readings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      received_at TEXT NOT NULL,
+      device TEXT,
+      power_delivered_kw REAL,
+      power_returned_kw REAL,
+      gas_m3 REAL,
+      raw TEXT NOT NULL
+    )
+  `);
+
+  insertStmt = db.prepare(`
+    INSERT INTO readings (received_at, device, power_delivered_kw, power_returned_kw, gas_m3, raw)
+    VALUES (:received_at, :device, :power_delivered_kw, :power_returned_kw, :gas_m3, :raw)
+  `);
+
+  latestStmt = db.prepare(`SELECT * FROM readings ORDER BY id DESC LIMIT 1`);
+  recentStmt = db.prepare(`
+    SELECT received_at, power_delivered_kw, power_returned_kw, gas_m3
+    FROM readings ORDER BY id DESC LIMIT 20
+  `);
+
+  saveDb();
+
+  server.listen(PORT, "0.0.0.0", function() {
+    console.log("Server listening on http://0.0.0.0:" + PORT);
+  });
+});
+
+function stmtToObjects(stmt) {
+  var results = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.reset();
+  return results;
+}
 
 function logReading(data) {
-  const received_at = new Date().toISOString();
+  var received_at = new Date().toISOString();
 
-  insert.run({
-    received_at,
-    device: data.device != null ? data.device : null,
-    power_delivered_kw: data.power_delivered_kw != null ? data.power_delivered_kw : null,
-    power_returned_kw: data.power_returned_kw != null ? data.power_returned_kw : null,
-    gas_m3: data.gas_m3 != null ? data.gas_m3 : null,
-    raw: JSON.stringify(data),
+  insertStmt.run({
+    ":received_at": received_at,
+    ":device": data.device != null ? data.device : null,
+    ":power_delivered_kw": data.power_delivered_kw != null ? data.power_delivered_kw : null,
+    ":power_returned_kw": data.power_returned_kw != null ? data.power_returned_kw : null,
+    ":gas_m3": data.gas_m3 != null ? data.gas_m3 : null,
+    ":raw": JSON.stringify(data),
   });
 
+  saveDb();
+
   console.log(
-    `[${received_at}] ${data.device != null ? data.device : "unknown"} - ` +
-      `delivered=${data.power_delivered_kw}kW ` +
-      `returned=${data.power_returned_kw}kW ` +
-      `gas=${data.gas_m3}m3`
+    "[" + received_at + "] " + (data.device != null ? data.device : "unknown") + " - " +
+    "delivered=" + data.power_delivered_kw + "kW " +
+    "returned=" + data.power_returned_kw + "kW " +
+    "gas=" + data.gas_m3 + "m3"
   );
 }
 
@@ -139,25 +168,25 @@ const HTML = `<!DOCTYPE html>
 
       if (latest) {
         document.getElementById("delivered").innerHTML =
-          (latest.power_delivered_kw ?? "—") + '<span class="card-unit">kW</span>';
+          (latest.power_delivered_kw != null ? latest.power_delivered_kw : "—") + '<span class="card-unit">kW</span>';
         document.getElementById("returned").innerHTML =
-          (latest.power_returned_kw ?? "—") + '<span class="card-unit">kW</span>';
+          (latest.power_returned_kw != null ? latest.power_returned_kw : "—") + '<span class="card-unit">kW</span>';
         document.getElementById("gas").innerHTML =
-          (latest.gas_m3 ?? "—") + '<span class="card-unit">m³</span>';
-        document.getElementById("device").textContent = latest.device ?? "unknown";
+          (latest.gas_m3 != null ? latest.gas_m3 : "—") + '<span class="card-unit">m³</span>';
+        document.getElementById("device").textContent = latest.device != null ? latest.device : "unknown";
         document.getElementById("updated").textContent =
           "Last updated: " + new Date(latest.received_at).toLocaleTimeString();
       }
 
       const tbody = document.getElementById("rows");
-      tbody.innerHTML = recent.map(r => \`
+      tbody.innerHTML = recent.map(function(r) { return \`
         <tr>
           <td>\${new Date(r.received_at).toLocaleTimeString()}</td>
-          <td>\${r.power_delivered_kw ?? "—"}</td>
-          <td>\${r.power_returned_kw ?? "—"}</td>
-          <td>\${r.gas_m3 ?? "—"}</td>
+          <td>\${r.power_delivered_kw != null ? r.power_delivered_kw : "—"}</td>
+          <td>\${r.power_returned_kw != null ? r.power_returned_kw : "—"}</td>
+          <td>\${r.gas_m3 != null ? r.gas_m3 : "—"}</td>
         </tr>
-      \`).join("");
+      \`; }).join("");
     }
 
     refresh();
@@ -166,7 +195,7 @@ const HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(function(req, res) {
   if (req.method === "POST" && req.url === "/api/p1data") {
     const contentType = req.headers["content-type"] || "";
     if (!contentType.includes("application/json")) {
@@ -176,14 +205,14 @@ const server = http.createServer((req, res) => {
     }
 
     let body = "";
-    req.on("data", (chunk) => (body += chunk));
-    req.on("end", () => {
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", function() {
       try {
         const data = JSON.parse(body);
         logReading(data);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ status: "ok" }));
-      } catch {
+      } catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "invalid JSON" }));
       }
@@ -192,10 +221,11 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === "GET" && req.url === "/api/latest") {
-    const latest = getLatest.get() || null;
-    const recent = getRecent.all();
+    var rows = stmtToObjects(latestStmt);
+    var latest = rows.length > 0 ? rows[0] : null;
+    var recent = stmtToObjects(recentStmt);
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ latest, recent }));
+    res.end(JSON.stringify({ latest: latest, recent: recent }));
     return;
   }
 
@@ -207,8 +237,4 @@ const server = http.createServer((req, res) => {
 
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "not found" }));
-});
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
