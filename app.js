@@ -95,17 +95,17 @@ var HTML = "<!DOCTYPE html>\n" +
 "    html, body { height: 100vh; overflow: hidden; }\n" +
 "    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
 "    .header { display: flex; align-items: baseline; justify-content: space-between; }\n" +
-"    h1 { font-size: 1.05rem; }\n" +
-"    .updated { color: #475569; font-size: 0.72rem; }\n" +
-"    .section-title { font-size: 0.6rem; text-transform: uppercase; color: #475569; letter-spacing: 0.07em; margin-bottom: 0.25rem; }\n" +
-"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.4rem; }\n" +
-"    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }\n" +
-"    .cards-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }\n" +
-"    .card { background: #1e293b; border-radius: 8px; padding: 0.4rem 0.6rem; }\n" +
-"    .card-label { font-size: 0.6rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; margin-bottom: 0.1rem; }\n" +
-"    .card-value { font-size: 1.35rem; font-weight: 700; }\n" +
-"    .card-value.small { font-size: clamp(0.85rem, 1.8vw, 1.05rem); }\n" +
-"    .card-unit { font-size: 0.6rem; color: #94a3b8; margin-left: 0.1rem; }\n" +
+"    h1 { font-size: 1.3rem; }\n" +
+"    .updated { color: #475569; font-size: 0.8rem; }\n" +
+"    .section-title { font-size: 0.65rem; text-transform: uppercase; color: #475569; letter-spacing: 0.07em; margin-bottom: 0.35rem; }\n" +
+"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; }\n" +
+"    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }\n" +
+"    .cards-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }\n" +
+"    .card { background: #1e293b; border-radius: 10px; padding: 0.75rem 1rem; }\n" +
+"    .card-label { font-size: 0.68rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; margin-bottom: 0.3rem; }\n" +
+"    .card-value { font-size: 2rem; font-weight: 700; }\n" +
+"    .card-value.small { font-size: clamp(1rem, 2.2vw, 1.4rem); }\n" +
+"    .card-unit { font-size: 0.7rem; color: #94a3b8; margin-left: 0.15rem; }\n" +
 "    .delivered { color: #34d399; }\n" +
 "    .returned { color: #60a5fa; }\n" +
 "    .gas { color: #f59e0b; }\n" +
