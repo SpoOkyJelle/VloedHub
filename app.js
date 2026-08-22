@@ -192,7 +192,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === "GET" && req.url === "/api/latest") {
-    const latest = getLatest.get() ?? null;
+    const latest = getLatest.get() || null;
     const recent = getRecent.all();
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ latest, recent }));
