@@ -109,7 +109,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "    .gas { color: #f59e0b; }\n" +
 "    .voltage { color: #a78bfa; }\n" +
 "    .updated { color: #475569; font-size: 0.8rem; margin: 1rem 0 0.5rem; }\n" +
-"    .log-wrap { flex: 1; overflow-y: auto; overflow-x: auto; margin-top: 0.5rem; border-radius: 10px; border: 1px solid #1e293b; }\n" +
+"    .log-wrap { overflow-y: auto; overflow-x: auto; margin-top: 0.5rem; border-radius: 10px; border: 1px solid #1e293b; min-height: 200px; max-height: 420px; }\n" +
 "    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }\n" +
 "    thead th { position: sticky; top: 0; background: #0f172a; z-index: 1; }\n" +
 "    th { text-align: left; padding: 0.5rem 0.75rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
@@ -165,6 +165,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <canvas id=\"chart\" height=\"120\"></canvas>\n" +
 "  </div>\n" +
 "\n" +
+"  <p class=\"section-title\">Recent readings</p>\n" +
 "  <div class=\"log-wrap\">\n" +
 "  <table>\n" +
 "    <thead><tr><th>Time</th><th>Del. total (kW)</th><th>Ret. total (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
