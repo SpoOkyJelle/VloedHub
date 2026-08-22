@@ -117,7 +117,12 @@ var HTML = "<!DOCTYPE html>\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
 "    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-right: 0.5rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
+"    .chart-card { background: #1e293b; border-radius: 10px; padding: 1rem; margin-top: 0.5rem; }\n" +
+"    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }\n" +
+"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; padding: 0.35rem 0.9rem; font-size: 0.8rem; cursor: pointer; }\n" +
+"    .tab.active { background: #334155; color: #e2e8f0; }\n" +
 "  </style>\n" +
+"  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
 "<body>\n" +
 "  <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
@@ -155,6 +160,16 @@ var HTML = "<!DOCTYPE html>\n" +
 "  </div>\n" +
 "\n" +
 "  <p class=\"updated\" id=\"updated\">Waiting for data\u2026</p>\n" +
+"\n" +
+"  <p class=\"section-title\">History</p>\n" +
+"  <div class=\"chart-card\">\n" +
+"    <div class=\"tab-bar\">\n" +
+"      <button class=\"tab active\" onclick=\"loadChart('day',this)\">Day</button>\n" +
+"      <button class=\"tab\" onclick=\"loadChart('week',this)\">Week</button>\n" +
+"      <button class=\"tab\" onclick=\"loadChart('month',this)\">Month</button>\n" +
+"    </div>\n" +
+"    <canvas id=\"chart\" height=\"120\"></canvas>\n" +
+"  </div>\n" +
 "\n" +
 "  <div class=\"log-wrap\">\n" +
 "  <table>\n" +
@@ -201,6 +216,42 @@ var HTML = "<!DOCTYPE html>\n" +
 "    }\n" +
 "    refresh();\n" +
 "    setInterval(refresh, 3000);\n" +
+"\n" +
+"    var chart = null;\n" +
+"    function loadChart(range, btn) {\n" +
+"      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });\n" +
+"      if (btn) btn.classList.add('active');\n" +
+"      fetch('/api/history?range=' + range).then(function(r) { return r.json(); }).then(function(rows) {\n" +
+"        var labels = rows.map(function(r) { return r.period; });\n" +
+"        var del    = rows.map(function(r) { return r.del != null ? Number(r.del).toFixed(3) : null; });\n" +
+"        var ret    = rows.map(function(r) { return r.ret != null ? Number(r.ret).toFixed(3) : null; });\n" +
+"        if (chart) chart.destroy();\n" +
+"        chart = new Chart(document.getElementById('chart'), {\n" +
+"          type: 'line',\n" +
+"          data: {\n" +
+"            labels: labels,\n" +
+"            datasets: [\n" +
+"              { label: 'Delivered (kW)', data: del, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', tension: 0.3, pointRadius: 2, fill: true },\n" +
+"              { label: 'Returned (kW)',  data: ret, borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)', tension: 0.3, pointRadius: 2, fill: true }\n" +
+"            ]\n" +
+"          },\n" +
+"          options: {\n" +
+"            responsive: true,\n" +
+"            interaction: { mode: 'index', intersect: false },\n" +
+"            plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12 } } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#475569', maxRotation: 45 }, grid: { color: '#1e293b' } },\n" +
+"              y: { ticks: { color: '#475569' }, grid: { color: '#1e293b' }, beginAtZero: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    loadChart('day', null);\n" +
+"    setInterval(function() {\n" +
+"      var active = document.querySelector('.tab.active');\n" +
+"      if (active) loadChart(active.textContent.toLowerCase(), null);\n" +
+"    }, 60000);\n" +
 "  </script>\n" +
 "</body>\n" +
 "</html>";
@@ -246,6 +297,35 @@ var server = http.createServer(function(req, res) {
           res.end(JSON.stringify({ latest: latest || null, recent: recent || [] }));
         }
       );
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url.indexOf("/api/history") === 0) {
+    var range = "day";
+    var qs = req.url.indexOf("?range=");
+    if (qs !== -1) range = req.url.slice(qs + 7).split("&")[0];
+
+    var interval, since, fmt;
+    if (range === "week") {
+      since = "'-7 days'"; fmt = "'%Y-%m-%d'";
+    } else if (range === "month") {
+      since = "'-30 days'"; fmt = "'%Y-%m-%d'";
+    } else {
+      since = "'-24 hours'"; fmt = "'%Y-%m-%d %H:00'";
+    }
+
+    var sql =
+      "SELECT strftime(" + fmt + ", received_at) as period," +
+      " AVG(power_delivered_total_kw) as del," +
+      " AVG(power_returned_total_kw) as ret" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now'," + since + ")" +
+      " GROUP BY period ORDER BY period ASC";
+
+    db.all(sql, function(err, rows) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows || []));
     });
     return;
   }
