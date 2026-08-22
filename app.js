@@ -92,43 +92,48 @@ var HTML = "<!DOCTYPE html>\n" +
 "  <title>VloedHub \u2014 P1 Live</title>\n" +
 "  <style>\n" +
 "    * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
-"    html, body { height: 100%; }\n" +
-"    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 1.25rem; display: flex; flex-direction: column; min-height: 100vh; }\n" +
-"    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }\n" +
-"    .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem; }\n" +
-"    .section-title { font-size: 0.7rem; text-transform: uppercase; color: #475569; letter-spacing: 0.08em; margin: 1.25rem 0 0.6rem; }\n" +
-"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.5rem; }\n" +
-"    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.5rem; }\n" +
-"    .card { background: #1e293b; border-radius: 10px; padding: 0.9rem 1rem; }\n" +
-"    .card-label { font-size: 0.7rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.4rem; }\n" +
-"    .card-value { font-size: 1.9rem; font-weight: 700; }\n" +
-"    .card-value.small { font-size: clamp(1rem, 3.5vw, 1.3rem); padding-top: 0.2rem; }\n" +
-"    .card-unit { font-size: 0.75rem; color: #94a3b8; margin-left: 0.15rem; }\n" +
+"    html, body { height: 100vh; overflow: hidden; }\n" +
+"    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
+"    .header { display: flex; align-items: baseline; justify-content: space-between; }\n" +
+"    h1 { font-size: 1.05rem; }\n" +
+"    .updated { color: #475569; font-size: 0.72rem; }\n" +
+"    .section-title { font-size: 0.6rem; text-transform: uppercase; color: #475569; letter-spacing: 0.07em; margin-bottom: 0.25rem; }\n" +
+"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.4rem; }\n" +
+"    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }\n" +
+"    .cards-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }\n" +
+"    .card { background: #1e293b; border-radius: 8px; padding: 0.4rem 0.6rem; }\n" +
+"    .card-label { font-size: 0.6rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; margin-bottom: 0.1rem; }\n" +
+"    .card-value { font-size: 1.35rem; font-weight: 700; }\n" +
+"    .card-value.small { font-size: clamp(0.85rem, 1.8vw, 1.05rem); }\n" +
+"    .card-unit { font-size: 0.6rem; color: #94a3b8; margin-left: 0.1rem; }\n" +
 "    .delivered { color: #34d399; }\n" +
 "    .returned { color: #60a5fa; }\n" +
 "    .gas { color: #f59e0b; }\n" +
 "    .voltage { color: #a78bfa; }\n" +
-"    .updated { color: #475569; font-size: 0.8rem; margin: 1rem 0 0.5rem; }\n" +
-"    .log-wrap { overflow-y: auto; overflow-x: auto; margin-top: 0.5rem; border-radius: 10px; border: 1px solid #1e293b; min-height: 200px; max-height: 420px; }\n" +
-"    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }\n" +
-"    thead th { position: sticky; top: 0; background: #0f172a; z-index: 1; }\n" +
-"    th { text-align: left; padding: 0.5rem 0.75rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
-"    td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; white-space: nowrap; }\n" +
-"    tr:last-child td { border-bottom: none; }\n" +
-"    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-right: 0.5rem; animation: pulse 2s infinite; }\n" +
-"    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
-"    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; align-items: start; }\n" +
-"    @media (max-width: 600px) { .bottom-row { grid-template-columns: 1fr; } }\n" +
-"    .chart-card { background: #1e293b; border-radius: 10px; padding: 1rem; }\n" +
-"    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }\n" +
-"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; padding: 0.3rem 0.75rem; font-size: 0.75rem; cursor: pointer; }\n" +
+"    .bottom-row { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
+"    .bottom-col { display: flex; flex-direction: column; min-height: 0; }\n" +
+"    .chart-card { background: #1e293b; border-radius: 8px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
+"    .chart-wrap { position: relative; flex: 1; min-height: 0; }\n" +
+"    .tab-bar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }\n" +
+"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 5px; padding: 0.18rem 0.55rem; font-size: 0.68rem; cursor: pointer; }\n" +
 "    .tab.active { background: #334155; color: #e2e8f0; }\n" +
+"    .log-wrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border-radius: 8px; border: 1px solid #1e293b; }\n" +
+"    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }\n" +
+"    thead th { position: sticky; top: 0; background: #0f172a; z-index: 1; }\n" +
+"    th { text-align: left; padding: 0.35rem 0.6rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
+"    td { padding: 0.3rem 0.6rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; white-space: nowrap; }\n" +
+"    tr:last-child td { border-bottom: none; }\n" +
+"    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34d399; margin-right: 0.4rem; animation: pulse 2s infinite; }\n" +
+"    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
+"    @media (max-width: 640px) { html, body { height: auto; overflow: auto; } .bottom-row { grid-template-columns: 1fr; } .cards-6 { grid-template-columns: repeat(3, 1fr); } }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
 "<body>\n" +
-"  <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
-"  <p class=\"subtitle\">Live energy readings from your smart meter</p>\n" +
+"  <div class=\"header\">\n" +
+"    <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
+"    <span class=\"updated\" id=\"updated\">Waiting for data\u2026</span>\n" +
+"  </div>\n" +
 "\n" +
 "  <p class=\"section-title\">Totals</p>\n" +
 "  <div class=\"cards\">\n" +
@@ -137,28 +142,23 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <div class=\"card\"><div class=\"card-label\">Gas</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
 "  </div>\n" +
 "\n" +
-"  <p class=\"section-title\">Per phase \u2014 Power</p>\n" +
+"  <p class=\"section-title\">Per phase</p>\n" +
 "  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "  </div>\n" +
-"  <p class=\"section-title\">Per phase \u2014 Voltage &amp; Current</p>\n" +
-"  <div class=\"cards-3\">\n" +
+"  <div class=\"cards-6\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"  </div>\n" +
-"  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "  </div>\n" +
 "\n" +
-"  <p class=\"updated\" id=\"updated\">Waiting for data\u2026</p>\n" +
-"\n" +
 "  <div class=\"bottom-row\">\n" +
-"    <div>\n" +
+"    <div class=\"bottom-col\">\n" +
 "      <p class=\"section-title\">History</p>\n" +
 "      <div class=\"chart-card\">\n" +
 "        <div class=\"tab-bar\">\n" +
@@ -166,10 +166,10 @@ var HTML = "<!DOCTYPE html>\n" +
 "          <button class=\"tab\" onclick=\"loadChart('week',this)\">Week</button>\n" +
 "          <button class=\"tab\" onclick=\"loadChart('month',this)\">Month</button>\n" +
 "        </div>\n" +
-"        <canvas id=\"chart\" height=\"180\"></canvas>\n" +
+"        <div class=\"chart-wrap\"><canvas id=\"chart\"></canvas></div>\n" +
 "      </div>\n" +
 "    </div>\n" +
-"    <div>\n" +
+"    <div class=\"bottom-col\">\n" +
 "      <p class=\"section-title\">Recent readings</p>\n" +
 "      <div class=\"log-wrap\">\n" +
 "        <table>\n" +
@@ -235,7 +235,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "            ]\n" +
 "          },\n" +
 "          options: {\n" +
-"            responsive: true,\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
 "            interaction: { mode: 'index', intersect: false },\n" +
 "            plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12 } } },\n" +
 "            scales: {\n" +
