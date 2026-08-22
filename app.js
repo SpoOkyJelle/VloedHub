@@ -13,8 +13,73 @@
  */
 
 var http = require("http");
+var https = require("https");
 var path = require("path");
 var sqlite3 = require("sqlite3");
+
+var priceCache = { data: null, fetchedAt: 0 };
+
+function fetchPrices(callback) {
+  var now = Date.now();
+  if (priceCache.data && now - priceCache.fetchedAt < 3600000) {
+    return callback(null, priceCache.data);
+  }
+
+  var today = new Date().toISOString().slice(0, 10);
+  var body = JSON.stringify({
+    query: '{ marketPrices(date: "' + today + '") {' +
+      ' electricityPrices { from marketPrice marketPriceTax sourcingMarkupPrice energyTaxPrice }' +
+      ' gasPrices { from marketPrice marketPriceTax sourcingMarkupPrice energyTaxPrice }' +
+    ' } }'
+  });
+
+  var options = {
+    hostname: "frank-graphql-prod.graphcdn.app",
+    path: "/",
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+  };
+
+  var req = https.request(options, function(res) {
+    var chunks = "";
+    res.on("data", function(c) { chunks += c; });
+    res.on("end", function() {
+      try {
+        var json = JSON.parse(chunks);
+        var mp = json.data.marketPrices;
+
+        // Current hour in UTC to match Frank's timestamps
+        var nowHour = new Date().toISOString().slice(0, 13);
+        var elec = null;
+        mp.electricityPrices.forEach(function(p) {
+          if (p.from && p.from.slice(0, 13) === nowHour) {
+            elec = p.marketPrice + p.marketPriceTax + p.sourcingMarkupPrice + p.energyTaxPrice;
+          }
+        });
+        // Fallback: most recent electricity price
+        if (elec === null && mp.electricityPrices.length > 0) {
+          var last = mp.electricityPrices[mp.electricityPrices.length - 1];
+          elec = last.marketPrice + last.marketPriceTax + last.sourcingMarkupPrice + last.energyTaxPrice;
+        }
+
+        var gas = null;
+        if (mp.gasPrices.length > 0) {
+          var gp = mp.gasPrices[0];
+          gas = gp.marketPrice + gp.marketPriceTax + gp.sourcingMarkupPrice + gp.energyTaxPrice;
+        }
+
+        var result = { electricity_eur_kwh: elec, gas_eur_m3: gas };
+        priceCache = { data: result, fetchedAt: now };
+        callback(null, result);
+      } catch (e) {
+        callback(e);
+      }
+    });
+  });
+  req.on("error", callback);
+  req.write(body);
+  req.end();
+}
 
 var PORT = 5000;
 var db = new sqlite3.Database(path.join(__dirname, "p1_data.db"));
@@ -140,7 +205,9 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <div class=\"cards\">\n" +
 "      <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "      <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"ret-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">Gas</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">Gas usage</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">Electricity price</div><div class=\"card-value\" style=\"color:#fbbf24\" id=\"price-elec\">\u2014<span class=\"card-unit\">\u20ac/kWh</span></div></div>\n" +
+"      <div class=\"card\"><div class=\"card-label\">Gas price</div><div class=\"card-value\" style=\"color:#fbbf24\" id=\"price-gas\">\u2014<span class=\"card-unit\">\u20ac/m\u00b3</span></div></div>\n" +
 "    </div>\n" +
 "    <p class=\"section-title\">Per phase</p>\n" +
 "    <div class=\"cards-3\">\n" +
@@ -247,6 +314,17 @@ var HTML = "<!DOCTYPE html>\n" +
 "        });\n" +
 "      }).catch(function() {});\n" +
 "    }\n" +
+"    function refreshPrices() {\n" +
+"      fetch('/api/prices').then(function(r) { return r.json(); }).then(function(p) {\n" +
+"        if (p.electricity_eur_kwh != null)\n" +
+"          document.getElementById('price-elec').innerHTML = Number(p.electricity_eur_kwh).toFixed(4) + '<span class=\"card-unit\">\u20ac/kWh</span>';\n" +
+"        if (p.gas_eur_m3 != null)\n" +
+"          document.getElementById('price-gas').innerHTML = Number(p.gas_eur_m3).toFixed(4) + '<span class=\"card-unit\">\u20ac/m\u00b3</span>';\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    refreshPrices();\n" +
+"    setInterval(refreshPrices, 900000);\n" +
+"\n" +
 "    loadChart('day', null);\n" +
 "    setInterval(function() {\n" +
 "      var active = document.querySelector('.tab.active');\n" +
@@ -284,6 +362,14 @@ var server = http.createServer(function(req, res) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ status: "ok" }));
       });
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/prices") {
+    fetchPrices(function(err, prices) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(err ? { error: "unavailable" } : prices));
     });
     return;
   }
