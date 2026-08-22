@@ -19,42 +19,66 @@ var sqlite3 = require("sqlite3");
 var PORT = 5000;
 var db = new sqlite3.Database(path.join(__dirname, "p1_data.db"));
 
-db.run(
-  "CREATE TABLE IF NOT EXISTS readings (" +
-  "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
-  "  received_at TEXT NOT NULL," +
-  "  device TEXT," +
-  "  power_delivered_kw REAL," +
-  "  power_returned_kw REAL," +
-  "  gas_m3 REAL," +
-  "  raw TEXT NOT NULL" +
-  ")"
-);
+db.serialize(function() {
+  db.run(
+    "CREATE TABLE IF NOT EXISTS readings (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  received_at TEXT NOT NULL," +
+    "  device TEXT," +
+    "  voltage_l1 REAL, voltage_l2 REAL, voltage_l3 REAL," +
+    "  current_l1 REAL, current_l2 REAL, current_l3 REAL," +
+    "  power_delivered_l1_kw REAL, power_delivered_l2_kw REAL, power_delivered_l3_kw REAL," +
+    "  power_returned_l1_kw REAL, power_returned_l2_kw REAL, power_returned_l3_kw REAL," +
+    "  power_delivered_total_kw REAL," +
+    "  power_returned_total_kw REAL," +
+    "  gas_m3 REAL," +
+    "  raw TEXT NOT NULL" +
+    ")"
+  );
+
+  // Migrate older single-column schema if needed
+  var oldCols = ["voltage_l1","voltage_l2","voltage_l3","current_l1","current_l2","current_l3",
+    "power_delivered_l1_kw","power_delivered_l2_kw","power_delivered_l3_kw",
+    "power_returned_l1_kw","power_returned_l2_kw","power_returned_l3_kw",
+    "power_delivered_total_kw","power_returned_total_kw"];
+  oldCols.forEach(function(col) {
+    db.run("ALTER TABLE readings ADD COLUMN " + col + " REAL", function() {});
+  });
+});
 
 function logReading(data, callback) {
   var received_at = new Date().toISOString();
+  var n = function(v) { return v != null ? v : null; };
 
   db.run(
-    "INSERT INTO readings (received_at, device, power_delivered_kw, power_returned_kw, gas_m3, raw) " +
-    "VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT INTO readings (" +
+    "  received_at, device," +
+    "  voltage_l1, voltage_l2, voltage_l3," +
+    "  current_l1, current_l2, current_l3," +
+    "  power_delivered_l1_kw, power_delivered_l2_kw, power_delivered_l3_kw," +
+    "  power_returned_l1_kw, power_returned_l2_kw, power_returned_l3_kw," +
+    "  power_delivered_total_kw, power_returned_total_kw," +
+    "  gas_m3, raw" +
+    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
     [
       received_at,
-      data.device != null ? data.device : null,
-      data.power_delivered_kw != null ? data.power_delivered_kw : null,
-      data.power_returned_kw != null ? data.power_returned_kw : null,
-      data.gas_m3 != null ? data.gas_m3 : null,
+      n(data.device),
+      n(data.voltage_l1), n(data.voltage_l2), n(data.voltage_l3),
+      n(data.current_l1), n(data.current_l2), n(data.current_l3),
+      n(data.power_delivered_l1_kw), n(data.power_delivered_l2_kw), n(data.power_delivered_l3_kw),
+      n(data.power_returned_l1_kw), n(data.power_returned_l2_kw), n(data.power_returned_l3_kw),
+      n(data.power_delivered_total_kw), n(data.power_returned_total_kw),
+      n(data.gas_m3),
       JSON.stringify(data)
     ],
     function(err) {
       if (err) return callback(err);
-
       console.log(
-        "[" + received_at + "] " + (data.device != null ? data.device : "unknown") + " - " +
-        "delivered=" + data.power_delivered_kw + "kW " +
-        "returned=" + data.power_returned_kw + "kW " +
+        "[" + received_at + "] " + (data.device || "unknown") + " - " +
+        "delivered=" + data.power_delivered_total_kw + "kW " +
+        "returned=" + data.power_returned_total_kw + "kW " +
         "gas=" + data.gas_m3 + "m3"
       );
-
       callback(null);
     }
   );
@@ -71,16 +95,19 @@ var HTML = "<!DOCTYPE html>\n" +
 "    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; }\n" +
 "    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }\n" +
 "    .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 2rem; }\n" +
-"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }\n" +
+"    .section-title { font-size: 0.7rem; text-transform: uppercase; color: #475569; letter-spacing: 0.08em; margin: 1.5rem 0 0.75rem; }\n" +
+"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 0.5rem; }\n" +
 "    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem; }\n" +
 "    .card-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.5rem; }\n" +
-"    .card-value { font-size: 2rem; font-weight: 700; }\n" +
-"    .card-unit { font-size: 0.85rem; color: #94a3b8; margin-left: 0.25rem; }\n" +
+"    .card-value { font-size: 1.9rem; font-weight: 700; }\n" +
+"    .card-value.small { font-size: 1.3rem; padding-top: 0.3rem; }\n" +
+"    .card-unit { font-size: 0.8rem; color: #94a3b8; margin-left: 0.2rem; }\n" +
 "    .delivered { color: #34d399; }\n" +
 "    .returned { color: #60a5fa; }\n" +
 "    .gas { color: #f59e0b; }\n" +
-"    .updated { color: #475569; font-size: 0.8rem; margin-bottom: 1.5rem; }\n" +
-"    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }\n" +
+"    .voltage { color: #a78bfa; }\n" +
+"    .updated { color: #475569; font-size: 0.8rem; margin: 1.25rem 0; }\n" +
+"    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1.5rem; }\n" +
 "    th { text-align: left; padding: 0.5rem 0.75rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
 "    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
@@ -92,41 +119,72 @@ var HTML = "<!DOCTYPE html>\n" +
 "  <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
 "  <p class=\"subtitle\">Live energy readings from your smart meter</p>\n" +
 "\n" +
+"  <p class=\"section-title\">Totals</p>\n" +
 "  <div class=\"cards\">\n" +
-"    <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"delivered\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"returned\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"ret-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">Gas</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
-"    <div class=\"card\"><div class=\"card-label\">Device</div><div class=\"card-value\" style=\"font-size:1.1rem;padding-top:0.6rem\" id=\"device\">\u2014</div></div>\n" +
+"  </div>\n" +
+"\n" +
+"  <p class=\"section-title\">Per phase \u2014 Power</p>\n" +
+"  <div class=\"cards\">\n" +
+"    <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L1 returned</div><div class=\"card-value small returned\" id=\"ret-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L2 returned</div><div class=\"card-value small returned\" id=\"ret-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L3 returned</div><div class=\"card-value small returned\" id=\"ret-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"  </div>\n" +
+"\n" +
+"  <p class=\"section-title\">Per phase \u2014 Voltage &amp; Current</p>\n" +
+"  <div class=\"cards\">\n" +
+"    <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
+"    <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "  </div>\n" +
 "\n" +
 "  <p class=\"updated\" id=\"updated\">Waiting for data\u2026</p>\n" +
 "\n" +
 "  <table>\n" +
-"    <thead><tr><th>Time</th><th>Delivered (kW)</th><th>Returned (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
+"    <thead><tr><th>Time</th><th>Del. total (kW)</th><th>Ret. total (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
 "    <tbody id=\"rows\"></tbody>\n" +
 "  </table>\n" +
 "\n" +
 "  <script>\n" +
+"    function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '\u2014'; }\n" +
+"    function set(id, v, dec, unit) {\n" +
+"      document.getElementById(id).innerHTML = val(v, dec) + '<span class=\"card-unit\">' + unit + '</span>';\n" +
+"    }\n" +
 "    function refresh() {\n" +
-"      fetch('/api/latest').then(function(res) {\n" +
-"        return res.json();\n" +
-"      }).then(function(d) {\n" +
-"        var latest = d.latest;\n" +
-"        var recent = d.recent;\n" +
-"        if (latest) {\n" +
-"          document.getElementById('delivered').innerHTML = (latest.power_delivered_kw != null ? latest.power_delivered_kw : '\u2014') + '<span class=\"card-unit\">kW</span>';\n" +
-"          document.getElementById('returned').innerHTML = (latest.power_returned_kw != null ? latest.power_returned_kw : '\u2014') + '<span class=\"card-unit\">kW</span>';\n" +
-"          document.getElementById('gas').innerHTML = (latest.gas_m3 != null ? latest.gas_m3 : '\u2014') + '<span class=\"card-unit\">m\u00b3</span>';\n" +
-"          document.getElementById('device').textContent = latest.device != null ? latest.device : 'unknown';\n" +
-"          document.getElementById('updated').textContent = 'Last updated: ' + new Date(latest.received_at).toLocaleTimeString();\n" +
-"        }\n" +
+"      fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {\n" +
+"        var l = d.latest;\n" +
+"        if (!l) return;\n" +
+"        set('del-total', l.power_delivered_total_kw, 3, 'kW');\n" +
+"        set('ret-total', l.power_returned_total_kw, 3, 'kW');\n" +
+"        set('gas',       l.gas_m3,                  3, 'm\u00b3');\n" +
+"        set('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
+"        set('del-l2', l.power_delivered_l2_kw, 3, 'kW');\n" +
+"        set('del-l3', l.power_delivered_l3_kw, 3, 'kW');\n" +
+"        set('ret-l1', l.power_returned_l1_kw,  3, 'kW');\n" +
+"        set('ret-l2', l.power_returned_l2_kw,  3, 'kW');\n" +
+"        set('ret-l3', l.power_returned_l3_kw,  3, 'kW');\n" +
+"        set('v-l1', l.voltage_l1, 1, 'V');\n" +
+"        set('v-l2', l.voltage_l2, 1, 'V');\n" +
+"        set('v-l3', l.voltage_l3, 1, 'V');\n" +
+"        set('a-l1', l.current_l1, 0, 'A');\n" +
+"        set('a-l2', l.current_l2, 0, 'A');\n" +
+"        set('a-l3', l.current_l3, 0, 'A');\n" +
+"        document.getElementById('updated').textContent = 'Last updated: ' + new Date(l.received_at).toLocaleTimeString();\n" +
 "        var html = '';\n" +
-"        for (var i = 0; i < recent.length; i++) {\n" +
-"          var r = recent[i];\n" +
+"        for (var i = 0; i < d.recent.length; i++) {\n" +
+"          var r = d.recent[i];\n" +
 "          html += '<tr><td>' + new Date(r.received_at).toLocaleTimeString() + '</td>' +\n" +
-"            '<td>' + (r.power_delivered_kw != null ? r.power_delivered_kw : '\u2014') + '</td>' +\n" +
-"            '<td>' + (r.power_returned_kw != null ? r.power_returned_kw : '\u2014') + '</td>' +\n" +
-"            '<td>' + (r.gas_m3 != null ? r.gas_m3 : '\u2014') + '</td></tr>';\n" +
+"            '<td>' + val(r.power_delivered_total_kw) + '</td>' +\n" +
+"            '<td>' + val(r.power_returned_total_kw)  + '</td>' +\n" +
+"            '<td>' + val(r.gas_m3)                   + '</td></tr>';\n" +
 "        }\n" +
 "        document.getElementById('rows').innerHTML = html;\n" +
 "      }).catch(function() {});\n" +
@@ -150,14 +208,12 @@ var server = http.createServer(function(req, res) {
     req.on("data", function(chunk) { body += chunk; });
     req.on("end", function() {
       var data;
-      try {
-        data = JSON.parse(body);
-      } catch (e) {
+      try { data = JSON.parse(body); }
+      catch (e) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "invalid JSON" }));
         return;
       }
-
       logReading(data, function(err) {
         if (err) {
           res.writeHead(500, { "Content-Type": "application/json" });
@@ -173,13 +229,11 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/latest") {
     db.get("SELECT * FROM readings ORDER BY id DESC LIMIT 1", function(err, latest) {
-      if (err) { latest = null; }
       db.all(
-        "SELECT received_at, power_delivered_kw, power_returned_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 20",
+        "SELECT received_at, power_delivered_total_kw, power_returned_total_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 20",
         function(err2, recent) {
-          if (err2) { recent = []; }
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ latest: latest || null, recent: recent }));
+          res.end(JSON.stringify({ latest: latest || null, recent: recent || [] }));
         }
       );
     });
