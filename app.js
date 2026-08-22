@@ -92,24 +92,28 @@ var HTML = "<!DOCTYPE html>\n" +
 "  <title>VloedHub \u2014 P1 Live</title>\n" +
 "  <style>\n" +
 "    * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
-"    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; }\n" +
+"    html, body { height: 100%; }\n" +
+"    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 1.25rem; display: flex; flex-direction: column; min-height: 100vh; }\n" +
 "    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }\n" +
-"    .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 2rem; }\n" +
-"    .section-title { font-size: 0.7rem; text-transform: uppercase; color: #475569; letter-spacing: 0.08em; margin: 1.5rem 0 0.75rem; }\n" +
-"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 0.5rem; }\n" +
-"    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem; }\n" +
-"    .card-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.5rem; }\n" +
+"    .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem; }\n" +
+"    .section-title { font-size: 0.7rem; text-transform: uppercase; color: #475569; letter-spacing: 0.08em; margin: 1.25rem 0 0.6rem; }\n" +
+"    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.5rem; }\n" +
+"    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 0.5rem; }\n" +
+"    .card { background: #1e293b; border-radius: 10px; padding: 0.9rem 1rem; }\n" +
+"    .card-label { font-size: 0.7rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.4rem; }\n" +
 "    .card-value { font-size: 1.9rem; font-weight: 700; }\n" +
-"    .card-value.small { font-size: 1.3rem; padding-top: 0.3rem; }\n" +
-"    .card-unit { font-size: 0.8rem; color: #94a3b8; margin-left: 0.2rem; }\n" +
+"    .card-value.small { font-size: clamp(1rem, 3.5vw, 1.3rem); padding-top: 0.2rem; }\n" +
+"    .card-unit { font-size: 0.75rem; color: #94a3b8; margin-left: 0.15rem; }\n" +
 "    .delivered { color: #34d399; }\n" +
 "    .returned { color: #60a5fa; }\n" +
 "    .gas { color: #f59e0b; }\n" +
 "    .voltage { color: #a78bfa; }\n" +
-"    .updated { color: #475569; font-size: 0.8rem; margin: 1.25rem 0; }\n" +
-"    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1.5rem; }\n" +
+"    .updated { color: #475569; font-size: 0.8rem; margin: 1rem 0 0.5rem; }\n" +
+"    .log-wrap { flex: 1; overflow-y: auto; overflow-x: auto; margin-top: 0.5rem; border-radius: 10px; border: 1px solid #1e293b; }\n" +
+"    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }\n" +
+"    thead th { position: sticky; top: 0; background: #0f172a; z-index: 1; }\n" +
 "    th { text-align: left; padding: 0.5rem 0.75rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
-"    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }\n" +
+"    td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; white-space: nowrap; }\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
 "    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34d399; margin-right: 0.5rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
@@ -127,20 +131,24 @@ var HTML = "<!DOCTYPE html>\n" +
 "  </div>\n" +
 "\n" +
 "  <p class=\"section-title\">Per phase \u2014 Power</p>\n" +
-"  <div class=\"cards\">\n" +
+"  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
+"  </div>\n" +
+"  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 returned</div><div class=\"card-value small returned\" id=\"ret-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 returned</div><div class=\"card-value small returned\" id=\"ret-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 returned</div><div class=\"card-value small returned\" id=\"ret-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
 "  </div>\n" +
 "\n" +
 "  <p class=\"section-title\">Per phase \u2014 Voltage &amp; Current</p>\n" +
-"  <div class=\"cards\">\n" +
+"  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
+"  </div>\n" +
+"  <div class=\"cards-3\">\n" +
 "    <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
 "    <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
@@ -148,10 +156,12 @@ var HTML = "<!DOCTYPE html>\n" +
 "\n" +
 "  <p class=\"updated\" id=\"updated\">Waiting for data\u2026</p>\n" +
 "\n" +
+"  <div class=\"log-wrap\">\n" +
 "  <table>\n" +
 "    <thead><tr><th>Time</th><th>Del. total (kW)</th><th>Ret. total (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
 "    <tbody id=\"rows\"></tbody>\n" +
 "  </table>\n" +
+"  </div>\n" +
 "\n" +
 "  <script>\n" +
 "    function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '\u2014'; }\n" +
@@ -230,7 +240,7 @@ var server = http.createServer(function(req, res) {
   if (req.method === "GET" && req.url === "/api/latest") {
     db.get("SELECT * FROM readings ORDER BY id DESC LIMIT 1", function(err, latest) {
       db.all(
-        "SELECT received_at, power_delivered_total_kw, power_returned_total_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 20",
+        "SELECT received_at, power_delivered_total_kw, power_returned_total_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 250",
         function(err2, recent) {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ latest: latest || null, recent: recent || [] }));
