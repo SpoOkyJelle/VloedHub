@@ -51,15 +51,15 @@ function logReading(data) {
 
   insert.run({
     received_at,
-    device: data.device ?? null,
-    power_delivered_kw: data.power_delivered_kw ?? null,
-    power_returned_kw: data.power_returned_kw ?? null,
-    gas_m3: data.gas_m3 ?? null,
+    device: data.device != null ? data.device : null,
+    power_delivered_kw: data.power_delivered_kw != null ? data.power_delivered_kw : null,
+    power_returned_kw: data.power_returned_kw != null ? data.power_returned_kw : null,
+    gas_m3: data.gas_m3 != null ? data.gas_m3 : null,
     raw: JSON.stringify(data),
   });
 
   console.log(
-    `[${received_at}] ${data.device ?? "unknown"} - ` +
+    `[${received_at}] ${data.device != null ? data.device : "unknown"} - ` +
       `delivered=${data.power_delivered_kw}kW ` +
       `returned=${data.power_returned_kw}kW ` +
       `gas=${data.gas_m3}m3`
@@ -168,7 +168,7 @@ const HTML = `<!DOCTYPE html>
 
 const server = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/p1data") {
-    const contentType = req.headers["content-type"] ?? "";
+    const contentType = req.headers["content-type"] || "";
     if (!contentType.includes("application/json")) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "expected application/json" }));
