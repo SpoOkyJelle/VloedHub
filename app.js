@@ -1322,12 +1322,61 @@ var server = http.createServer(function(req, res) {
     return;
   }
 
+  if (req.method === "GET" && req.url.indexOf("/api/debug/gap-list") === 0) {
+    var glQs = req.url.indexOf("?");
+    var glParams = glQs !== -1 ? req.url.slice(glQs + 1) : "";
+    var glMinMatch = glParams.match(/min=(\d+(\.\d+)?)/);
+    var glMin = parseFloat(glMinMatch ? glMinMatch[1] : "5");
+    db.all(
+      "WITH ordered AS (" +
+      "  SELECT received_at AS ts, LAG(received_at) OVER (ORDER BY id) AS prev_ts" +
+      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      ")" +
+      "SELECT" +
+      "  date(ts) AS day," +
+      "  time(prev_ts) AS gap_start," +
+      "  time(ts) AS gap_end," +
+      "  ROUND((julianday(ts) - julianday(prev_ts)) * 1440, 1) AS gap_min" +
+      " FROM ordered" +
+      " WHERE prev_ts IS NOT NULL" +
+      "   AND (julianday(ts) - julianday(prev_ts)) * 1440 > ?" +
+      " ORDER BY ts DESC LIMIT 500",
+      [glMin],
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
   if (req.method === "GET" && req.url.indexOf("/api/debug/gaps") === 0) {
     db.all(
-      "SELECT date(received_at) as day, COUNT(*) as n," +
-      " MIN(received_at) as first, MAX(received_at) as last," +
-      " ROUND((julianday(MAX(received_at)) - julianday(MIN(received_at))) * 1440) as span_min" +
-      " FROM readings GROUP BY date(received_at) ORDER BY day DESC LIMIT 60",
+      "WITH ordered AS (" +
+      "  SELECT received_at AS ts, LAG(received_at) OVER (ORDER BY id) AS prev_ts" +
+      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      ")," +
+      "gaps AS (" +
+      "  SELECT date(ts) AS day," +
+      "    ROUND((julianday(ts) - julianday(prev_ts)) * 1440, 1) AS gap_min," +
+      "    time(prev_ts) AS gap_start, time(ts) AS gap_end" +
+      "  FROM ordered" +
+      "  WHERE prev_ts IS NOT NULL AND (julianday(ts) - julianday(prev_ts)) * 1440 > 2" +
+      ")," +
+      "day_summary AS (" +
+      "  SELECT date(received_at) AS day, COUNT(*) AS n," +
+      "    MIN(received_at) AS first_ts, MAX(received_at) AS last_ts," +
+      "    ROUND((julianday(MAX(received_at)) - julianday(MIN(received_at))) * 1440) AS span_min" +
+      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      "  GROUP BY date(received_at)" +
+      ")" +
+      "SELECT d.day, d.n, d.first_ts AS first, d.last_ts AS last, d.span_min," +
+      "  COUNT(g.gap_min) AS gap_count," +
+      "  MAX(g.gap_min) AS max_gap_min," +
+      "  (SELECT g2.gap_start FROM gaps g2 WHERE g2.day = d.day ORDER BY g2.gap_min DESC LIMIT 1) AS biggest_gap_start," +
+      "  (SELECT g2.gap_end FROM gaps g2 WHERE g2.day = d.day ORDER BY g2.gap_min DESC LIMIT 1) AS biggest_gap_end" +
+      " FROM day_summary d LEFT JOIN gaps g ON g.day = d.day" +
+      " GROUP BY d.day ORDER BY d.day DESC LIMIT 60",
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1378,8 +1427,20 @@ var server = http.createServer(function(req, res) {
 
       "<h2>Connectiviteit per dag <span class='count' id='gaps-count'></span></h2>" +
       "<div class='table-wrap'>" +
-      "<table><thead><tr><th>Datum</th><th>Metingen</th><th>Eerste meting</th><th>Laatste meting</th><th>Duur (min)</th><th>Status</th></tr></thead>" +
-      "<tbody id='gaps-body'><tr><td colspan='6' style='color:#3D4D6A;padding:0.5rem'>Laden…</td></tr></tbody></table></div>" +
+      "<table><thead><tr><th>Datum</th><th>Metingen</th><th>Eerste meting</th><th>Laatste meting</th><th>Duur (min)</th><th>Gaten (&gt;2m)</th><th>Grootste gat</th><th>Gat tijdspan</th><th>Status</th></tr></thead>" +
+      "<tbody id='gaps-body'><tr><td colspan='9' style='color:#3D4D6A;padding:0.5rem'>Laden…</td></tr></tbody></table></div>" +
+
+      "<h2>Gaten detail <span class='count' id='gap-list-count'></span></h2>" +
+      "<div class='controls'>" +
+      "<span style='font-size:0.65rem;color:#4A5880'>Minimale gap:</span>" +
+      "<button class='pill' onclick='loadGapList(1,this)'>1 min</button>" +
+      "<button class='pill active' onclick='loadGapList(5,this)'>5 min</button>" +
+      "<button class='pill' onclick='loadGapList(15,this)'>15 min</button>" +
+      "<button class='pill' onclick='loadGapList(60,this)'>1 uur</button>" +
+      "</div>" +
+      "<div class='table-wrap'>" +
+      "<table><thead><tr><th>Datum</th><th>Van</th><th>Tot</th><th>Duur (min)</th></tr></thead>" +
+      "<tbody id='gap-list-body'><tr><td colspan='4' style='color:#3D4D6A;padding:0.5rem'>Laden…</td></tr></tbody></table></div>" +
 
       "<h2>Log-viewer <span class='count' id='logs-count'></span></h2>" +
       "<div class='controls'>" +
@@ -1413,8 +1474,22 @@ var server = http.createServer(function(req, res) {
       "document.getElementById('gaps-count').textContent='('+rows.length+' dagen)';" +
       "document.getElementById('gaps-body').innerHTML=rows.map(function(r){" +
       "var status,cls;if(r.n<10){status='Weinig data';cls='gap-bad';}else if(r.span_min<1380){status='Gaten';cls='gap-warn';}else{status='OK';cls='gap-ok';}" +
-      "return '<tr><td>'+r.day+'</td><td>'+r.n.toLocaleString()+'</td><td>'+(r.first?new Date(r.first).toLocaleTimeString():'—')+'</td><td>'+(r.last?new Date(r.last).toLocaleTimeString():'—')+'</td><td>'+(r.span_min||0)+'</td><td class=\\''+cls+'\\'><b>'+status+'</b></td></tr>';" +
+      "var gapCls=r.max_gap_min>60?'gap-bad':r.max_gap_min>10?'gap-warn':'gap-ok';" +
+      "var gapSpan=r.biggest_gap_start&&r.biggest_gap_end?r.biggest_gap_start+' – '+r.biggest_gap_end:'—';" +
+      "return '<tr><td>'+r.day+'</td><td>'+r.n.toLocaleString()+'</td><td>'+(r.first?new Date(r.first).toLocaleTimeString():'—')+'</td><td>'+(r.last?new Date(r.last).toLocaleTimeString():'—')+'</td><td>'+(r.span_min||0)+'</td><td>'+(r.gap_count||0)+'</td><td class=\\''+gapCls+'\\'>'+( r.max_gap_min?r.max_gap_min+' min':'—')+'</td><td style=\\'color:#94A3B8\\'>'+gapSpan+'</td><td class=\\''+cls+'\\'><b>'+status+'</b></td></tr>';" +
       "}).join('');}).catch(function(){});}" +
+
+      "var currentGapMin=5;" +
+      "function loadGapList(min,btn){currentGapMin=min;" +
+      "document.querySelectorAll('.controls .pill').forEach(function(b){if(['1 min','5 min','15 min','1 uur'].includes(b.textContent))b.classList.remove('active');});" +
+      "if(btn)btn.classList.add('active');" +
+      "fetch('/api/debug/gap-list?min='+min).then(r=>r.json()).then(function(rows){" +
+      "document.getElementById('gap-list-count').textContent='('+rows.length+' gaten)';" +
+      "document.getElementById('gap-list-body').innerHTML=rows.length?rows.map(function(r){" +
+      "var cls=r.gap_min>60?'gap-bad':r.gap_min>10?'gap-warn':'gap-ok';" +
+      "return '<tr><td>'+r.day+'</td><td>'+r.gap_start+'</td><td>'+r.gap_end+'</td><td class=\\''+cls+'\\'>'+r.gap_min+'</td></tr>';" +
+      "}).join(''):'<tr><td colspan=\\'4\\' style=\\'color:#4ADE80;padding:0.5rem\\'>Geen gaten gevonden ✓</td></tr>';" +
+      "}).catch(function(){});}" +
 
       "function loadLogs(){fetch('/api/debug/logs?limit='+currentLimit).then(r=>r.json()).then(function(rows){" +
       "allRows=rows;document.getElementById('logs-count').textContent='('+rows.length+' van '+currentLimit+' gevraagd)';" +
@@ -1444,7 +1519,7 @@ var server = http.createServer(function(req, res) {
       "function toggleLive(btn){liveEnabled=!liveEnabled;btn.textContent=liveEnabled?'\\u25CF Live':'\\u25CB Paused';btn.classList.toggle('active',liveEnabled);if(liveEnabled)startLive();else{clearInterval(liveTimer);}}" +
       "function startLive(){liveTimer=setInterval(function(){loadStats();loadLogs();},5000);}" +
 
-      "loadStats();loadGaps();loadLogs();startLive();" +
+      "loadStats();loadGaps();loadGapList(5,document.querySelector('.controls .pill.active'));loadLogs();startLive();" +
       "</script></body></html>";
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(DEBUG_HTML);
