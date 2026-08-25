@@ -531,13 +531,13 @@ var HTML = "<!DOCTYPE html>\n" +
 "        var updEl = document.getElementById('updated');\n" +
 "        if (updEl) {\n" +
 "          var age = Math.round((Date.now() - new Date(l.received_at).getTime()) / 1000);\n" +
-"          updEl.textContent = 'Bijgewerkt: ' + new Date(l.received_at).toLocaleTimeString() + ' (' + age + 's geleden)';\n" +
+"          updEl.textContent = 'Bijgewerkt: ' + new Date(l.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + ' (' + age + 's geleden)';\n" +
 "          updEl.style.color = age > 60 ? '#F87171' : age > 30 ? '#FBBF24' : '#3D4D6A';\n" +
 "        }\n" +
 "        var html = '';\n" +
 "        for (var i = 0; i < d.recent.length; i++) {\n" +
 "          var r = d.recent[i];\n" +
-"          html += '<tr><td>' + new Date(r.received_at).toLocaleTimeString() + '</td>' +\n" +
+"          html += '<tr><td>' + new Date(r.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + '</td>' +\n" +
 "            '<td>' + val(r.power_delivered_total_kw) + '</td>' +\n" +
 "            '<td>' + val(r.gas_m3)                   + '</td></tr>';\n" +
 "        }\n" +
@@ -1039,7 +1039,7 @@ var server = http.createServer(function(req, res) {
     }
 
     var sql =
-      "SELECT strftime(" + fmt + ", received_at) as period," +
+      "SELECT strftime(" + fmt + ", received_at, 'localtime') as period," +
       " AVG(power_delivered_total_kw) as del," +
       " AVG(power_returned_total_kw) as ret" +
       " FROM readings" +
@@ -1055,12 +1055,12 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/peaks") {
     db.all(
-      "SELECT strftime('%H', received_at) as hour," +
+      "SELECT strftime('%H', received_at, 'localtime') as hour," +
       " AVG(power_delivered_total_kw) as avg_del," +
       " COUNT(*) as n" +
       " FROM readings" +
       " WHERE power_delivered_total_kw IS NOT NULL" +
-      " GROUP BY strftime('%H', received_at)" +
+      " GROUP BY strftime('%H', received_at, 'localtime')" +
       " ORDER BY hour",
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1098,7 +1098,7 @@ var server = http.createServer(function(req, res) {
       " AVG(power_delivered_l3_kw) as avg_l3," +
       " MIN(voltage_l1) as min_v1, MAX(voltage_l1) as max_v1" +
       " FROM readings" +
-      " WHERE date(received_at) = date('now')" +
+      " WHERE date(received_at, 'localtime') = date('now', 'localtime')" +
       " AND power_delivered_total_kw IS NOT NULL",
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1110,12 +1110,12 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/gas-daily") {
     db.all(
-      "SELECT date(received_at) as day," +
+      "SELECT date(received_at, 'localtime') as day," +
       " MAX(gas_m3) - MIN(gas_m3) as gas_used" +
       " FROM readings" +
       " WHERE received_at >= datetime('now', '-30 days')" +
       " AND gas_m3 IS NOT NULL" +
-      " GROUP BY date(received_at)" +
+      " GROUP BY date(received_at, 'localtime')" +
       " ORDER BY day ASC",
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1138,7 +1138,7 @@ var server = http.createServer(function(req, res) {
         "SELECT AVG(power_delivered_total_kw) as avg_kw," +
         " (julianday(MAX(received_at)) - julianday(MIN(received_at)))*24 as hours," +
         " MAX(gas_m3)-MIN(gas_m3) as gas_used, COUNT(*) as n" +
-        " FROM readings WHERE date(received_at) = date('now', " + d.offset + ")",
+        " FROM readings WHERE date(received_at, 'localtime') = date('now', 'localtime', " + d.offset + ")",
         function(err2, row) {
           var elec_kwh = (row && row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
           var gas_used = (row && row.n > 1) ? row.gas_used : null;
@@ -1157,7 +1157,7 @@ var server = http.createServer(function(req, res) {
     db.get(
       "SELECT AVG(power_delivered_total_kw) as night_avg, AVG(current_l1+current_l2+current_l3) as night_amp" +
       " FROM readings" +
-      " WHERE strftime('%H', received_at) BETWEEN '00' AND '05'" +
+      " WHERE strftime('%H', received_at, 'localtime') BETWEEN '00' AND '05'" +
       " AND received_at >= datetime('now','-7 days')" +
       " AND power_delivered_total_kw IS NOT NULL",
       function(err, row) {
@@ -1185,7 +1185,7 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/weekday-avg") {
     db.all(
-      "SELECT strftime('%w', received_at) as dow, AVG(power_delivered_total_kw) as avg_del" +
+      "SELECT strftime('%w', received_at, 'localtime') as dow, AVG(power_delivered_total_kw) as avg_del" +
       " FROM readings" +
       " WHERE received_at >= datetime('now','-60 days')" +
       " AND power_delivered_total_kw IS NOT NULL" +
@@ -1206,7 +1206,7 @@ var server = http.createServer(function(req, res) {
     if (hmRange === "month") hmWhere += " AND received_at >= datetime('now','-30 days')";
     if (hmRange === "day")   hmWhere += " AND received_at >= datetime('now','-1 day')";
     db.all(
-      "SELECT strftime('%w', received_at) as dow, strftime('%H', received_at) as hour," +
+      "SELECT strftime('%w', received_at, 'localtime') as dow, strftime('%H', received_at, 'localtime') as hour," +
       " AVG(power_delivered_total_kw) as avg_del, COUNT(*) as n" +
       " FROM readings WHERE " + hmWhere +
       " GROUP BY dow, hour",
@@ -1220,7 +1220,7 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/gas-monthly") {
     db.all(
-      "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
+      "SELECT strftime('%Y-%m', received_at, 'localtime') as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
       " FROM readings" +
       " WHERE gas_m3 IS NOT NULL" +
       " GROUP BY month ORDER BY month ASC",
@@ -1238,7 +1238,7 @@ var server = http.createServer(function(req, res) {
       var ep = prices.electricity_eur_kwh || null;
       var gp = prices.gas_eur_m3 || null;
       db.all(
-        "SELECT date(received_at) as day," +
+        "SELECT date(received_at, 'localtime') as day," +
         " AVG(power_delivered_total_kw) as avg_kw," +
         " (julianday(MAX(received_at))-julianday(MIN(received_at)))*24 as hours," +
         " MAX(gas_m3)-MIN(gas_m3) as gas_used," +
@@ -1271,7 +1271,7 @@ var server = http.createServer(function(req, res) {
       " FROM readings",
       function(err, row) {
         db.get(
-          "SELECT COUNT(*) as today FROM readings WHERE date(received_at) = date('now')",
+          "SELECT COUNT(*) as today FROM readings WHERE date(received_at, 'localtime') = date('now', 'localtime')",
           function(err2, today) {
             db.get(
               "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= datetime('now', '-1 hour')",
@@ -1462,8 +1462,8 @@ var server = http.createServer(function(req, res) {
       "function loadStats(){fetch('/api/debug/stats').then(r=>r.json()).then(function(s){" +
       "document.getElementById('stats-grid').innerHTML=" +
       "'<div class=\\'stat\\'><div class=\\'stat-label\\'>Totaal logs</div><div class=\\'stat-value\\'>'+s.total.toLocaleString()+'</div></div>'" +
-      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Eerste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.first_entry ? new Date(s.first_entry).toLocaleString() : '—')+'</div></div>'" +
-      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Laatste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.last_entry ? new Date(s.last_entry).toLocaleString() : '—')+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Eerste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.first_entry ? new Date(s.first_entry).toLocaleString('nl-NL',{hour12:false}) : '—')+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Laatste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.last_entry ? new Date(s.last_entry).toLocaleString('nl-NL',{hour12:false}) : '—')+'</div></div>'" +
       "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Dagen met data</div><div class=\\'stat-value\\'>'+s.days_with_data+'</div></div>'" +
       "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Vandaag</div><div class=\\'stat-value\\'>'+s.today.toLocaleString()+'</div><div class=\\'stat-sub\\'>Afgelopen uur: '+s.last_hour+'</div></div>'" +
       "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Gem. per dag</div><div class=\\'stat-value\\'>'+(s.avg_per_day?Math.round(s.avg_per_day).toLocaleString():'—')+'</div></div>'" +
@@ -1476,7 +1476,8 @@ var server = http.createServer(function(req, res) {
       "var status,cls;if(r.n<10){status='Weinig data';cls='gap-bad';}else if(r.span_min<1380){status='Gaten';cls='gap-warn';}else{status='OK';cls='gap-ok';}" +
       "var gapCls=r.max_gap_min>60?'gap-bad':r.max_gap_min>10?'gap-warn':'gap-ok';" +
       "var gapSpan=r.biggest_gap_start&&r.biggest_gap_end?r.biggest_gap_start+' – '+r.biggest_gap_end:'—';" +
-      "return '<tr><td>'+r.day+'</td><td>'+r.n.toLocaleString()+'</td><td>'+(r.first?new Date(r.first).toLocaleTimeString():'—')+'</td><td>'+(r.last?new Date(r.last).toLocaleTimeString():'—')+'</td><td>'+(r.span_min||0)+'</td><td>'+(r.gap_count||0)+'</td><td class=\\''+gapCls+'\\'>'+( r.max_gap_min?r.max_gap_min+' min':'—')+'</td><td style=\\'color:#94A3B8\\'>'+gapSpan+'</td><td class=\\''+cls+'\\'><b>'+status+'</b></td></tr>';" +
+      "var tOpts={hour12:false};" +
+      "return '<tr><td>'+r.day+'</td><td>'+r.n.toLocaleString()+'</td><td>'+(r.first?new Date(r.first).toLocaleTimeString('nl-NL',tOpts):'—')+'</td><td>'+(r.last?new Date(r.last).toLocaleTimeString('nl-NL',tOpts):'—')+'</td><td>'+(r.span_min||0)+'</td><td>'+(r.gap_count||0)+'</td><td class=\\''+gapCls+'\\'>'+( r.max_gap_min?r.max_gap_min+' min':'—')+'</td><td style=\\'color:#94A3B8\\'>'+gapSpan+'</td><td class=\\''+cls+'\\'><b>'+status+'</b></td></tr>';" +
       "}).join('');}).catch(function(){});}" +
 
       "var currentGapMin=5;" +
@@ -1500,7 +1501,7 @@ var server = http.createServer(function(req, res) {
       "filterStr=document.getElementById('search').value.toLowerCase();" +
       "var rows=filterStr?allRows.filter(function(r){return JSON.stringify(r).toLowerCase().includes(filterStr);}):allRows;" +
       "document.getElementById('logs-body').innerHTML=rows.map(function(r){" +
-      "return '<tr><td style=\\'color:#3D4D6A\\'>'+r.id+'</td><td>'+new Date(r.received_at).toLocaleString()+'</td>'" +
+      "return '<tr><td style=\\'color:#3D4D6A\\'>'+r.id+'</td><td>'+new Date(r.received_at).toLocaleString('nl-NL',{hour12:false})+'</td>'" +
       "+'<td class=\\'del\\'>'+n(r.power_delivered_total_kw)+'</td>'" +
       "+'<td class=\\'del\\'>'+n(r.power_delivered_l1_kw)+'</td>'" +
       "+'<td class=\\'del\\'>'+n(r.power_delivered_l2_kw)+'</td>'" +
