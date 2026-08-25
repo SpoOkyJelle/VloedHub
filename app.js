@@ -156,109 +156,237 @@ var HTML = "<!DOCTYPE html>\n" +
 "  <meta charset=\"UTF-8\" />\n" +
 "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n" +
 "  <title>VloedHub \u2014 P1 Live</title>\n" +
+"  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n" +
+"  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n" +
+"  <link href=\"https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n" +
 "  <style>\n" +
 "    * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
-"    html, body { height: 100vh; overflow: hidden; }\n" +
-"    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
+"    html, body { margin: 0; }\n" +
+"    body { font-family: 'Poppins', system-ui, sans-serif; background: #0C0F1D; color: #F1F5F9; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; min-height: 100vh; overflow-y: auto; }\n" +
 "    .header { display: flex; align-items: baseline; justify-content: space-between; }\n" +
-"    h1 { font-size: 1.3rem; }\n" +
-"    .updated { color: #475569; font-size: 0.8rem; }\n" +
-"    .section-title { font-size: 0.65rem; text-transform: uppercase; color: #475569; letter-spacing: 0.07em; margin-bottom: 0.35rem; }\n" +
+"    h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; }\n" +
+"    .updated { color: #3D4D6A; font-size: 0.75rem; }\n" +
+"    .section-title { font-size: 0.6rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.35rem; }\n" +
 "    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; }\n" +
 "    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }\n" +
 "    .cards-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }\n" +
-"    .card { background: #1e293b; border-radius: 10px; padding: 0.75rem 1rem; }\n" +
-"    .card-label { font-size: 0.68rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; margin-bottom: 0.3rem; }\n" +
-"    .card-value { font-size: 2rem; font-weight: 700; }\n" +
+"    .card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; }\n" +
+"    .card-label { font-size: 0.62rem; text-transform: uppercase; color: #4A5880; letter-spacing: 0.06em; margin-bottom: 0.3rem; font-weight: 500; }\n" +
+"    .card-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }\n" +
 "    .card-value.small { font-size: clamp(1rem, 2.2vw, 1.4rem); }\n" +
-"    .card-unit { font-size: 0.7rem; color: #94a3b8; margin-left: 0.15rem; }\n" +
-"    .delivered { color: #34d399; }\n" +
-"    .returned { color: #60a5fa; }\n" +
-"    .gas { color: #f59e0b; }\n" +
-"    .voltage { color: #a78bfa; }\n" +
+"    .card-unit { font-size: 0.65rem; color: #4A5880; margin-left: 0.15rem; font-weight: 400; }\n" +
+"    .delivered { color: #A855F7; }\n" +
+"    .returned { color: #22C55E; }\n" +
+"    .gas { color: #F97316; }\n" +
+"    .voltage { color: #38BDF8; }\n" +
 "    .top-section { flex: 0 0 50%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
 "    .cost-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }\n" +
-"    .cost-table th { text-align: left; padding: 0.2rem 0.5rem; color: #475569; font-weight: 600; border-bottom: 1px solid #1e293b; }\n" +
-"    .cost-table td { padding: 0.2rem 0.5rem; color: #cbd5e1; border-bottom: 1px solid #0f172a; }\n" +
+"    .cost-table th { text-align: left; padding: 0.2rem 0.5rem; color: #3D4D6A; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); }\n" +
+"    .cost-table td { padding: 0.2rem 0.5rem; color: #94A3B8; border-bottom: 1px solid rgba(255,255,255,0.03); }\n" +
 "    .cost-table tr:last-child td { border-bottom: none; }\n" +
 "    .cost-table .num { text-align: right; font-variant-numeric: tabular-nums; }\n" +
-"    .cost-wrap { background: #1e293b; border-radius: 8px; padding: 0.4rem 0.2rem; }\n" +
-"    .bottom-row { flex: 0 0 50%; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
+"    .cost-wrap { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.4rem 0.2rem; }\n" +
+"    .bottom-row { flex-shrink: 0; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
 "    .bottom-col { display: flex; flex-direction: column; min-height: 0; }\n" +
-"    .chart-card { background: #1e293b; border-radius: 8px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
+"    .chart-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
 "    .chart-wrap { position: relative; flex: 1; min-height: 0; }\n" +
 "    .tab-bar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }\n" +
-"    .tab { background: #0f172a; border: 1px solid #334155; color: #94a3b8; border-radius: 5px; padding: 0.18rem 0.55rem; font-size: 0.68rem; cursor: pointer; }\n" +
-"    .tab.active { background: #334155; color: #e2e8f0; }\n" +
-"    .log-wrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border-radius: 8px; border: 1px solid #1e293b; }\n" +
-"    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }\n" +
-"    thead th { position: sticky; top: 0; background: #0f172a; z-index: 1; }\n" +
-"    th { text-align: left; padding: 0.35rem 0.6rem; color: #64748b; border-bottom: 1px solid #1e293b; }\n" +
-"    td { padding: 0.3rem 0.6rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; white-space: nowrap; }\n" +
+"    .tab { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #4A5880; border-radius: 20px; padding: 0.18rem 0.65rem; font-size: 0.65rem; cursor: pointer; font-family: 'Poppins', system-ui, sans-serif; font-weight: 500; }\n" +
+"    .tab.active { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.4); color: #C084FC; }\n" +
+"    .log-wrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }\n" +
+"    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }\n" +
+"    thead th { position: sticky; top: 0; background: #141728; z-index: 1; }\n" +
+"    th { text-align: left; padding: 0.35rem 0.6rem; color: #3D4D6A; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }\n" +
+"    td { padding: 0.3rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: #94A3B8; white-space: nowrap; }\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
-"    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34d399; margin-right: 0.4rem; animation: pulse 2s infinite; }\n" +
+"    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22C55E; margin-right: 0.4rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
-"    @media (max-width: 640px) { html, body { height: auto; overflow: auto; } .top-section { flex: none; } .bottom-row { flex: none; grid-template-columns: 1fr; } .cards-6 { grid-template-columns: repeat(3, 1fr); } }\n" +
+"    /* Hero cards */\n" +
+"    .hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; flex-shrink: 0; }\n" +
+"    .hero-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }\n" +
+"    .accent-bar { height: 3px; width: 100%; }\n" +
+"    .delivered-bar { background: linear-gradient(90deg,#A855F7,#C084FC); }\n" +
+"    .returned-bar { background: linear-gradient(90deg,#22C55E,#4ADE80); }\n" +
+"    .gas-bar { background: linear-gradient(90deg,#F97316,#FB923C); }\n" +
+"    .hero-content { padding: 0.9rem 1.1rem; flex: 1; display: flex; flex-direction: column; justify-content: center; }\n" +
+"    .hero-label { font-size: 0.6rem; text-transform: uppercase; color: #4A5880; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.4rem; }\n" +
+"    .hero-value { font-size: clamp(1.5rem, 2.8vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }\n" +
+"    .hero-value .card-unit { font-size: 0.85rem; color: #4A5880; font-weight: 400; margin-left: 0.2rem; vertical-align: middle; }\n" +
+"    .hero-sub { margin-top: 0.5rem; font-size: 0.7rem; color: #4A5880; }\n" +
+"    .hero-sub .card-unit { font-size: 0.65rem; }\n" +
+"    /* Middle row */\n" +
+"    .middle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex-shrink: 0; }\n" +
+"    .phases-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; }\n" +
+"    .costs-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; display: flex; flex-direction: column; }\n" +
+"    .phase-table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }\n" +
+"    .phase-table th { text-align: center; padding: 0.15rem 0.4rem 0.3rem; color: #3D4D6A; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); }\n" +
+"    .phase-table th:first-child { text-align: left; width: 5.5rem; }\n" +
+"    .phase-table td { padding: 0.25rem 0.4rem; text-align: center; font-variant-numeric: tabular-nums; border-bottom: 1px solid rgba(255,255,255,0.03); color: #94A3B8; }\n" +
+"    .phase-table td:first-child { text-align: left; color: #3D4D6A; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }\n" +
+"    .phase-table tr:last-child td { border-bottom: none; }\n" +
+"    .phase-table .card-unit { font-size: 0.58rem; color: #3D4D6A; margin-left: 0.1rem; }\n" +
+"    /* Stats strip */\n" +
+"    .stats-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }\n" +
+"    .stat-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem 0.85rem; }\n" +
+"    .stat-label { font-size: 0.58rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.3rem; }\n" +
+"    .stat-value { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }\n" +
+"    .stat-unit { font-size: 0.6rem; color: #4A5880; margin-left: 0.1rem; }\n" +
+"    /* Charts grid */\n" +
+"    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
+"    .chart-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; display: flex; flex-direction: column; min-height: 240px; }\n" +
+"    .chart-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }\n" +
+"    .chart-block-title { font-size: 0.6rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.1em; font-weight: 600; }\n" +
+"    @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } .middle { grid-template-columns: 1fr; } .stats-strip { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } .bottom-row { grid-template-columns: 1fr; } }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
 "<body>\n" +
-"  <div class=\"top-section\">\n" +
-"    <div class=\"header\">\n" +
-"      <h1><span class=\"dot\"></span>VloedHub P1 Monitor</h1>\n" +
-"      <span class=\"updated\" id=\"updated\">Waiting for data\u2026</span>\n" +
+"  <div class=\"header\">\n" +
+"    <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
+"    <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
+"  </div>\n" +
+"\n" +
+"  <div class=\"hero\">\n" +
+"    <div class=\"hero-card\">\n" +
+"      <div class=\"accent-bar delivered-bar\"></div>\n" +
+"      <div class=\"hero-content\">\n" +
+"        <div class=\"hero-label\">Verbruik</div>\n" +
+"        <div class=\"hero-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div>\n" +
+"        <div class=\"hero-sub\" id=\"price-elec\">\u2014 <span class=\"card-unit\">\u20ac/kWh</span></div>\n" +
+"      </div>\n" +
 "    </div>\n" +
-"    <p class=\"section-title\">Totals</p>\n" +
-"    <div class=\"cards\">\n" +
-"      <div class=\"card\"><div class=\"card-label\">Delivered</div><div class=\"card-value delivered\" id=\"del-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">Returned</div><div class=\"card-value returned\" id=\"ret-total\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">Gas usage</div><div class=\"card-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">Electricity price</div><div class=\"card-value\" style=\"color:#fbbf24\" id=\"price-elec\">\u2014<span class=\"card-unit\">\u20ac/kWh</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">Gas price</div><div class=\"card-value\" style=\"color:#fbbf24\" id=\"price-gas\">\u2014<span class=\"card-unit\">\u20ac/m\u00b3</span></div></div>\n" +
+"    <div class=\"hero-card\">\n" +
+"      <div class=\"accent-bar\" style=\"background:linear-gradient(90deg,#FBBF24,#FDE68A)\"></div>\n" +
+"      <div class=\"hero-content\">\n" +
+"        <div class=\"hero-label\">Kosten vandaag</div>\n" +
+"        <div class=\"hero-value\" style=\"color:#FBBF24\" id=\"hero-cost-today\">\u2014<span class=\"card-unit\">\u20ac</span></div>\n" +
+"        <div class=\"hero-sub\">Stroom + gas</div>\n" +
+"      </div>\n" +
 "    </div>\n" +
-"    <p class=\"section-title\">Per phase</p>\n" +
-"    <div class=\"cards-3\">\n" +
-"      <div class=\"card\"><div class=\"card-label\">L1 delivered</div><div class=\"card-value small delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L2 delivered</div><div class=\"card-value small delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L3 delivered</div><div class=\"card-value small delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></div></div>\n" +
-"    </div>\n" +
-"    <div class=\"cards-6\">\n" +
-"      <div class=\"card\"><div class=\"card-label\">L1 voltage</div><div class=\"card-value small voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L2 voltage</div><div class=\"card-value small voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L3 voltage</div><div class=\"card-value small voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L1 current</div><div class=\"card-value small\" id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L2 current</div><div class=\"card-value small\" id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
-"      <div class=\"card\"><div class=\"card-label\">L3 current</div><div class=\"card-value small\" id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></div></div>\n" +
-"    </div>\n" +
-"    <p class=\"section-title\">Estimated costs <span style=\"color:#334155;font-weight:400\">(current prices \u00b7 electricity = current hour, gas = today)</span></p>\n" +
-"    <div class=\"cost-wrap\">\n" +
-"      <table class=\"cost-table\">\n" +
-"        <thead><tr><th>Period</th><th class=\"num\">Elec (kWh)</th><th class=\"num\">Elec cost</th><th class=\"num\">Gas (m\u00b3)</th><th class=\"num\">Gas cost</th></tr></thead>\n" +
-"        <tbody id=\"cost-rows\"><tr><td colspan=\"5\" style=\"color:#475569;padding:0.3rem 0.5rem\">Loading\u2026</td></tr></tbody>\n" +
-"      </table>\n" +
+"    <div class=\"hero-card\">\n" +
+"      <div class=\"accent-bar gas-bar\"></div>\n" +
+"      <div class=\"hero-content\">\n" +
+"        <div class=\"hero-label\">Gas</div>\n" +
+"        <div class=\"hero-value gas\" id=\"gas\">\u2014<span class=\"card-unit\">m\u00b3</span></div>\n" +
+"        <div class=\"hero-sub\" id=\"price-gas\">\u2014 <span class=\"card-unit\">\u20ac/m\u00b3</span></div>\n" +
+"      </div>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
-"  <div class=\"bottom-row\">\n" +
-"    <div class=\"bottom-col\">\n" +
-"      <p class=\"section-title\">History</p>\n" +
-"      <div class=\"chart-card\">\n" +
-"        <div class=\"tab-bar\">\n" +
-"          <button class=\"tab active\" onclick=\"loadChart('day',this)\">Day</button>\n" +
-"          <button class=\"tab\" onclick=\"loadChart('week',this)\">Week</button>\n" +
-"          <button class=\"tab\" onclick=\"loadChart('month',this)\">Month</button>\n" +
-"        </div>\n" +
-"        <div class=\"chart-wrap\"><canvas id=\"chart\"></canvas></div>\n" +
-"      </div>\n" +
+"  <div class=\"middle\">\n" +
+"    <div class=\"phases-block\">\n" +
+"      <p class=\"section-title\">Per fase</p>\n" +
+"      <table class=\"phase-table\">\n" +
+"        <thead><tr><th></th><th>L1</th><th>L2</th><th>L3</th></tr></thead>\n" +
+"        <tbody>\n" +
+"          <tr>\n" +
+"            <td>Verbruik</td>\n" +
+"            <td class=\"delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"            <td class=\"delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"            <td class=\"delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"          </tr>\n" +
+"          <tr>\n" +
+"            <td>Spanning</td>\n" +
+"            <td class=\"voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"            <td class=\"voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"            <td class=\"voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"          </tr>\n" +
+"          <tr>\n" +
+"            <td>Stroom</td>\n" +
+"            <td id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"            <td id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"            <td id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"          </tr>\n" +
+"        </tbody>\n" +
+"      </table>\n" +
 "    </div>\n" +
-"    <div class=\"bottom-col\">\n" +
-"      <p class=\"section-title\">Recent readings</p>\n" +
-"      <div class=\"log-wrap\">\n" +
-"        <table>\n" +
-"          <thead><tr><th>Time</th><th>Del. (kW)</th><th>Ret. (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
-"          <tbody id=\"rows\"></tbody>\n" +
+"    <div class=\"costs-block\">\n" +
+"      <p class=\"section-title\">Geschatte kosten <span style=\"color:#2A3550;font-weight:400\">(stroom = huidig uur \u00b7 gas = vandaag)</span></p>\n" +
+"      <div class=\"cost-wrap\" style=\"flex:1\">\n" +
+"        <table class=\"cost-table\">\n" +
+"          <thead><tr><th>Periode</th><th class=\"num\">Stroom (kWh)</th><th class=\"num\">Stroom \u20ac</th><th class=\"num\">Gas (m\u00b3)</th><th class=\"num\">Gas \u20ac</th></tr></thead>\n" +
+"          <tbody id=\"cost-rows\"><tr><td colspan=\"5\" style=\"color:#3D4D6A;padding:0.3rem 0.5rem\">Laden\u2026</td></tr></tbody>\n" +
 "        </table>\n" +
 "      </div>\n" +
+"    </div>\n" +
+"  </div>\n" +
+"\n" +
+"  <!-- Stats strip -->\n" +
+"  <div class=\"stats-strip\">\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Gem. verbruik vandaag</div>\n" +
+"      <div class=\"stat-value delivered\" id=\"stat-avg-del\">\u2014<span class=\"stat-unit\">kW</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Piekverbruik vandaag</div>\n" +
+"      <div class=\"stat-value delivered\" id=\"stat-max-del\">\u2014<span class=\"stat-unit\">kW</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Gem. spanning</div>\n" +
+"      <div class=\"stat-value voltage\" id=\"stat-avg-v\">\u2014<span class=\"stat-unit\">V</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Meest actieve fase</div>\n" +
+"      <div class=\"stat-value voltage\" id=\"stat-top-phase\">\u2014</div>\n" +
+"    </div>\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Spanning (min\u2013max)</div>\n" +
+"      <div class=\"stat-value\" id=\"stat-voltage-range\">\u2014<span class=\"stat-unit\">V</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"stat-card\">\n" +
+"      <div class=\"stat-label\">Metingen vandaag</div>\n" +
+"      <div class=\"stat-value\" id=\"stat-readings\">\u2014</div>\n" +
+"    </div>\n" +
+"  </div>\n" +
+"\n" +
+"  <!-- Charts grid 2x2 -->\n" +
+"  <div class=\"charts-grid\">\n" +
+"    <!-- Elektra verloop (existing line chart) -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Elektra verloop</span>\n" +
+"        <div class=\"tab-bar\" style=\"margin-bottom:0\">\n" +
+"          <button class=\"tab active\" data-range=\"day\" onclick=\"loadChart('day',this)\">Dag</button>\n" +
+"          <button class=\"tab\" data-range=\"week\" onclick=\"loadChart('week',this)\">Week</button>\n" +
+"          <button class=\"tab\" data-range=\"month\" onclick=\"loadChart('month',this)\">Maand</button>\n" +
+"        </div>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Piekuren staafdiagram -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Piekuren (gem. per uur, 30 dgn)</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-peaks\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Faseverdeling horizontale bar -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Faseverdeling (gem. + piek, 7 dgn)</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-phases\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Gas dagverbruik -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Gas dagverbruik (30 dgn)</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-gas\"></canvas></div>\n" +
+"    </div>\n" +
+"  </div>\n" +
+"\n" +
+"  <!-- Recent log -->\n" +
+"  <div>\n" +
+"    <p class=\"section-title\" style=\"margin-top:0.35rem\">Recente metingen</p>\n" +
+"    <div class=\"log-wrap\" style=\"max-height:200px\">\n" +
+"      <table>\n" +
+"        <thead><tr><th>Tijd</th><th>Verbruik (kW)</th><th>Gas (m\u00b3)</th></tr></thead>\n" +
+"        <tbody id=\"rows\"></tbody>\n" +
+"      </table>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
@@ -272,7 +400,6 @@ var HTML = "<!DOCTYPE html>\n" +
 "        var l = d.latest;\n" +
 "        if (!l) return;\n" +
 "        setCard('del-total', l.power_delivered_total_kw, 3, 'kW');\n" +
-"        setCard('ret-total', l.power_returned_total_kw, 3, 'kW');\n" +
 "        setCard('gas',       l.gas_m3,                  3, 'm\u00b3');\n" +
 "        setCard('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
 "        setCard('del-l2', l.power_delivered_l2_kw, 3, 'kW');\n" +
@@ -289,7 +416,6 @@ var HTML = "<!DOCTYPE html>\n" +
 "          var r = d.recent[i];\n" +
 "          html += '<tr><td>' + new Date(r.received_at).toLocaleTimeString() + '</td>' +\n" +
 "            '<td>' + val(r.power_delivered_total_kw) + '</td>' +\n" +
-"            '<td>' + val(r.power_returned_total_kw)  + '</td>' +\n" +
 "            '<td>' + val(r.gas_m3)                   + '</td></tr>';\n" +
 "        }\n" +
 "        document.getElementById('rows').innerHTML = html;\n" +
@@ -305,24 +431,22 @@ var HTML = "<!DOCTYPE html>\n" +
 "      fetch('/api/history?range=' + range).then(function(r) { return r.json(); }).then(function(rows) {\n" +
 "        var labels = rows.map(function(r) { return r.period; });\n" +
 "        var del    = rows.map(function(r) { return r.del != null ? Number(r.del).toFixed(3) : null; });\n" +
-"        var ret    = rows.map(function(r) { return r.ret != null ? Number(r.ret).toFixed(3) : null; });\n" +
 "        if (chart) chart.destroy();\n" +
 "        chart = new Chart(document.getElementById('chart'), {\n" +
 "          type: 'line',\n" +
 "          data: {\n" +
 "            labels: labels,\n" +
 "            datasets: [\n" +
-"              { label: 'Delivered (kW)', data: del, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', tension: 0.3, pointRadius: 2, fill: true },\n" +
-"              { label: 'Returned (kW)',  data: ret, borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)', tension: 0.3, pointRadius: 2, fill: true }\n" +
+"              { label: 'Verbruik (kW)', data: del, borderColor: '#A855F7', backgroundColor: 'rgba(168,85,247,0.1)', tension: 0.3, pointRadius: 2, fill: true }\n" +
 "            ]\n" +
 "          },\n" +
 "          options: {\n" +
 "            responsive: true, maintainAspectRatio: false,\n" +
 "            interaction: { mode: 'index', intersect: false },\n" +
-"            plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12 } } },\n" +
+"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12 } } },\n" +
 "            scales: {\n" +
-"              x: { ticks: { color: '#475569', maxRotation: 45 }, grid: { color: '#1e293b' } },\n" +
-"              y: { ticks: { color: '#475569' }, grid: { color: '#1e293b' }, beginAtZero: true }\n" +
+"              x: { ticks: { color: '#3D4D6A', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
+"              y: { ticks: { color: '#3D4D6A' }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
 "            }\n" +
 "          }\n" +
 "        });\n" +
@@ -332,7 +456,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "    function num(v, d) { return v != null ? Number(v).toFixed(d != null ? d : 3) : '\u2014'; }\n" +
 "    function refreshCosts() {\n" +
 "      fetch('/api/costs').then(function(r) { return r.json(); }).then(function(c) {\n" +
-"        var rows = [['Hour','hour'],['Day','day'],['Week','week'],['Month','month']];\n" +
+"        var rows = [['Uur','hour'],['Dag','day'],['Week','week'],['Maand','month']];\n" +
 "        document.getElementById('cost-rows').innerHTML = rows.map(function(r) {\n" +
 "          var d = c[r[1]];\n" +
 "          return '<tr><td>' + r[0] + '</td>' +\n" +
@@ -341,6 +465,11 @@ var HTML = "<!DOCTYPE html>\n" +
 "            '<td class=\"num\">' + num(d.gas_m3)    + '</td>' +\n" +
 "            '<td class=\"num\">' + eur(d.gas_cost)  + '</td></tr>';\n" +
 "        }).join('');\n" +
+"        var day = c.day;\n" +
+"        if (day && (day.elec_cost != null || day.gas_cost != null)) {\n" +
+"          var total = (day.elec_cost || 0) + (day.gas_cost || 0);\n" +
+"          document.getElementById('hero-cost-today').innerHTML = '\u20ac' + total.toFixed(2) + '<span class=\"card-unit\">/dag</span>';\n" +
+"        }\n" +
 "      }).catch(function() {});\n" +
 "    }\n" +
 "    refreshCosts();\n" +
@@ -357,10 +486,122 @@ var HTML = "<!DOCTYPE html>\n" +
 "    refreshPrices();\n" +
 "    setInterval(refreshPrices, 900000);\n" +
 "\n" +
+"    // Stats\n" +
+"    function refreshStats() {\n" +
+"      fetch('/api/stats').then(function(r) { return r.json(); }).then(function(s) {\n" +
+"        if (!s || s.avg_del == null) return;\n" +
+"        document.getElementById('stat-avg-del').innerHTML = num(s.avg_del, 3) + '<span class=\"stat-unit\">kW</span>';\n" +
+"        document.getElementById('stat-max-del').innerHTML = num(s.max_del, 3) + '<span class=\"stat-unit\">kW</span>';\n" +
+"        var phases = [['L1', s.avg_l1], ['L2', s.avg_l2], ['L3', s.avg_l3]];\n" +
+"        var top = phases.filter(function(p) { return p[1] != null; }).sort(function(a,b) { return b[1]-a[1]; })[0];\n" +
+"        document.getElementById('stat-top-phase').textContent = top ? top[0] : '\u2014';\n" +
+"        if (s.min_v1 != null && s.max_v1 != null)\n" +
+"          document.getElementById('stat-voltage-range').innerHTML = num(s.min_v1,1) + '\u2013' + num(s.max_v1,1) + '<span class=\"stat-unit\">V</span>';\n" +
+"        if (s.min_v1 != null && s.max_v1 != null)\n" +
+"          document.getElementById('stat-avg-v').innerHTML = num((s.min_v1 + s.max_v1) / 2, 1) + '<span class=\"stat-unit\">V</span>';\n" +
+"        document.getElementById('stat-readings').textContent = s.total_readings != null ? s.total_readings : '\u2014';\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    refreshStats();\n" +
+"    setInterval(refreshStats, 30000);\n" +
+"\n" +
+"    // Peaks bar chart\n" +
+"    var chartPeaks = null;\n" +
+"    function loadPeaks() {\n" +
+"      fetch('/api/peaks').then(function(r) { return r.json(); }).then(function(rows) {\n" +
+"        var byHour = {};\n" +
+"        rows.forEach(function(r) { byHour[parseInt(r.hour, 10)] = r; });\n" +
+"        var labels = [], delData = [], retData = [];\n" +
+"        for (var h = 0; h < 24; h++) {\n" +
+"          labels.push(h + ':00');\n" +
+"          var d = byHour[h];\n" +
+"          delData.push(d && d.avg_del != null ? Number(d.avg_del).toFixed(3) : 0);\n" +
+"          retData.push(d && d.avg_ret != null ? Number(d.avg_ret).toFixed(3) : 0);\n" +
+"        }\n" +
+"        if (chartPeaks) chartPeaks.destroy();\n" +
+"        chartPeaks = new Chart(document.getElementById('chart-peaks'), {\n" +
+"          type: 'bar',\n" +
+"          data: { labels: labels, datasets: [\n" +
+"            { label: 'Verbruik (kW)', data: delData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3 }\n" +
+"          ]},\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
+"              y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    loadPeaks();\n" +
+"    setInterval(loadPeaks, 300000);\n" +
+"\n" +
+"    // Phase distribution\n" +
+"    var chartPhases = null;\n" +
+"    function loadPhaseChart() {\n" +
+"      fetch('/api/phase-stats').then(function(r) { return r.json(); }).then(function(s) {\n" +
+"        if (!s || s.avg_l1 == null) return;\n" +
+"        if (chartPhases) chartPhases.destroy();\n" +
+"        chartPhases = new Chart(document.getElementById('chart-phases'), {\n" +
+"          type: 'bar',\n" +
+"          data: {\n" +
+"            labels: ['L1', 'L2', 'L3'],\n" +
+"            datasets: [\n" +
+"              { label: 'Gemiddeld (kW)', data: [s.avg_l1, s.avg_l2, s.avg_l3].map(function(v) { return v != null ? Number(v).toFixed(3) : 0; }),\n" +
+"                backgroundColor: ['rgba(168,85,247,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'],\n" +
+"                borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },\n" +
+"              { label: 'Piek (kW)', data: [s.max_l1, s.max_l2, s.max_l3].map(function(v) { return v != null ? Number(v).toFixed(3) : 0; }),\n" +
+"                backgroundColor: ['rgba(168,85,247,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'],\n" +
+"                borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }\n" +
+"            ]\n" +
+"          },\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            indexAxis: 'y',\n" +
+"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true },\n" +
+"              y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    loadPhaseChart();\n" +
+"    setInterval(loadPhaseChart, 300000);\n" +
+"\n" +
+"    // Gas daily\n" +
+"    var chartGas = null;\n" +
+"    function loadGasDaily() {\n" +
+"      fetch('/api/gas-daily').then(function(r) { return r.json(); }).then(function(rows) {\n" +
+"        var labels = rows.map(function(r) { return r.day.slice(5); }); // MM-DD\n" +
+"        var data = rows.map(function(r) { return r.gas_used != null ? Number(r.gas_used).toFixed(3) : 0; });\n" +
+"        if (chartGas) chartGas.destroy();\n" +
+"        chartGas = new Chart(document.getElementById('chart-gas'), {\n" +
+"          type: 'bar',\n" +
+"          data: { labels: labels, datasets: [\n" +
+"            { label: 'Gas (m\u00b3)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3 }\n" +
+"          ]},\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
+"              y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function() {});\n" +
+"    }\n" +
+"    loadGasDaily();\n" +
+"    setInterval(loadGasDaily, 300000);\n" +
+"\n" +
 "    loadChart('day', null);\n" +
 "    setInterval(function() {\n" +
 "      var active = document.querySelector('.tab.active');\n" +
-"      if (active) loadChart(active.textContent.toLowerCase(), null);\n" +
+"      if (active) loadChart(active.dataset.range, null);\n" +
 "    }, 60000);\n" +
 "  </script>\n" +
 "</body>\n" +
@@ -484,6 +725,79 @@ var server = http.createServer(function(req, res) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows || []));
     });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/peaks") {
+    db.all(
+      "SELECT strftime('%H', received_at) as hour," +
+      " AVG(power_delivered_total_kw) as avg_del," +
+      " AVG(power_returned_total_kw) as avg_ret" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now', '-30 days')" +
+      " AND power_delivered_total_kw IS NOT NULL" +
+      " GROUP BY strftime('%H', received_at)" +
+      " ORDER BY hour",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/phase-stats") {
+    db.get(
+      "SELECT" +
+      " AVG(power_delivered_l1_kw) as avg_l1, AVG(power_delivered_l2_kw) as avg_l2, AVG(power_delivered_l3_kw) as avg_l3," +
+      " MAX(power_delivered_l1_kw) as max_l1, MAX(power_delivered_l2_kw) as max_l2, MAX(power_delivered_l3_kw) as max_l3" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now', '-7 days')" +
+      " AND power_delivered_l1_kw IS NOT NULL",
+      function(err, row) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(row || {}));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/stats") {
+    db.get(
+      "SELECT" +
+      " AVG(power_delivered_total_kw) as avg_del," +
+      " MAX(power_delivered_total_kw) as max_del," +
+      " MAX(power_returned_total_kw) as max_ret," +
+      " COUNT(*) as total_readings," +
+      " AVG(power_delivered_l1_kw) as avg_l1," +
+      " AVG(power_delivered_l2_kw) as avg_l2," +
+      " AVG(power_delivered_l3_kw) as avg_l3," +
+      " MIN(voltage_l1) as min_v1, MAX(voltage_l1) as max_v1" +
+      " FROM readings" +
+      " WHERE date(received_at) = date('now')" +
+      " AND power_delivered_total_kw IS NOT NULL",
+      function(err, row) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(row || {}));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/gas-daily") {
+    db.all(
+      "SELECT date(received_at) as day," +
+      " MAX(gas_m3) - MIN(gas_m3) as gas_used" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now', '-30 days')" +
+      " AND gas_m3 IS NOT NULL" +
+      " GROUP BY date(received_at)" +
+      " ORDER BY day ASC",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
     return;
   }
 

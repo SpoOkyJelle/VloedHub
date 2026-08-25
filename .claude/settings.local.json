@@ -1,10 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
       "Bash(npm install *)",
       "Bash(node -e \"var h = require\\('./app.js'\\)\")",
-      "Bash(node --check app.js)"
+      "Bash(node --check app.js)",
+      "WebSearch",
+      "WebFetch(domain:brandfetch.com)",
+      "WebFetch(domain:www.homewizard.com)",
+      "WebFetch(domain:helpdesk.homewizard.com)"
     ]
   }
 }
