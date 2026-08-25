@@ -15,6 +15,7 @@
 var http = require("http");
 var https = require("https");
 var path = require("path");
+var fs = require("fs");
 var sqlite3 = require("sqlite3");
 
 var priceCache = { data: null, fetchedAt: 0 };
@@ -268,7 +269,10 @@ var HTML = "<!DOCTYPE html>\n" +
 "<body>\n" +
 "  <div class=\"header\">\n" +
 "    <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
-"    <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
+"    <div style=\"display:flex;align-items:center;gap:1rem\">\n" +
+"      <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
+"      <a href=\"/debug\" style=\"font-size:0.62rem;color:#3D4D6A;text-decoration:none;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Debug pagina\">&#128736; Debug</a>\n" +
+"    </div>\n" +
 "  </div>\n" +
 "\n" +
 "  <div class=\"hero\">\n" +
@@ -503,13 +507,16 @@ var HTML = "<!DOCTYPE html>\n" +
 "\n" +
 "  <script>\n" +
 "    function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '\u2014'; }\n" +
+"    function setEl(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }\n" +
 "    function setCard(id, v, dec, unit) {\n" +
-"      document.getElementById(id).innerHTML = val(v, dec) + '<span class=\"card-unit\">' + unit + '</span>';\n" +
+"      setEl(id, val(v, dec) + '<span class=\"card-unit\">' + unit + '</span>');\n" +
 "    }\n" +
+"    var lastUpdateTime = null;\n" +
 "    function refresh() {\n" +
 "      fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {\n" +
 "        var l = d.latest;\n" +
 "        if (!l) return;\n" +
+"        lastUpdateTime = Date.now();\n" +
 "        setCard('del-total', l.power_delivered_total_kw, 3, 'kW');\n" +
 "        setCard('gas',       l.gas_m3,                  3, 'm\u00b3');\n" +
 "        setCard('del-l1', l.power_delivered_l1_kw, 3, 'kW');\n" +
@@ -521,7 +528,12 @@ var HTML = "<!DOCTYPE html>\n" +
 "        setCard('a-l1', l.current_l1, 0, 'A');\n" +
 "        setCard('a-l2', l.current_l2, 0, 'A');\n" +
 "        setCard('a-l3', l.current_l3, 0, 'A');\n" +
-"        document.getElementById('updated').textContent = 'Last updated: ' + new Date(l.received_at).toLocaleTimeString();\n" +
+"        var updEl = document.getElementById('updated');\n" +
+"        if (updEl) {\n" +
+"          var age = Math.round((Date.now() - new Date(l.received_at).getTime()) / 1000);\n" +
+"          updEl.textContent = 'Bijgewerkt: ' + new Date(l.received_at).toLocaleTimeString() + ' (' + age + 's geleden)';\n" +
+"          updEl.style.color = age > 60 ? '#F87171' : age > 30 ? '#FBBF24' : '#3D4D6A';\n" +
+"        }\n" +
 "        var html = '';\n" +
 "        for (var i = 0; i < d.recent.length; i++) {\n" +
 "          var r = d.recent[i];\n" +
@@ -529,8 +541,8 @@ var HTML = "<!DOCTYPE html>\n" +
 "            '<td>' + val(r.power_delivered_total_kw) + '</td>' +\n" +
 "            '<td>' + val(r.gas_m3)                   + '</td></tr>';\n" +
 "        }\n" +
-"        document.getElementById('rows').innerHTML = html;\n" +
-"      }).catch(function() {});\n" +
+"        setEl('rows', html);\n" +
+"      }).catch(function(e) { console.error('[refresh]', e); });\n" +
 "    }\n" +
 "    refresh();\n" +
 "    setInterval(refresh, 3000);\n" +
@@ -1246,6 +1258,196 @@ var server = http.createServer(function(req, res) {
         }
       );
     });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/debug/stats") {
+    var dbPath = path.join(__dirname, "p1_data.db");
+    var dbSize = 0;
+    try { dbSize = fs.statSync(dbPath).size; } catch(e) {}
+    db.get(
+      "SELECT COUNT(*) as total, MIN(received_at) as first_entry, MAX(received_at) as last_entry," +
+      " COUNT(DISTINCT date(received_at)) as days_with_data" +
+      " FROM readings",
+      function(err, row) {
+        db.get(
+          "SELECT COUNT(*) as today FROM readings WHERE date(received_at) = date('now')",
+          function(err2, today) {
+            db.get(
+              "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= datetime('now', '-1 hour')",
+              function(err3, hour) {
+                db.get(
+                  "SELECT AVG(cnt) as avg_per_day FROM (SELECT COUNT(*) as cnt FROM readings GROUP BY date(received_at))",
+                  function(err4, avg) {
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({
+                      total: row ? row.total : 0,
+                      first_entry: row ? row.first_entry : null,
+                      last_entry: row ? row.last_entry : null,
+                      days_with_data: row ? row.days_with_data : 0,
+                      today: today ? today.today : 0,
+                      last_hour: hour ? hour.last_hour : 0,
+                      avg_per_day: avg ? avg.avg_per_day : 0,
+                      db_size_mb: (dbSize / 1024 / 1024).toFixed(2)
+                    }));
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url.indexOf("/api/debug/logs") === 0) {
+    var qs = req.url.indexOf("?");
+    var params = qs !== -1 ? req.url.slice(qs + 1) : "";
+    var limitMatch = params.match(/limit=(\d+)/);
+    var offsetMatch = params.match(/offset=(\d+)/);
+    var limit = Math.min(parseInt(limitMatch ? limitMatch[1] : "100", 10), 5000);
+    var offset = parseInt(offsetMatch ? offsetMatch[1] : "0", 10);
+    db.all(
+      "SELECT id, received_at, device, power_delivered_total_kw, gas_m3," +
+      " power_delivered_l1_kw, power_delivered_l2_kw, power_delivered_l3_kw," +
+      " voltage_l1, voltage_l2, voltage_l3, current_l1, current_l2, current_l3" +
+      " FROM readings ORDER BY id DESC LIMIT ? OFFSET ?",
+      [limit, offset],
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url.indexOf("/api/debug/gaps") === 0) {
+    db.all(
+      "SELECT date(received_at) as day, COUNT(*) as n," +
+      " MIN(received_at) as first, MAX(received_at) as last," +
+      " ROUND((julianday(MAX(received_at)) - julianday(MIN(received_at))) * 1440) as span_min" +
+      " FROM readings GROUP BY date(received_at) ORDER BY day DESC LIMIT 60",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/debug") {
+    var DEBUG_HTML = "<!DOCTYPE html><html lang='nl'><head>" +
+      "<meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
+      "<title>VloedHub — Debug</title>" +
+      "<link rel='preconnect' href='https://fonts.googleapis.com'>" +
+      "<link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' rel='stylesheet'>" +
+      "<style>" +
+      "*{box-sizing:border-box;margin:0;padding:0}" +
+      "body{font-family:'Poppins',system-ui,sans-serif;background:#0C0F1D;color:#F1F5F9;padding:1rem 1.25rem;min-height:100vh}" +
+      "a{color:#A855F7;text-decoration:none;font-size:0.8rem}" +
+      "h1{font-size:1.1rem;font-weight:600;margin-bottom:0.2rem}" +
+      "h2{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#3D4D6A;font-weight:600;margin:1.2rem 0 0.5rem}" +
+      ".stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem;margin-bottom:0.5rem}" +
+      ".stat{background:#141728;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:0.65rem 1rem}" +
+      ".stat-label{font-size:0.58rem;text-transform:uppercase;color:#3D4D6A;letter-spacing:0.06em;font-weight:600;margin-bottom:0.25rem}" +
+      ".stat-value{font-size:1.15rem;font-weight:700;color:#F1F5F9}" +
+      ".stat-sub{font-size:0.62rem;color:#4A5880;margin-top:0.15rem}" +
+      ".controls{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem}" +
+      ".pill{background:transparent;border:1px solid rgba(255,255,255,0.1);color:#4A5880;border-radius:20px;padding:0.2rem 0.7rem;font-size:0.65rem;cursor:pointer;font-family:inherit;font-weight:500}" +
+      ".pill.active{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#C084FC}" +
+      ".pill-green.active{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ADE80}" +
+      "input[type=text]{background:#141728;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#F1F5F9;padding:0.25rem 0.6rem;font-size:0.72rem;font-family:inherit;width:220px;outline:none}" +
+      "input[type=text]:focus{border-color:rgba(168,85,247,0.5)}" +
+      ".table-wrap{overflow-x:auto;border-radius:12px;border:1px solid rgba(255,255,255,0.06);max-height:500px;overflow-y:auto}" +
+      "table{width:100%;border-collapse:collapse;font-size:0.7rem}" +
+      "thead th{position:sticky;top:0;background:#0C0F1D;text-align:left;padding:0.4rem 0.6rem;color:#3D4D6A;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.07);white-space:nowrap}" +
+      "td{padding:0.28rem 0.6rem;border-bottom:1px solid rgba(255,255,255,0.03);color:#94A3B8;white-space:nowrap;font-variant-numeric:tabular-nums}" +
+      "tr:last-child td{border-bottom:none}" +
+      "tr:hover td{background:rgba(168,85,247,0.04)}" +
+      ".del{color:#A855F7}.gas{color:#F97316}.volt{color:#38BDF8}" +
+      ".gap-ok{color:#4ADE80}.gap-warn{color:#FBBF24}.gap-bad{color:#F87171}" +
+      ".badge{display:inline-block;border-radius:4px;padding:0.05rem 0.35rem;font-size:0.6rem;font-weight:600}" +
+      ".count{color:#3D4D6A;font-size:0.72rem;margin-left:0.5rem}" +
+      ".header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem}" +
+      "</style></head><body>" +
+      "<div class='header'><div><h1>&#128736; VloedHub Debug</h1><span style='font-size:0.72rem;color:#3D4D6A'>Databasediagnose &amp; log-viewer</span></div><a href='/'>&#8592; Terug naar dashboard</a></div>" +
+
+      "<h2>Database statistieken</h2>" +
+      "<div class='stats-grid' id='stats-grid'><div class='stat'><div class='stat-label'>Laden…</div></div></div>" +
+
+      "<h2>Connectiviteit per dag <span class='count' id='gaps-count'></span></h2>" +
+      "<div class='table-wrap'>" +
+      "<table><thead><tr><th>Datum</th><th>Metingen</th><th>Eerste meting</th><th>Laatste meting</th><th>Duur (min)</th><th>Status</th></tr></thead>" +
+      "<tbody id='gaps-body'><tr><td colspan='6' style='color:#3D4D6A;padding:0.5rem'>Laden…</td></tr></tbody></table></div>" +
+
+      "<h2>Log-viewer <span class='count' id='logs-count'></span></h2>" +
+      "<div class='controls'>" +
+      "<span style='font-size:0.65rem;color:#4A5880'>Toon laatste:</span>" +
+      "<button class='pill active' onclick='setLimit(50,this)'>50</button>" +
+      "<button class='pill' onclick='setLimit(100,this)'>100</button>" +
+      "<button class='pill' onclick='setLimit(500,this)'>500</button>" +
+      "<button class='pill' onclick='setLimit(1000,this)'>1000</button>" +
+      "<input type='text' id='search' placeholder='Filter op tijd, waarde…' oninput='applyFilter()'>" +
+      "<button class='pill pill-green active' onclick='toggleLive(this)' id='live-btn'>&#9679; Live</button>" +
+      "</div>" +
+      "<div class='table-wrap'>" +
+      "<table><thead><tr><th>#</th><th>Tijd</th><th>Verbruik (kW)</th><th>L1</th><th>L2</th><th>L3</th><th>Gas (m&#179;)</th><th>V-L1</th><th>V-L2</th><th>V-L3</th><th>A-L1</th><th>A-L2</th><th>A-L3</th><th>Apparaat</th></tr></thead>" +
+      "<tbody id='logs-body'><tr><td colspan='14' style='color:#3D4D6A;padding:0.5rem'>Laden…</td></tr></tbody></table></div>" +
+
+      "<script>" +
+      "var currentLimit=50, liveEnabled=true, liveTimer=null, allRows=[], filterStr='';" +
+      "function n(v,d){return v!=null?Number(v).toFixed(d!=null?d:3):'—';}" +
+      "function loadStats(){fetch('/api/debug/stats').then(r=>r.json()).then(function(s){" +
+      "document.getElementById('stats-grid').innerHTML=" +
+      "'<div class=\\'stat\\'><div class=\\'stat-label\\'>Totaal logs</div><div class=\\'stat-value\\'>'+s.total.toLocaleString()+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Eerste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.first_entry ? new Date(s.first_entry).toLocaleString() : '—')+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Laatste meting</div><div class=\\'stat-value\\' style=\\'font-size:0.75rem\\'>'+( s.last_entry ? new Date(s.last_entry).toLocaleString() : '—')+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Dagen met data</div><div class=\\'stat-value\\'>'+s.days_with_data+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Vandaag</div><div class=\\'stat-value\\'>'+s.today.toLocaleString()+'</div><div class=\\'stat-sub\\'>Afgelopen uur: '+s.last_hour+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Gem. per dag</div><div class=\\'stat-value\\'>'+(s.avg_per_day?Math.round(s.avg_per_day).toLocaleString():'—')+'</div></div>'" +
+      "+'<div class=\\'stat\\'><div class=\\'stat-label\\'>Database grootte</div><div class=\\'stat-value\\'>'+s.db_size_mb+' MB</div></div>';" +
+      "}).catch(function(){});}" +
+
+      "function loadGaps(){fetch('/api/debug/gaps').then(r=>r.json()).then(function(rows){" +
+      "document.getElementById('gaps-count').textContent='('+rows.length+' dagen)';" +
+      "document.getElementById('gaps-body').innerHTML=rows.map(function(r){" +
+      "var status,cls;if(r.n<10){status='Weinig data';cls='gap-bad';}else if(r.span_min<1380){status='Gaten';cls='gap-warn';}else{status='OK';cls='gap-ok';}" +
+      "return '<tr><td>'+r.day+'</td><td>'+r.n.toLocaleString()+'</td><td>'+(r.first?new Date(r.first).toLocaleTimeString():'—')+'</td><td>'+(r.last?new Date(r.last).toLocaleTimeString():'—')+'</td><td>'+(r.span_min||0)+'</td><td class=\\''+cls+'\\'><b>'+status+'</b></td></tr>';" +
+      "}).join('');}).catch(function(){});}" +
+
+      "function loadLogs(){fetch('/api/debug/logs?limit='+currentLimit).then(r=>r.json()).then(function(rows){" +
+      "allRows=rows;document.getElementById('logs-count').textContent='('+rows.length+' van '+currentLimit+' gevraagd)';" +
+      "applyFilter();" +
+      "}).catch(function(){});}" +
+
+      "function applyFilter(){" +
+      "filterStr=document.getElementById('search').value.toLowerCase();" +
+      "var rows=filterStr?allRows.filter(function(r){return JSON.stringify(r).toLowerCase().includes(filterStr);}):allRows;" +
+      "document.getElementById('logs-body').innerHTML=rows.map(function(r){" +
+      "return '<tr><td style=\\'color:#3D4D6A\\'>'+r.id+'</td><td>'+new Date(r.received_at).toLocaleString()+'</td>'" +
+      "+'<td class=\\'del\\'>'+n(r.power_delivered_total_kw)+'</td>'" +
+      "+'<td class=\\'del\\'>'+n(r.power_delivered_l1_kw)+'</td>'" +
+      "+'<td class=\\'del\\'>'+n(r.power_delivered_l2_kw)+'</td>'" +
+      "+'<td class=\\'del\\'>'+n(r.power_delivered_l3_kw)+'</td>'" +
+      "+'<td class=\\'gas\\'>'+n(r.gas_m3)+'</td>'" +
+      "+'<td class=\\'volt\\'>'+n(r.voltage_l1,1)+'</td>'" +
+      "+'<td class=\\'volt\\'>'+n(r.voltage_l2,1)+'</td>'" +
+      "+'<td class=\\'volt\\'>'+n(r.voltage_l3,1)+'</td>'" +
+      "+'<td>'+n(r.current_l1,0)+'</td>'" +
+      "+'<td>'+n(r.current_l2,0)+'</td>'" +
+      "+'<td>'+n(r.current_l3,0)+'</td>'" +
+      "+'<td style=\\'color:#3D4D6A\\'>'+( r.device||'—')+'</td></tr>';" +
+      "}).join('');}" +
+
+      "function setLimit(n,btn){currentLimit=n;document.querySelectorAll('.pill').forEach(function(b){if(['50','100','500','1000'].includes(b.textContent))b.classList.remove('active');});btn.classList.add('active');loadLogs();}" +
+      "function toggleLive(btn){liveEnabled=!liveEnabled;btn.textContent=liveEnabled?'\\u25CF Live':'\\u25CB Paused';btn.classList.toggle('active',liveEnabled);if(liveEnabled)startLive();else{clearInterval(liveTimer);}}" +
+      "function startLive(){liveTimer=setInterval(function(){loadStats();loadLogs();},5000);}" +
+
+      "loadStats();loadGaps();loadLogs();startLive();" +
+      "</script></body></html>";
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(DEBUG_HTML);
     return;
   }
 
