@@ -7,7 +7,8 @@
       "WebSearch",
       "WebFetch(domain:brandfetch.com)",
       "WebFetch(domain:www.homewizard.com)",
-      "WebFetch(domain:helpdesk.homewizard.com)"
+      "WebFetch(domain:helpdesk.homewizard.com)",
+      "Bash(node *)"
     ]
   }
 }

@@ -236,7 +236,32 @@ var HTML = "<!DOCTYPE html>\n" +
 "    .chart-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; display: flex; flex-direction: column; min-height: 240px; }\n" +
 "    .chart-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }\n" +
 "    .chart-block-title { font-size: 0.6rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.1em; font-weight: 600; }\n" +
-"    @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } .middle { grid-template-columns: 1fr; } .stats-strip { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } .bottom-row { grid-template-columns: 1fr; } }\n" +
+"    /* Day comparison */\n" +
+"    .compare-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }\n" +
+"    .compare-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.7rem 1rem; }\n" +
+"    .compare-title { font-size: 0.58rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 0.5rem; }\n" +
+"    .compare-row-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; }\n" +
+"    .compare-label { font-size: 0.65rem; color: #4A5880; }\n" +
+"    .compare-value { font-size: 0.85rem; font-weight: 600; color: #F1F5F9; font-variant-numeric: tabular-nums; }\n" +
+"    .delta-up { color: #F87171; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
+"    .delta-down { color: #4ADE80; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
+"    .delta-same { color: #3D4D6A; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
+"    /* Safety / voltage section */\n" +
+"    .safety-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }\n" +
+"    .safety-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem 0.85rem; }\n" +
+"    /* Cheap hours */\n" +
+"    .cheap-hours-grid { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }\n" +
+"    .hour-pill { font-size: 0.62rem; font-weight: 600; border-radius: 20px; padding: 0.15rem 0.5rem; }\n" +
+"    .hour-cheap { background: rgba(34,197,94,0.15); color: #4ADE80; border: 1px solid rgba(34,197,94,0.3); }\n" +
+"    .hour-mid { background: rgba(251,191,36,0.12); color: #FDE68A; border: 1px solid rgba(251,191,36,0.25); }\n" +
+"    .hour-exp { background: rgba(248,113,113,0.1); color: #FCA5A5; border: 1px solid rgba(248,113,113,0.2); }\n" +
+"    /* Heatmap */\n" +
+"    .heatmap-wrap { overflow-x: auto; margin-top: 0.4rem; }\n" +
+"    .heatmap { display: grid; grid-template-columns: 2rem repeat(24, 1fr); gap: 2px; font-size: 0.5rem; }\n" +
+"    .hm-label { color: #3D4D6A; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-weight: 600; }\n" +
+"    .hm-hour-label { color: #3D4D6A; text-align: center; padding-bottom: 2px; }\n" +
+"    .hm-cell { height: 18px; border-radius: 2px; cursor: default; }\n" +
+"    @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } .middle { grid-template-columns: 1fr; } .stats-strip { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } .bottom-row { grid-template-columns: 1fr; } .compare-row { grid-template-columns: 1fr; } .safety-row { grid-template-columns: repeat(2, 1fr); } }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
@@ -311,6 +336,26 @@ var HTML = "<!DOCTYPE html>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
+"  <!-- Day comparison -->\n" +
+"  <div class=\"compare-row\">\n" +
+"    <div class=\"compare-card\">\n" +
+"      <div class=\"compare-title\">Vandaag</div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Stroom</span><span class=\"compare-value\" id=\"cmp-today-elec\">\u2014</span></div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Gas</span><span class=\"compare-value\" id=\"cmp-today-gas\">\u2014</span></div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Verwacht totaal</span><span class=\"compare-value\" id=\"cmp-today-exp\" style=\"color:#FBBF24\">\u2014</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"compare-card\">\n" +
+"      <div class=\"compare-title\">Gisteren</div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Stroom</span><span class=\"compare-value\" id=\"cmp-yest-elec\">\u2014</span></div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Gas</span><span class=\"compare-value\" id=\"cmp-yest-gas\">\u2014</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"compare-card\">\n" +
+"      <div class=\"compare-title\">Vorige week zelfde dag</div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Stroom</span><span class=\"compare-value\" id=\"cmp-week-elec\">\u2014</span></div>\n" +
+"      <div class=\"compare-row-item\"><span class=\"compare-label\">Gas</span><span class=\"compare-value\" id=\"cmp-week-gas\">\u2014</span></div>\n" +
+"    </div>\n" +
+"  </div>\n" +
+"\n" +
 "  <!-- Stats strip -->\n" +
 "  <div class=\"stats-strip\">\n" +
 "    <div class=\"stat-card\">\n" +
@@ -336,6 +381,26 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <div class=\"stat-card\">\n" +
 "      <div class=\"stat-label\">Metingen vandaag</div>\n" +
 "      <div class=\"stat-value\" id=\"stat-readings\">\u2014</div>\n" +
+"    </div>\n" +
+"  </div>\n" +
+"\n" +
+"  <!-- Safety / voltage -->\n" +
+"  <div class=\"safety-row\">\n" +
+"    <div class=\"safety-card\">\n" +
+"      <div class=\"stat-label\">Spanningsdips (7 dgn)</div>\n" +
+"      <div class=\"stat-value\" id=\"saf-dips\" style=\"color:#F87171\">\u2014</div>\n" +
+"    </div>\n" +
+"    <div class=\"safety-card\">\n" +
+"      <div class=\"stat-label\">Max. stroom L1 / L2 / L3</div>\n" +
+"      <div class=\"stat-value voltage\" id=\"saf-max-amp\">\u2014</div>\n" +
+"    </div>\n" +
+"    <div class=\"safety-card\">\n" +
+"      <div class=\"stat-label\">Nachtverbruik standby</div>\n" +
+"      <div class=\"stat-value\" id=\"saf-night\" style=\"color:#A855F7\">\u2014<span class=\"stat-unit\">kW</span></div>\n" +
+"    </div>\n" +
+"    <div class=\"safety-card\">\n" +
+"      <div class=\"stat-label\">CO\u2082 vandaag (est.)</div>\n" +
+"      <div class=\"stat-value\" id=\"saf-co2\" style=\"color:#94A3B8\">\u2014<span class=\"stat-unit\">kg</span></div>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
@@ -376,6 +441,52 @@ var HTML = "<!DOCTYPE html>\n" +
 "        <span class=\"chart-block-title\">Gas dagverbruik (30 dgn)</span>\n" +
 "      </div>\n" +
 "      <div class=\"chart-wrap\"><canvas id=\"chart-gas\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Goedkoopste uren vandaag -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Goedkoopste uren vandaag</span>\n" +
+"      </div>\n" +
+"      <div class=\"cheap-hours-grid\" id=\"cheap-hours-grid\"></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Weekdaggemiddelde -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Weekdaggemiddelde (60 dgn)</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-weekday\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Heatmap -->\n" +
+"    <div class=\"chart-block\" style=\"grid-column: 1 / -1;\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Verbruik heatmap (uur \u00d7 weekdag)</span>\n" +
+"        <div class=\"tab-bar\" style=\"margin-bottom:0\">\n" +
+"          <button class=\"tab active\" data-hm=\"alltime\" onclick=\"loadHeatmap('alltime',this)\">Alles</button>\n" +
+"          <button class=\"tab\" data-hm=\"year\" onclick=\"loadHeatmap('year',this)\">Jaar</button>\n" +
+"          <button class=\"tab\" data-hm=\"month\" onclick=\"loadHeatmap('month',this)\">Maand</button>\n" +
+"          <button class=\"tab\" data-hm=\"day\" onclick=\"loadHeatmap('day',this)\">Dag</button>\n" +
+"        </div>\n" +
+"      </div>\n" +
+"      <div class=\"heatmap-wrap\"><div class=\"heatmap\" id=\"heatmap\"></div></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Kosten per dag -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Kosten per dag (30 dgn)</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-costs-daily\"></canvas></div>\n" +
+"    </div>\n" +
+"\n" +
+"    <!-- Gas per maand -->\n" +
+"    <div class=\"chart-block\">\n" +
+"      <div class=\"chart-block-header\">\n" +
+"        <span class=\"chart-block-title\">Gas per maand</span>\n" +
+"      </div>\n" +
+"      <div class=\"chart-wrap\"><canvas id=\"chart-gas-monthly\"></canvas></div>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
@@ -511,22 +622,25 @@ var HTML = "<!DOCTYPE html>\n" +
 "      fetch('/api/peaks').then(function(r) { return r.json(); }).then(function(rows) {\n" +
 "        var byHour = {};\n" +
 "        rows.forEach(function(r) { byHour[parseInt(r.hour, 10)] = r; });\n" +
-"        var labels = [], delData = [], retData = [];\n" +
+"        var labels = [], delData = [], counts = [];\n" +
 "        for (var h = 0; h < 24; h++) {\n" +
 "          labels.push(h + ':00');\n" +
 "          var d = byHour[h];\n" +
 "          delData.push(d && d.avg_del != null ? Number(d.avg_del).toFixed(3) : 0);\n" +
-"          retData.push(d && d.avg_ret != null ? Number(d.avg_ret).toFixed(3) : 0);\n" +
+"          counts.push(d ? d.n : 0);\n" +
 "        }\n" +
 "        if (chartPeaks) chartPeaks.destroy();\n" +
 "        chartPeaks = new Chart(document.getElementById('chart-peaks'), {\n" +
 "          type: 'bar',\n" +
 "          data: { labels: labels, datasets: [\n" +
-"            { label: 'Verbruik (kW)', data: delData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3 }\n" +
+"            { label: 'Gem. verbruik (kW)', data: delData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3 }\n" +
 "          ]},\n" +
 "          options: {\n" +
 "            responsive: true, maintainAspectRatio: false,\n" +
-"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } },\n" +
+"            plugins: {\n" +
+"              legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } },\n" +
+"              tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } }\n" +
+"            },\n" +
 "            scales: {\n" +
 "              x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
 "              y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
@@ -597,6 +711,205 @@ var HTML = "<!DOCTYPE html>\n" +
 "    }\n" +
 "    loadGasDaily();\n" +
 "    setInterval(loadGasDaily, 300000);\n" +
+"\n" +
+"    // Day comparison\n" +
+"    function refreshComparison() {\n" +
+"      fetch('/api/day-comparison').then(function(r){return r.json();}).then(function(c) {\n" +
+"        var t = c.today, y = c.yesterday, w = c.lastweek;\n" +
+"        function kwh(v) { return v != null ? num(v,2)+' kWh' : '\u2014'; }\n" +
+"        function m3(v)  { return v != null ? num(v,3)+' m\u00b3' : '\u2014'; }\n" +
+"        function delta(now, ref) {\n" +
+"          if (now == null || ref == null || ref === 0) return '';\n" +
+"          var pct = ((now - ref) / ref * 100);\n" +
+"          var cls = pct > 5 ? 'delta-up' : pct < -5 ? 'delta-down' : 'delta-same';\n" +
+"          return '<span class=\"'+cls+'\">'+(pct>0?'+':'')+pct.toFixed(0)+'%</span>';\n" +
+"        }\n" +
+"        document.getElementById('cmp-today-elec').innerHTML = kwh(t && t.elec_kwh) + delta(t && t.elec_kwh, y && y.elec_kwh);\n" +
+"        document.getElementById('cmp-today-gas').innerHTML  = m3(t && t.gas_used)  + delta(t && t.gas_used,  y && y.gas_used);\n" +
+"        document.getElementById('cmp-yest-elec').innerHTML  = kwh(y && y.elec_kwh);\n" +
+"        document.getElementById('cmp-yest-gas').innerHTML   = m3(y && y.gas_used);\n" +
+"        document.getElementById('cmp-week-elec').innerHTML  = kwh(w && w.elec_kwh);\n" +
+"        document.getElementById('cmp-week-gas').innerHTML   = m3(w && w.gas_used);\n" +
+"        if (t && t.elec_kwh != null) {\n" +
+"          var h = new Date().getHours() + (new Date().getMinutes()/60);\n" +
+"          if (h > 0) {\n" +
+"            var expElec = t.elec_kwh / h * 24;\n" +
+"            document.getElementById('cmp-today-exp').textContent = '~' + num(expElec,2) + ' kWh/dag';\n" +
+"          }\n" +
+"        }\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    refreshComparison();\n" +
+"    setInterval(refreshComparison, 60000);\n" +
+"\n" +
+"    // Safety / night usage / CO2\n" +
+"    function refreshSafety() {\n" +
+"      fetch('/api/voltage-dips').then(function(r){return r.json();}).then(function(s) {\n" +
+"        if (!s) return;\n" +
+"        var dipsEl = document.getElementById('saf-dips');\n" +
+"        dipsEl.textContent = s.dips != null ? s.dips : '\u2014';\n" +
+"        dipsEl.style.color = (s.dips > 0) ? '#F87171' : '#4ADE80';\n" +
+"        if (s.max_a1 != null)\n" +
+"          document.getElementById('saf-max-amp').innerHTML =\n" +
+"            num(s.max_a1,0)+'A / '+num(s.max_a2,0)+'A / '+num(s.max_a3,0)+'A <span class=\"stat-unit\">max</span>';\n" +
+"      }).catch(function(){});\n" +
+"      fetch('/api/night-usage').then(function(r){return r.json();}).then(function(s) {\n" +
+"        if (!s) return;\n" +
+"        if (s.night_avg != null)\n" +
+"          document.getElementById('saf-night').innerHTML = num(s.night_avg,3)+'<span class=\"stat-unit\">kW</span>';\n" +
+"      }).catch(function(){});\n" +
+"      fetch('/api/stats').then(function(r){return r.json();}).then(function(s) {\n" +
+"        if (!s || s.avg_del == null) return;\n" +
+"        var h = new Date().getHours() + new Date().getMinutes()/60;\n" +
+"        var kwh = s.avg_del * h;\n" +
+"        var co2 = kwh * 0.4;\n" +
+"        document.getElementById('saf-co2').innerHTML = num(co2,2)+'<span class=\"stat-unit\">kg</span>';\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    refreshSafety();\n" +
+"    setInterval(refreshSafety, 60000);\n" +
+"\n" +
+"    // Cheap hours\n" +
+"    function refreshCheapHours() {\n" +
+"      fetch('/api/prices').then(function(r){return r.json();}).then(function(p) {\n" +
+"        var grid = document.getElementById('cheap-hours-grid');\n" +
+"        if (!grid) return;\n" +
+"        if (p.electricity_eur_kwh != null) {\n" +
+"          var price = p.electricity_eur_kwh;\n" +
+"          var now = new Date().getHours();\n" +
+"          var html = '<div style=\"font-size:0.7rem;color:#94A3B8;width:100%\">Huidig uur (' + now + ':00): <strong style=\"color:#FBBF24\">\u20ac' + price.toFixed(4) + '/kWh</strong></div>';\n" +
+"          html += '<div style=\"font-size:0.62rem;color:#3D4D6A;width:100%;margin-top:0.3rem\">Tip: plan grote apparaten in de avond (vaak lager tarief)</div>';\n" +
+"          grid.innerHTML = html;\n" +
+"        }\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    refreshCheapHours();\n" +
+"\n" +
+"    // Weekday average bar chart\n" +
+"    var chartWeekday = null;\n" +
+"    function loadWeekdayChart() {\n" +
+"      fetch('/api/weekday-avg').then(function(r){return r.json();}).then(function(rows) {\n" +
+"        var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];\n" +
+"        var byDow = {};\n" +
+"        rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; });\n" +
+"        var labels = [], data = [];\n" +
+"        for (var d = 0; d < 7; d++) {\n" +
+"          labels.push(dayNames[d]);\n" +
+"          var r = byDow[d];\n" +
+"          data.push(r && r.avg_del != null ? Number(r.avg_del).toFixed(3) : 0);\n" +
+"        }\n" +
+"        if (chartWeekday) chartWeekday.destroy();\n" +
+"        chartWeekday = new Chart(document.getElementById('chart-weekday'), {\n" +
+"          type: 'bar',\n" +
+"          data: { labels: labels, datasets: [{\n" +
+"            label: 'Gem. verbruik (kW)', data: data,\n" +
+"            backgroundColor: ['rgba(168,85,247,0.4)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.4)'],\n" +
+"            borderColor: '#A855F7', borderWidth: 1, borderRadius: 4\n" +
+"          }]},\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            plugins: { legend: { display: false } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
+"              y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    loadWeekdayChart();\n" +
+"    setInterval(loadWeekdayChart, 600000);\n" +
+"\n" +
+"    // Heatmap\n" +
+"    function loadHeatmap(range, btn) {\n" +
+"      document.querySelectorAll('[data-hm]').forEach(function(t) { t.classList.remove('active'); });\n" +
+"      if (btn) btn.classList.add('active');\n" +
+"      fetch('/api/heatmap?range=' + (range || 'alltime')).then(function(r){return r.json();}).then(function(rows) {\n" +
+"        var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];\n" +
+"        var grid = {};\n" +
+"        var maxVal = 0;\n" +
+"        rows.forEach(function(r) {\n" +
+"          var key = r.dow + '_' + parseInt(r.hour, 10);\n" +
+"          var v = r.avg_del != null ? Number(r.avg_del) : 0;\n" +
+"          grid[key] = v;\n" +
+"          if (v > maxVal) maxVal = v;\n" +
+"        });\n" +
+"        if (maxVal === 0) maxVal = 1;\n" +
+"        var html = '<div class=\"hm-label\"></div>';\n" +
+"        for (var h = 0; h < 24; h++) html += '<div class=\"hm-hour-label\">' + h + '</div>';\n" +
+"        for (var d = 0; d < 7; d++) {\n" +
+"          html += '<div class=\"hm-label\">' + dayNames[d] + '</div>';\n" +
+"          for (var h = 0; h < 24; h++) {\n" +
+"            var v = grid[d + '_' + h] || 0;\n" +
+"            var ratio = v / maxVal;\n" +
+"            var r2 = Math.round(168 + (ratio * (248-168)));\n" +
+"            var g2 = Math.round(85  - (ratio * 85));\n" +
+"            var b2 = Math.round(247 - (ratio * 100));\n" +
+"            var alpha = 0.1 + ratio * 0.8;\n" +
+"            var bg = 'rgba('+r2+','+g2+','+b2+','+alpha.toFixed(2)+')';\n" +
+"            html += '<div class=\"hm-cell\" style=\"background:'+bg+'\" title=\"'+dayNames[d]+' '+h+':00 \u2014 '+v.toFixed(3)+' kW\"></div>';\n" +
+"          }\n" +
+"        }\n" +
+"        document.getElementById('heatmap').innerHTML = html;\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    loadHeatmap('alltime', null);\n" +
+"    setInterval(function() { loadHeatmap('alltime', null); }, 300000);\n" +
+"\n" +
+"    // Daily costs chart\n" +
+"    var chartCostsDaily = null;\n" +
+"    function loadCostsDaily() {\n" +
+"      fetch('/api/costs-daily').then(function(r){return r.json();}).then(function(rows) {\n" +
+"        var labels = rows.map(function(r){ return r.day.slice(5); });\n" +
+"        var elecData = rows.map(function(r){ return r.elec_cost != null ? Number(r.elec_cost).toFixed(2) : 0; });\n" +
+"        var gasData  = rows.map(function(r){ return r.gas_cost  != null ? Number(r.gas_cost).toFixed(2)  : 0; });\n" +
+"        if (chartCostsDaily) chartCostsDaily.destroy();\n" +
+"        chartCostsDaily = new Chart(document.getElementById('chart-costs-daily'), {\n" +
+"          type: 'bar',\n" +
+"          data: { labels: labels, datasets: [\n" +
+"            { label: 'Stroom (\u20ac)', data: elecData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3, stack: 'cost' },\n" +
+"            { label: 'Gas (\u20ac)',    data: gasData,  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }\n" +
+"          ]},\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true },\n" +
+"              y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '\u20ac'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    loadCostsDaily();\n" +
+"    setInterval(loadCostsDaily, 300000);\n" +
+"\n" +
+"    // Monthly gas chart\n" +
+"    var chartGasMonthly = null;\n" +
+"    function loadGasMonthly() {\n" +
+"      fetch('/api/gas-monthly').then(function(r){return r.json();}).then(function(rows) {\n" +
+"        var labels = rows.map(function(r){ return r.month; });\n" +
+"        var data   = rows.map(function(r){ return r.gas_used != null ? Number(r.gas_used).toFixed(2) : 0; });\n" +
+"        if (chartGasMonthly) chartGasMonthly.destroy();\n" +
+"        chartGasMonthly = new Chart(document.getElementById('chart-gas-monthly'), {\n" +
+"          type: 'bar',\n" +
+"          data: { labels: labels, datasets: [{\n" +
+"            label: 'Gas (m\u00b3)', data: data,\n" +
+"            backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4\n" +
+"          }]},\n" +
+"          options: {\n" +
+"            responsive: true, maintainAspectRatio: false,\n" +
+"            plugins: { legend: { display: false } },\n" +
+"            scales: {\n" +
+"              x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },\n" +
+"              y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }\n" +
+"            }\n" +
+"          }\n" +
+"        });\n" +
+"      }).catch(function(){});\n" +
+"    }\n" +
+"    loadGasMonthly();\n" +
+"    setInterval(loadGasMonthly, 600000);\n" +
 "\n" +
 "    loadChart('day', null);\n" +
 "    setInterval(function() {\n" +
@@ -732,10 +1045,9 @@ var server = http.createServer(function(req, res) {
     db.all(
       "SELECT strftime('%H', received_at) as hour," +
       " AVG(power_delivered_total_kw) as avg_del," +
-      " AVG(power_returned_total_kw) as avg_ret" +
+      " COUNT(*) as n" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now', '-30 days')" +
-      " AND power_delivered_total_kw IS NOT NULL" +
+      " WHERE power_delivered_total_kw IS NOT NULL" +
       " GROUP BY strftime('%H', received_at)" +
       " ORDER BY hour",
       function(err, rows) {
@@ -798,6 +1110,142 @@ var server = http.createServer(function(req, res) {
         res.end(JSON.stringify(rows || []));
       }
     );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/day-comparison") {
+    var days = [
+      { key: "today",    offset: "''" },
+      { key: "yesterday", offset: "'-1 day'" },
+      { key: "lastweek", offset: "'-7 days'" }
+    ];
+    var dcResults = {};
+    var dcPending = days.length;
+    days.forEach(function(d) {
+      db.get(
+        "SELECT AVG(power_delivered_total_kw) as avg_kw," +
+        " (julianday(MAX(received_at)) - julianday(MIN(received_at)))*24 as hours," +
+        " MAX(gas_m3)-MIN(gas_m3) as gas_used, COUNT(*) as n" +
+        " FROM readings WHERE date(received_at) = date('now', " + d.offset + ")",
+        function(err2, row) {
+          var elec_kwh = (row && row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
+          var gas_used = (row && row.n > 1) ? row.gas_used : null;
+          dcResults[d.key] = { elec_kwh: elec_kwh, gas_used: gas_used };
+          if (--dcPending === 0) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(dcResults));
+          }
+        }
+      );
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/night-usage") {
+    db.get(
+      "SELECT AVG(power_delivered_total_kw) as night_avg, AVG(current_l1+current_l2+current_l3) as night_amp" +
+      " FROM readings" +
+      " WHERE strftime('%H', received_at) BETWEEN '00' AND '05'" +
+      " AND received_at >= datetime('now','-7 days')" +
+      " AND power_delivered_total_kw IS NOT NULL",
+      function(err, row) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(row || {}));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/voltage-dips") {
+    db.get(
+      "SELECT COUNT(*) as dips, MIN(voltage_l1) as min_v, MAX(voltage_l1) as max_v," +
+      " MAX(current_l1) as max_a1, MAX(current_l2) as max_a2, MAX(current_l3) as max_a3" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now','-7 days')" +
+      " AND (voltage_l1 < 207 OR voltage_l1 > 253 OR voltage_l2 < 207 OR voltage_l2 > 253 OR voltage_l3 < 207 OR voltage_l3 > 253)",
+      function(err, row) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(row || {}));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/weekday-avg") {
+    db.all(
+      "SELECT strftime('%w', received_at) as dow, AVG(power_delivered_total_kw) as avg_del" +
+      " FROM readings" +
+      " WHERE received_at >= datetime('now','-60 days')" +
+      " AND power_delivered_total_kw IS NOT NULL" +
+      " GROUP BY dow ORDER BY dow",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url.indexOf("/api/heatmap") === 0) {
+    var hmQs = req.url.indexOf("?range=");
+    var hmRange = hmQs !== -1 ? req.url.slice(hmQs + 7).split("&")[0] : "alltime";
+    var hmWhere = "power_delivered_total_kw IS NOT NULL";
+    if (hmRange === "year")  hmWhere += " AND received_at >= datetime('now','-1 year')";
+    if (hmRange === "month") hmWhere += " AND received_at >= datetime('now','-30 days')";
+    if (hmRange === "day")   hmWhere += " AND received_at >= datetime('now','-1 day')";
+    db.all(
+      "SELECT strftime('%w', received_at) as dow, strftime('%H', received_at) as hour," +
+      " AVG(power_delivered_total_kw) as avg_del, COUNT(*) as n" +
+      " FROM readings WHERE " + hmWhere +
+      " GROUP BY dow, hour",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/gas-monthly") {
+    db.all(
+      "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
+      " FROM readings" +
+      " WHERE gas_m3 IS NOT NULL" +
+      " GROUP BY month ORDER BY month ASC",
+      function(err, rows) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/costs-daily") {
+    fetchPrices(function(err, prices) {
+      if (err) { prices = {}; }
+      var ep = prices.electricity_eur_kwh || null;
+      var gp = prices.gas_eur_m3 || null;
+      db.all(
+        "SELECT date(received_at) as day," +
+        " AVG(power_delivered_total_kw) as avg_kw," +
+        " (julianday(MAX(received_at))-julianday(MIN(received_at)))*24 as hours," +
+        " MAX(gas_m3)-MIN(gas_m3) as gas_used," +
+        " COUNT(*) as n" +
+        " FROM readings" +
+        " WHERE received_at >= datetime('now','-30 days') AND power_delivered_total_kw IS NOT NULL" +
+        " GROUP BY day ORDER BY day ASC",
+        function(err2, rows) {
+          var result = (rows || []).map(function(row) {
+            var elec_kwh = (row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
+            var elec_cost = (elec_kwh != null && ep != null) ? elec_kwh * ep : null;
+            var gas_cost = (row.gas_used != null && gp != null) ? row.gas_used * gp : null;
+            return { day: row.day, elec_cost: elec_cost, gas_cost: gas_cost };
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        }
+      );
+    });
     return;
   }
 
