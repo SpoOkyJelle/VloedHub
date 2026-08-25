@@ -426,7 +426,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <!-- Piekuren staafdiagram -->\n" +
 "    <div class=\"chart-block\">\n" +
 "      <div class=\"chart-block-header\">\n" +
-"        <span class=\"chart-block-title\">Piekuren (gem. per uur, 30 dgn)</span>\n" +
+"        <span class=\"chart-block-title\">Piekuren (gem. per uur, alle data)</span>\n" +
 "      </div>\n" +
 "      <div class=\"chart-wrap\"><canvas id=\"chart-peaks\"></canvas></div>\n" +
 "    </div>\n" +
