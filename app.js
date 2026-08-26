@@ -158,6 +158,17 @@ function logReading(data, callback) {
   );
 }
 
+// Returns a naive Amsterdam-local datetime string (matches how received_at is stored)
+function cutoff(ms) {
+  return new Date(Date.now() - ms).toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+}
+function todayAms() {
+  return new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 10);
+}
+function dateAms(offsetMs) {
+  return new Date(Date.now() + offsetMs).toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 10);
+}
+
 var HTML = "<!DOCTYPE html>\n" +
 "<html lang=\"en\">\n" +
 "<head>\n" +
@@ -985,10 +996,10 @@ var server = http.createServer(function(req, res) {
       var ep = prices.electricity_eur_kwh || null;
       var gp = prices.gas_eur_m3 || null;
       var periods = [
-        { key: "hour",  since: "'-1 hour'" },
-        { key: "day",   since: "'-24 hours'" },
-        { key: "week",  since: "'-7 days'" },
-        { key: "month", since: "'-30 days'" }
+        { key: "hour",  ms: 3600000 },
+        { key: "day",   ms: 86400000 },
+        { key: "week",  ms: 604800000 },
+        { key: "month", ms: 2592000000 }
       ];
       var results = {};
       var pending = periods.length;
@@ -997,7 +1008,8 @@ var server = http.createServer(function(req, res) {
           "SELECT AVG(power_delivered_total_kw) as avg_kw," +
           " (julianday(MAX(received_at)) - julianday(MIN(received_at))) * 24 as hours," +
           " MAX(gas_m3) - MIN(gas_m3) as gas_used, COUNT(*) as n" +
-          " FROM readings WHERE received_at >= datetime('now', " + p.since + ")",
+          " FROM readings WHERE received_at >= ?",
+          [cutoff(p.ms)],
           function(err2, row) {
             var elec_kwh = (row && row.n > 1) ? row.avg_kw * row.hours : null;
             var gas_m3   = (row && row.n > 1) ? row.gas_used : null;
@@ -1036,24 +1048,24 @@ var server = http.createServer(function(req, res) {
     var qs = req.url.indexOf("?range=");
     if (qs !== -1) range = req.url.slice(qs + 7).split("&")[0];
 
-    var interval, since, fmt;
+    var sinceMs, fmt;
     if (range === "week") {
-      since = "'-7 days'"; fmt = "'%Y-%m-%d'";
+      sinceMs = 604800000; fmt = "'%Y-%m-%d'";
     } else if (range === "month") {
-      since = "'-30 days'"; fmt = "'%Y-%m-%d'";
+      sinceMs = 2592000000; fmt = "'%Y-%m-%d'";
     } else {
-      since = "'-24 hours'"; fmt = "'%Y-%m-%d %H:00'";
+      sinceMs = 86400000; fmt = "'%Y-%m-%d %H:00'";
     }
 
     var sql =
-      "SELECT strftime(" + fmt + ", received_at, 'localtime') as period," +
+      "SELECT strftime(" + fmt + ", received_at) as period," +
       " AVG(power_delivered_total_kw) as del," +
       " AVG(power_returned_total_kw) as ret" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now'," + since + ")" +
+      " WHERE received_at >= ?" +
       " GROUP BY period ORDER BY period ASC";
 
-    db.all(sql, function(err, rows) {
+    db.all(sql, [cutoff(sinceMs)], function(err, rows) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows || []));
     });
@@ -1083,8 +1095,9 @@ var server = http.createServer(function(req, res) {
       " AVG(power_delivered_l1_kw) as avg_l1, AVG(power_delivered_l2_kw) as avg_l2, AVG(power_delivered_l3_kw) as avg_l3," +
       " MAX(power_delivered_l1_kw) as max_l1, MAX(power_delivered_l2_kw) as max_l2, MAX(power_delivered_l3_kw) as max_l3" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now', '-7 days')" +
+      " WHERE received_at >= ?" +
       " AND power_delivered_l1_kw IS NOT NULL",
+      [cutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1105,8 +1118,9 @@ var server = http.createServer(function(req, res) {
       " AVG(power_delivered_l3_kw) as avg_l3," +
       " MIN(voltage_l1) as min_v1, MAX(voltage_l1) as max_v1" +
       " FROM readings" +
-      " WHERE date(received_at, 'localtime') = date('now', 'localtime')" +
+      " WHERE date(received_at) = ?" +
       " AND power_delivered_total_kw IS NOT NULL",
+      [todayAms()],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1117,13 +1131,14 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/gas-daily") {
     db.all(
-      "SELECT date(received_at, 'localtime') as day," +
+      "SELECT date(received_at) as day," +
       " MAX(gas_m3) - MIN(gas_m3) as gas_used" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now', '-30 days')" +
+      " WHERE received_at >= ?" +
       " AND gas_m3 IS NOT NULL" +
-      " GROUP BY date(received_at, 'localtime')" +
+      " GROUP BY date(received_at)" +
       " ORDER BY day ASC",
+      [cutoff(2592000000)],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1134,9 +1149,9 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/day-comparison") {
     var days = [
-      { key: "today",    offset: "''" },
-      { key: "yesterday", offset: "'-1 day'" },
-      { key: "lastweek", offset: "'-7 days'" }
+      { key: "today",     date: dateAms(0) },
+      { key: "yesterday", date: dateAms(-86400000) },
+      { key: "lastweek",  date: dateAms(-7 * 86400000) }
     ];
     var dcResults = {};
     var dcPending = days.length;
@@ -1145,7 +1160,8 @@ var server = http.createServer(function(req, res) {
         "SELECT AVG(power_delivered_total_kw) as avg_kw," +
         " (julianday(MAX(received_at)) - julianday(MIN(received_at)))*24 as hours," +
         " MAX(gas_m3)-MIN(gas_m3) as gas_used, COUNT(*) as n" +
-        " FROM readings WHERE date(received_at, 'localtime') = date('now', 'localtime', " + d.offset + ")",
+        " FROM readings WHERE date(received_at) = ?",
+        [d.date],
         function(err2, row) {
           var elec_kwh = (row && row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
           var gas_used = (row && row.n > 1) ? row.gas_used : null;
@@ -1165,8 +1181,9 @@ var server = http.createServer(function(req, res) {
       "SELECT AVG(power_delivered_total_kw) as night_avg, AVG(current_l1+current_l2+current_l3) as night_amp" +
       " FROM readings" +
       " WHERE strftime('%H', received_at) BETWEEN '00' AND '05'" +
-      " AND received_at >= datetime('now','-7 days')" +
+      " AND received_at >= ?" +
       " AND power_delivered_total_kw IS NOT NULL",
+      [cutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1180,8 +1197,9 @@ var server = http.createServer(function(req, res) {
       "SELECT COUNT(*) as dips, MIN(voltage_l1) as min_v, MAX(voltage_l1) as max_v," +
       " MAX(current_l1) as max_a1, MAX(current_l2) as max_a2, MAX(current_l3) as max_a3" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now','-7 days')" +
+      " WHERE received_at >= ?" +
       " AND (voltage_l1 < 207 OR voltage_l1 > 253 OR voltage_l2 < 207 OR voltage_l2 > 253 OR voltage_l3 < 207 OR voltage_l3 > 253)",
+      [cutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1192,11 +1210,12 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/weekday-avg") {
     db.all(
-      "SELECT strftime('%w', received_at, 'localtime') as dow, AVG(power_delivered_total_kw) as avg_del" +
+      "SELECT strftime('%w', received_at) as dow, AVG(power_delivered_total_kw) as avg_del" +
       " FROM readings" +
-      " WHERE received_at >= datetime('now','-60 days')" +
+      " WHERE received_at >= ?" +
       " AND power_delivered_total_kw IS NOT NULL" +
       " GROUP BY dow ORDER BY dow",
+      [cutoff(5184000000)],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1209,14 +1228,16 @@ var server = http.createServer(function(req, res) {
     var hmQs = req.url.indexOf("?range=");
     var hmRange = hmQs !== -1 ? req.url.slice(hmQs + 7).split("&")[0] : "alltime";
     var hmWhere = "power_delivered_total_kw IS NOT NULL";
-    if (hmRange === "year")  hmWhere += " AND received_at >= datetime('now','-1 year')";
-    if (hmRange === "month") hmWhere += " AND received_at >= datetime('now','-30 days')";
-    if (hmRange === "day")   hmWhere += " AND received_at >= datetime('now','-1 day')";
+    var hmParams = [];
+    if (hmRange === "year")  { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(365*86400000)); }
+    if (hmRange === "month") { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(2592000000)); }
+    if (hmRange === "day")   { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(86400000)); }
     db.all(
       "SELECT strftime('%w', received_at) as dow, strftime('%H', received_at) as hour," +
       " AVG(power_delivered_total_kw) as avg_del, COUNT(*) as n" +
       " FROM readings WHERE " + hmWhere +
       " GROUP BY dow, hour",
+      hmParams,
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1227,7 +1248,7 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/gas-monthly") {
     db.all(
-      "SELECT strftime('%Y-%m', received_at, 'localtime') as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
+      "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
       " FROM readings" +
       " WHERE gas_m3 IS NOT NULL" +
       " GROUP BY month ORDER BY month ASC",
@@ -1245,14 +1266,15 @@ var server = http.createServer(function(req, res) {
       var ep = prices.electricity_eur_kwh || null;
       var gp = prices.gas_eur_m3 || null;
       db.all(
-        "SELECT date(received_at, 'localtime') as day," +
+        "SELECT date(received_at) as day," +
         " AVG(power_delivered_total_kw) as avg_kw," +
         " (julianday(MAX(received_at))-julianday(MIN(received_at)))*24 as hours," +
         " MAX(gas_m3)-MIN(gas_m3) as gas_used," +
         " COUNT(*) as n" +
         " FROM readings" +
-        " WHERE received_at >= datetime('now','-30 days') AND power_delivered_total_kw IS NOT NULL" +
+        " WHERE received_at >= ? AND power_delivered_total_kw IS NOT NULL" +
         " GROUP BY day ORDER BY day ASC",
+        [cutoff(2592000000)],
         function(err2, rows) {
           var result = (rows || []).map(function(row) {
             var elec_kwh = (row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
@@ -1278,10 +1300,12 @@ var server = http.createServer(function(req, res) {
       " FROM readings",
       function(err, row) {
         db.get(
-          "SELECT COUNT(*) as today FROM readings WHERE date(received_at, 'localtime') = date('now', 'localtime')",
+          "SELECT COUNT(*) as today FROM readings WHERE date(received_at) = ?",
+          [todayAms()],
           function(err2, today) {
             db.get(
-              "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= datetime('now', '-1 hour')",
+              "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= ?",
+              [cutoff(3600000)],
               function(err3, hour) {
                 db.get(
                   "SELECT AVG(cnt) as avg_per_day FROM (SELECT COUNT(*) as cnt FROM readings GROUP BY date(received_at))",
@@ -1338,7 +1362,7 @@ var server = http.createServer(function(req, res) {
     db.all(
       "WITH ordered AS (" +
       "  SELECT received_at AS ts, LAG(received_at) OVER (ORDER BY id) AS prev_ts" +
-      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      "  FROM readings WHERE received_at >= ?" +
       ")" +
       "SELECT" +
       "  date(ts) AS day," +
@@ -1349,7 +1373,7 @@ var server = http.createServer(function(req, res) {
       " WHERE prev_ts IS NOT NULL" +
       "   AND (julianday(ts) - julianday(prev_ts)) * 1440 > ?" +
       " ORDER BY ts DESC LIMIT 500",
-      [glMin],
+      [cutoff(5184000000), glMin],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1362,7 +1386,7 @@ var server = http.createServer(function(req, res) {
     db.all(
       "WITH ordered AS (" +
       "  SELECT received_at AS ts, LAG(received_at) OVER (ORDER BY id) AS prev_ts" +
-      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      "  FROM readings WHERE received_at >= ?" +
       ")," +
       "gaps AS (" +
       "  SELECT date(ts) AS day," +
@@ -1375,7 +1399,7 @@ var server = http.createServer(function(req, res) {
       "  SELECT date(received_at) AS day, COUNT(*) AS n," +
       "    MIN(received_at) AS first_ts, MAX(received_at) AS last_ts," +
       "    ROUND((julianday(MAX(received_at)) - julianday(MIN(received_at))) * 1440) AS span_min" +
-      "  FROM readings WHERE received_at >= datetime('now', '-60 days')" +
+      "  FROM readings WHERE received_at >= ?" +
       "  GROUP BY date(received_at)" +
       ")" +
       "SELECT d.day, d.n, d.first_ts AS first, d.last_ts AS last, d.span_min," +
@@ -1385,6 +1409,7 @@ var server = http.createServer(function(req, res) {
       "  (SELECT g2.gap_end FROM gaps g2 WHERE g2.day = d.day ORDER BY g2.gap_min DESC LIMIT 1) AS biggest_gap_end" +
       " FROM day_summary d LEFT JOIN gaps g ON g.day = d.day" +
       " GROUP BY d.day ORDER BY d.day DESC LIMIT 60",
+      [cutoff(5184000000), cutoff(5184000000)],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
