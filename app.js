@@ -29,6 +29,13 @@ function getLocalIP() {
   return "localhost";
 }
 var LOCAL_IP = getLocalIP();
+var WAN_IP = "ophalen…";
+
+https.get("https://api.ipify.org", function(res) {
+  var data = "";
+  res.on("data", function(c) { data += c; });
+  res.on("end", function() { WAN_IP = data.trim(); });
+}).on("error", function() { WAN_IP = "onbekend"; });
 
 var priceCache = { data: null, fetchedAt: 0 };
 
@@ -301,7 +308,8 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
 "    <div style=\"display:flex;align-items:center;gap:1rem\">\n" +
 "      <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
-"      <span style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Server IP-adres\">&#127760; " + LOCAL_IP + ":5000</span>\n" +
+"      <span style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Lokaal IP\">&#128421; " + LOCAL_IP + ":5000</span>\n" +
+"      <span id=\"wan-ip-badge\" style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"WAN IP (router)\">&#127760; …</span>\n" +
 "      <a href=\"/debug\" style=\"font-size:0.62rem;color:#3D4D6A;text-decoration:none;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Debug pagina\">&#128736; Debug</a>\n" +
 "    </div>\n" +
 "  </div>\n" +
@@ -537,6 +545,10 @@ var HTML = "<!DOCTYPE html>\n" +
 "  </div>\n" +
 "\n" +
 "  <script>\n" +
+"    fetch('/api/network-info').then(function(r){return r.json();}).then(function(d){\n" +
+"      var el=document.getElementById('wan-ip-badge');\n" +
+"      if(el) el.textContent='\\uD83C\\uDF10 '+d.wan;\n" +
+"    }).catch(function(){});\n" +
 "    function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '\u2014'; }\n" +
 "    function setEl(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }\n" +
 "    function setCard(id, v, dec, unit) {\n" +
@@ -1577,6 +1589,12 @@ var server = http.createServer(function(req, res) {
   if (req.method === "GET" && req.url === "/") {
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(HTML);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/network-info") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ lan: LOCAL_IP, wan: WAN_IP }));
     return;
   }
 
