@@ -103,6 +103,13 @@ db.serialize(function() {
     ")"
   );
 
+  // Migrate UTC timestamps to local time (Europe/Amsterdam = UTC+1/+2)
+  // Only runs once: skips rows that are already in local time (no trailing Z, not starting with UTC offset)
+  db.run(
+    "UPDATE readings SET received_at = datetime(received_at, '+2 hours')" +
+    " WHERE received_at LIKE '%Z' OR received_at LIKE '%+00:00'"
+  );
+
   // Migrate older single-column schema if needed
   var oldCols = ["voltage_l1","voltage_l2","voltage_l3","current_l1","current_l2","current_l3",
     "power_delivered_l1_kw","power_delivered_l2_kw","power_delivered_l3_kw",
@@ -114,7 +121,7 @@ db.serialize(function() {
 });
 
 function logReading(data, callback) {
-  var received_at = new Date().toISOString();
+  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
   var n = function(v) { return v != null ? v : null; };
 
   db.run(
@@ -1055,12 +1062,12 @@ var server = http.createServer(function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/peaks") {
     db.all(
-      "SELECT strftime('%H', received_at, 'localtime') as hour," +
+      "SELECT strftime('%H', received_at) as hour," +
       " AVG(power_delivered_total_kw) as avg_del," +
       " COUNT(*) as n" +
       " FROM readings" +
       " WHERE power_delivered_total_kw IS NOT NULL" +
-      " GROUP BY strftime('%H', received_at, 'localtime')" +
+      " GROUP BY strftime('%H', received_at)" +
       " ORDER BY hour",
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1157,7 +1164,7 @@ var server = http.createServer(function(req, res) {
     db.get(
       "SELECT AVG(power_delivered_total_kw) as night_avg, AVG(current_l1+current_l2+current_l3) as night_amp" +
       " FROM readings" +
-      " WHERE strftime('%H', received_at, 'localtime') BETWEEN '00' AND '05'" +
+      " WHERE strftime('%H', received_at) BETWEEN '00' AND '05'" +
       " AND received_at >= datetime('now','-7 days')" +
       " AND power_delivered_total_kw IS NOT NULL",
       function(err, row) {
@@ -1206,7 +1213,7 @@ var server = http.createServer(function(req, res) {
     if (hmRange === "month") hmWhere += " AND received_at >= datetime('now','-30 days')";
     if (hmRange === "day")   hmWhere += " AND received_at >= datetime('now','-1 day')";
     db.all(
-      "SELECT strftime('%w', received_at, 'localtime') as dow, strftime('%H', received_at, 'localtime') as hour," +
+      "SELECT strftime('%w', received_at) as dow, strftime('%H', received_at) as hour," +
       " AVG(power_delivered_total_kw) as avg_del, COUNT(*) as n" +
       " FROM readings WHERE " + hmWhere +
       " GROUP BY dow, hour",
