@@ -237,61 +237,90 @@ var HTML = "<!DOCTYPE html>\n" +
 "    * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
 "    html, body { margin: 0; }\n" +
 "    body { font-family: 'Poppins', system-ui, sans-serif; background: #0C0F1D; color: #F1F5F9; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; min-height: 100vh; overflow-y: auto; }\n" +
-"    .header { display: flex; align-items: baseline; justify-content: space-between; }\n" +
+"\n" +
+"    /* ── Header ── */\n" +
+"    .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem; }\n" +
+"    .header-left { display: flex; align-items: center; gap: 0.5rem; }\n" +
+"    .header-right { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }\n" +
 "    h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; }\n" +
-"    .updated { color: #3D4D6A; font-size: 0.75rem; }\n" +
+"    .updated { color: #3D4D6A; font-size: 0.75rem; white-space: nowrap; }\n" +
+"    .ip-badge { font-size: 0.62rem; color: #3D4D6A; border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 0.15rem 0.55rem; white-space: nowrap; }\n" +
+"    a.ip-badge { text-decoration: none; }\n" +
+"    a.ip-badge:hover { color: #94A3B8; border-color: rgba(255,255,255,0.15); }\n" +
+"\n" +
+"    /* ── Typography ── */\n" +
 "    .section-title { font-size: 0.6rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.35rem; }\n" +
+"\n" +
+"    /* ── Generic cards ── */\n" +
 "    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; }\n" +
 "    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }\n" +
 "    .cards-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }\n" +
-"    .card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; }\n" +
+"    .card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }\n" +
 "    .card-label { font-size: 0.62rem; text-transform: uppercase; color: #4A5880; letter-spacing: 0.06em; margin-bottom: 0.3rem; font-weight: 500; }\n" +
 "    .card-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }\n" +
 "    .card-value.small { font-size: clamp(1rem, 2.2vw, 1.4rem); }\n" +
 "    .card-unit { font-size: 0.65rem; color: #4A5880; margin-left: 0.15rem; font-weight: 400; }\n" +
+"\n" +
+"    /* ── Colour tokens ── */\n" +
 "    .delivered { color: #A855F7; }\n" +
-"    .returned { color: #22C55E; }\n" +
-"    .gas { color: #F97316; }\n" +
-"    .voltage { color: #38BDF8; }\n" +
+"    .returned  { color: #22C55E; }\n" +
+"    .gas       { color: #F97316; }\n" +
+"    .voltage   { color: #38BDF8; }\n" +
+"\n" +
+"    /* ── Legacy layout helpers ── */\n" +
 "    .top-section { flex: 0 0 50%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0.35rem; }\n" +
+"\n" +
+"    /* ── Cost table ── */\n" +
 "    .cost-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }\n" +
 "    .cost-table th { text-align: left; padding: 0.2rem 0.5rem; color: #3D4D6A; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); }\n" +
 "    .cost-table td { padding: 0.2rem 0.5rem; color: #94A3B8; border-bottom: 1px solid rgba(255,255,255,0.03); }\n" +
 "    .cost-table tr:last-child td { border-bottom: none; }\n" +
 "    .cost-table .num { text-align: right; font-variant-numeric: tabular-nums; }\n" +
 "    .cost-wrap { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.4rem 0.2rem; }\n" +
+"\n" +
+"    /* ── Bottom row ── */\n" +
 "    .bottom-row { flex-shrink: 0; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
 "    .bottom-col { display: flex; flex-direction: column; min-height: 0; }\n" +
 "    .chart-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem; flex: 1; min-height: 0; display: flex; flex-direction: column; }\n" +
 "    .chart-wrap { position: relative; flex: 1; min-height: 0; }\n" +
-"    .tab-bar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }\n" +
+"\n" +
+"    /* ── Tabs ── */\n" +
+"    .tab-bar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; }\n" +
 "    .tab { background: transparent; border: 1px solid rgba(255,255,255,0.08); color: #4A5880; border-radius: 20px; padding: 0.18rem 0.65rem; font-size: 0.65rem; cursor: pointer; font-family: 'Poppins', system-ui, sans-serif; font-weight: 500; }\n" +
 "    .tab.active { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.4); color: #C084FC; }\n" +
+"\n" +
+"    /* ── Log table ── */\n" +
 "    .log-wrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }\n" +
 "    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }\n" +
 "    thead th { position: sticky; top: 0; background: #141728; z-index: 1; }\n" +
 "    th { text-align: left; padding: 0.35rem 0.6rem; color: #3D4D6A; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }\n" +
 "    td { padding: 0.3rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: #94A3B8; white-space: nowrap; }\n" +
 "    tr:last-child td { border-bottom: none; }\n" +
+"\n" +
+"    /* ── Live dot ── */\n" +
 "    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22C55E; margin-right: 0.4rem; animation: pulse 2s infinite; }\n" +
 "    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }\n" +
-"    /* Hero cards */\n" +
+"\n" +
+"    /* ── Hero cards ── */\n" +
 "    .hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; flex-shrink: 0; }\n" +
-"    .hero-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }\n" +
+"    .hero-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 12px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s; }\n" +
+"    .hero-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }\n" +
 "    .accent-bar { height: 3px; width: 100%; }\n" +
 "    .delivered-bar { background: linear-gradient(90deg,#A855F7,#C084FC); }\n" +
-"    .returned-bar { background: linear-gradient(90deg,#22C55E,#4ADE80); }\n" +
-"    .gas-bar { background: linear-gradient(90deg,#F97316,#FB923C); }\n" +
+"    .returned-bar  { background: linear-gradient(90deg,#22C55E,#4ADE80); }\n" +
+"    .gas-bar       { background: linear-gradient(90deg,#F97316,#FB923C); }\n" +
 "    .hero-content { padding: 0.9rem 1.1rem; flex: 1; display: flex; flex-direction: column; justify-content: center; }\n" +
 "    .hero-label { font-size: 0.6rem; text-transform: uppercase; color: #4A5880; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.4rem; }\n" +
 "    .hero-value { font-size: clamp(1.5rem, 2.8vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }\n" +
 "    .hero-value .card-unit { font-size: 0.85rem; color: #4A5880; font-weight: 400; margin-left: 0.2rem; vertical-align: middle; }\n" +
 "    .hero-sub { margin-top: 0.5rem; font-size: 0.7rem; color: #4A5880; }\n" +
 "    .hero-sub .card-unit { font-size: 0.65rem; }\n" +
-"    /* Middle row */\n" +
+"\n" +
+"    /* ── Middle row (fase + kosten) ── */\n" +
 "    .middle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex-shrink: 0; }\n" +
-"    .phases-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; }\n" +
-"    .costs-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; display: flex; flex-direction: column; }\n" +
+"    .phases-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }\n" +
+"    .costs-block  { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.65rem 1rem; display: flex; flex-direction: column; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }\n" +
+"    .phase-table-wrap { overflow-x: auto; }\n" +
 "    .phase-table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }\n" +
 "    .phase-table th { text-align: center; padding: 0.15rem 0.4rem 0.3rem; color: #3D4D6A; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.05); }\n" +
 "    .phase-table th:first-child { text-align: left; width: 5.5rem; }\n" +
@@ -299,54 +328,123 @@ var HTML = "<!DOCTYPE html>\n" +
 "    .phase-table td:first-child { text-align: left; color: #3D4D6A; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }\n" +
 "    .phase-table tr:last-child td { border-bottom: none; }\n" +
 "    .phase-table .card-unit { font-size: 0.58rem; color: #3D4D6A; margin-left: 0.1rem; }\n" +
-"    /* Stats strip */\n" +
+"\n" +
+"    /* ── Stats strip (6 kaartjes) ── */\n" +
 "    .stats-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; }\n" +
-"    .stat-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem 0.85rem; }\n" +
+"    .stat-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.6rem 0.85rem; box-shadow: 0 2px 12px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s; }\n" +
+"    .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }\n" +
 "    .stat-label { font-size: 0.58rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.3rem; }\n" +
 "    .stat-value { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }\n" +
 "    .stat-unit { font-size: 0.6rem; color: #4A5880; margin-left: 0.1rem; }\n" +
-"    /* Charts grid */\n" +
+"\n" +
+"    /* ── Charts grid ── */\n" +
 "    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }\n" +
-"    .chart-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; display: flex; flex-direction: column; min-height: 240px; }\n" +
-"    .chart-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }\n" +
+"    .chart-block { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.75rem 1rem; display: flex; flex-direction: column; min-height: 240px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }\n" +
+"    .chart-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem; }\n" +
 "    .chart-block-title { font-size: 0.6rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.1em; font-weight: 600; }\n" +
-"    /* Day comparison */\n" +
+"\n" +
+"    /* ── Day comparison ── */\n" +
 "    .compare-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }\n" +
-"    .compare-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.7rem 1rem; }\n" +
+"    .compare-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.7rem 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s; }\n" +
+"    .compare-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }\n" +
 "    .compare-title { font-size: 0.58rem; text-transform: uppercase; color: #3D4D6A; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 0.5rem; }\n" +
 "    .compare-row-item { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; }\n" +
 "    .compare-label { font-size: 0.65rem; color: #4A5880; }\n" +
 "    .compare-value { font-size: 0.85rem; font-weight: 600; color: #F1F5F9; font-variant-numeric: tabular-nums; }\n" +
-"    .delta-up { color: #F87171; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
+"    .delta-up   { color: #F87171; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
 "    .delta-down { color: #4ADE80; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
 "    .delta-same { color: #3D4D6A; font-size: 0.65rem; margin-left: 0.3rem; }\n" +
-"    /* Safety / voltage section */\n" +
+"\n" +
+"    /* ── Safety / voltage ── */\n" +
 "    .safety-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }\n" +
-"    .safety-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem 0.85rem; }\n" +
-"    /* Cheap hours */\n" +
+"    .safety-card { background: #141728; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 0.6rem 0.85rem; box-shadow: 0 2px 12px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s; }\n" +
+"    .safety-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }\n" +
+"\n" +
+"    /* ── Cheap hours ── */\n" +
 "    .cheap-hours-grid { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }\n" +
-"    .hour-pill { font-size: 0.62rem; font-weight: 600; border-radius: 20px; padding: 0.15rem 0.5rem; }\n" +
-"    .hour-cheap { background: rgba(34,197,94,0.15); color: #4ADE80; border: 1px solid rgba(34,197,94,0.3); }\n" +
-"    .hour-mid { background: rgba(251,191,36,0.12); color: #FDE68A; border: 1px solid rgba(251,191,36,0.25); }\n" +
-"    .hour-exp { background: rgba(248,113,113,0.1); color: #FCA5A5; border: 1px solid rgba(248,113,113,0.2); }\n" +
-"    /* Heatmap */\n" +
+"    .hour-pill  { font-size: 0.62rem; font-weight: 600; border-radius: 20px; padding: 0.15rem 0.5rem; }\n" +
+"    .hour-cheap { background: rgba(34,197,94,0.15);  color: #4ADE80;  border: 1px solid rgba(34,197,94,0.3); }\n" +
+"    .hour-mid   { background: rgba(251,191,36,0.12); color: #FDE68A;  border: 1px solid rgba(251,191,36,0.25); }\n" +
+"    .hour-exp   { background: rgba(248,113,113,0.1); color: #FCA5A5;  border: 1px solid rgba(248,113,113,0.2); }\n" +
+"\n" +
+"    /* ── Heatmap ── */\n" +
 "    .heatmap-wrap { overflow-x: auto; margin-top: 0.4rem; }\n" +
 "    .heatmap { display: grid; grid-template-columns: 2rem repeat(24, 1fr); gap: 2px; font-size: 0.5rem; }\n" +
-"    .hm-label { color: #3D4D6A; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-weight: 600; }\n" +
+"    .hm-label      { color: #3D4D6A; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-weight: 600; }\n" +
 "    .hm-hour-label { color: #3D4D6A; text-align: center; padding-bottom: 2px; }\n" +
-"    .hm-cell { height: 18px; border-radius: 2px; cursor: default; }\n" +
-"    @media (max-width: 640px) { .hero { grid-template-columns: 1fr; } .middle { grid-template-columns: 1fr; } .stats-strip { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } .bottom-row { grid-template-columns: 1fr; } .compare-row { grid-template-columns: 1fr; } .safety-row { grid-template-columns: repeat(2, 1fr); } }\n" +
+"    .hm-cell       { height: 18px; border-radius: 2px; cursor: default; }\n" +
+"\n" +
+"    /* ── Footer ── */\n" +
+"    .dashboard-footer { border-top: 1px solid rgba(255,255,255,0.04); margin-top: 0.5rem; padding-top: 0.5rem; text-align: center; font-size: 0.58rem; color: #2A3550; letter-spacing: 0.05em; }\n" +
+"\n" +
+"    /* ═══════════════════════════════════════════\n" +
+"       Tablet: 641px – 1024px\n" +
+"    ═══════════════════════════════════════════ */\n" +
+"    @media (max-width: 1024px) and (min-width: 641px) {\n" +
+"      .hero { grid-template-columns: repeat(3, 1fr); }\n" +
+"      .hero-value { font-size: clamp(1.2rem, 2.4vw, 2rem); }\n" +
+"      .middle { grid-template-columns: 1fr 1fr; }\n" +
+"      .stats-strip { grid-template-columns: repeat(3, 1fr); }\n" +
+"      .safety-row { grid-template-columns: repeat(2, 1fr); }\n" +
+"      .compare-row { grid-template-columns: repeat(3, 1fr); }\n" +
+"      .charts-grid { grid-template-columns: 1fr; }\n" +
+"      .bottom-row { grid-template-columns: 1fr 1fr; }\n" +
+"    }\n" +
+"\n" +
+"    /* ═══════════════════════════════════════════\n" +
+"       Mobile: <= 640px\n" +
+"    ═══════════════════════════════════════════ */\n" +
+"    @media (max-width: 640px) {\n" +
+"      body { padding: 0.5rem; gap: 0.5rem; }\n" +
+"\n" +
+"      /* Header: logo+status op rij 1, badges op rij 2 */\n" +
+"      .header { flex-direction: column; align-items: flex-start; gap: 0.35rem; }\n" +
+"      .header-left { width: 100%; justify-content: space-between; }\n" +
+"      .header-right { width: 100%; gap: 0.4rem; }\n" +
+"\n" +
+"      /* Hero: 1 kolom */\n" +
+"      .hero { grid-template-columns: 1fr; }\n" +
+"\n" +
+"      /* Middle row: 1 kolom */\n" +
+"      .middle { grid-template-columns: 1fr; }\n" +
+"\n" +
+"      /* Fase tabel: scrollbaar */\n" +
+"      .phase-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }\n" +
+"\n" +
+"      /* Stats strip: 2 kolommen */\n" +
+"      .stats-strip { grid-template-columns: repeat(2, 1fr); }\n" +
+"\n" +
+"      /* Safety: 2 kolommen */\n" +
+"      .safety-row { grid-template-columns: repeat(2, 1fr); }\n" +
+"\n" +
+"      /* Compare: 1 kolom */\n" +
+"      .compare-row { grid-template-columns: 1fr; }\n" +
+"\n" +
+"      /* Charts: 1 kolom */\n" +
+"      .charts-grid { grid-template-columns: 1fr; }\n" +
+"\n" +
+"      /* Bottom row: 1 kolom */\n" +
+"      .bottom-row { grid-template-columns: 1fr; }\n" +
+"\n" +
+"      /* Log tabel: scrollbaar */\n" +
+"      .log-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }\n" +
+"\n" +
+"      /* Tabs: iets groter op mobile */\n" +
+"      .tab { min-height: 32px; padding: 0.28rem 0.85rem; font-size: 0.7rem; }\n" +
+"    }\n" +
 "  </style>\n" +
 "  <script src=\"https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js\"></script>\n" +
 "</head>\n" +
 "<body>\n" +
 "  <div class=\"header\">\n" +
-"    <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
-"    <div style=\"display:flex;align-items:center;gap:1rem\">\n" +
+"    <div class=\"header-left\">\n" +
+"      <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
 "      <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
-"      <span style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Lokaal IP\">&#128421; " + LOCAL_IP + ":5000</span>\n" +
-"      <span id=\"wan-ip-badge\" style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"WAN IP (router)\">&#127760; …</span>\n" +
-"      <a href=\"/debug\" style=\"font-size:0.62rem;color:#3D4D6A;text-decoration:none;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Debug pagina\">&#128736; Debug</a>\n" +
+"    </div>\n" +
+"    <div class=\"header-right\">\n" +
+"      <span class=\"ip-badge\" title=\"Lokaal IP\">&#128421; " + LOCAL_IP + ":5000</span>\n" +
+"      <span id=\"wan-ip-badge\" class=\"ip-badge\" title=\"WAN IP (router)\">&#127760; \u2026</span>\n" +
+"      <a href=\"/debug\" class=\"ip-badge\" title=\"Debug pagina\">&#128736; Debug</a>\n" +
 "    </div>\n" +
 "  </div>\n" +
 "\n" +
@@ -380,29 +478,31 @@ var HTML = "<!DOCTYPE html>\n" +
 "  <div class=\"middle\">\n" +
 "    <div class=\"phases-block\">\n" +
 "      <p class=\"section-title\">Per fase</p>\n" +
-"      <table class=\"phase-table\">\n" +
-"        <thead><tr><th></th><th>L1</th><th>L2</th><th>L3</th></tr></thead>\n" +
-"        <tbody>\n" +
-"          <tr>\n" +
-"            <td>Verbruik</td>\n" +
-"            <td class=\"delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
-"            <td class=\"delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
-"            <td class=\"delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
-"          </tr>\n" +
-"          <tr>\n" +
-"            <td>Spanning</td>\n" +
-"            <td class=\"voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></td>\n" +
-"            <td class=\"voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></td>\n" +
-"            <td class=\"voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></td>\n" +
-"          </tr>\n" +
-"          <tr>\n" +
-"            <td>Stroom</td>\n" +
-"            <td id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></td>\n" +
-"            <td id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></td>\n" +
-"            <td id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></td>\n" +
-"          </tr>\n" +
-"        </tbody>\n" +
-"      </table>\n" +
+"      <div class=\"phase-table-wrap\">\n" +
+"        <table class=\"phase-table\">\n" +
+"          <thead><tr><th></th><th>L1</th><th>L2</th><th>L3</th></tr></thead>\n" +
+"          <tbody>\n" +
+"            <tr>\n" +
+"              <td>Verbruik</td>\n" +
+"              <td class=\"delivered\" id=\"del-l1\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"              <td class=\"delivered\" id=\"del-l2\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"              <td class=\"delivered\" id=\"del-l3\">\u2014<span class=\"card-unit\">kW</span></td>\n" +
+"            </tr>\n" +
+"            <tr>\n" +
+"              <td>Spanning</td>\n" +
+"              <td class=\"voltage\" id=\"v-l1\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"              <td class=\"voltage\" id=\"v-l2\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"              <td class=\"voltage\" id=\"v-l3\">\u2014<span class=\"card-unit\">V</span></td>\n" +
+"            </tr>\n" +
+"            <tr>\n" +
+"              <td>Stroom</td>\n" +
+"              <td id=\"a-l1\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"              <td id=\"a-l2\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"              <td id=\"a-l3\">\u2014<span class=\"card-unit\">A</span></td>\n" +
+"            </tr>\n" +
+"          </tbody>\n" +
+"        </table>\n" +
+"      </div>\n" +
 "    </div>\n" +
 "    <div class=\"costs-block\">\n" +
 "      <p class=\"section-title\">Geschatte kosten <span style=\"color:#2A3550;font-weight:400\">(stroom = huidig uur \u00b7 gas = vandaag)</span></p>\n" +
@@ -579,6 +679,8 @@ var HTML = "<!DOCTYPE html>\n" +
 "      </table>\n" +
 "    </div>\n" +
 "  </div>\n" +
+"\n" +
+"  <footer class=\"dashboard-footer\">VloedHub \u00b7 P1 Monitor</footer>\n" +
 "\n" +
 "  <script>\n" +
 "    fetch('/api/network-info').then(function(r){return r.json();}).then(function(d){\n" +
