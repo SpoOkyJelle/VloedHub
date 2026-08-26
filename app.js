@@ -1313,14 +1313,15 @@ var server = http.createServer(function(req, res) {
     var params = qs !== -1 ? req.url.slice(qs + 1) : "";
     var limitMatch = params.match(/limit=(\d+)/);
     var offsetMatch = params.match(/offset=(\d+)/);
-    var limit = Math.min(parseInt(limitMatch ? limitMatch[1] : "100", 10), 5000);
+    var limitRaw = parseInt(limitMatch ? limitMatch[1] : "100", 10);
+    var limit = limitRaw === 0 ? 0 : Math.min(limitRaw, 99999);
     var offset = parseInt(offsetMatch ? offsetMatch[1] : "0", 10);
     db.all(
       "SELECT id, received_at, device, power_delivered_total_kw, gas_m3," +
       " power_delivered_l1_kw, power_delivered_l2_kw, power_delivered_l3_kw," +
       " voltage_l1, voltage_l2, voltage_l3, current_l1, current_l2, current_l3" +
-      " FROM readings ORDER BY id DESC LIMIT ? OFFSET ?",
-      [limit, offset],
+      " FROM readings ORDER BY id DESC" + (limit === 0 ? "" : " LIMIT ? OFFSET ?"),
+      limit === 0 ? [] : [limit, offset],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1456,6 +1457,7 @@ var server = http.createServer(function(req, res) {
       "<button class='pill' onclick='setLimit(100,this)'>100</button>" +
       "<button class='pill' onclick='setLimit(500,this)'>500</button>" +
       "<button class='pill' onclick='setLimit(1000,this)'>1000</button>" +
+      "<button class='pill' onclick='setLimit(0,this)'>Alles</button>" +
       "<input type='text' id='search' placeholder='Filter op tijd, waarde…' oninput='applyFilter()'>" +
       "<button class='pill pill-green active' onclick='toggleLive(this)' id='live-btn'>&#9679; Live</button>" +
       "</div>" +
@@ -1500,7 +1502,7 @@ var server = http.createServer(function(req, res) {
       "}).catch(function(){});}" +
 
       "function loadLogs(){fetch('/api/debug/logs?limit='+currentLimit).then(r=>r.json()).then(function(rows){" +
-      "allRows=rows;document.getElementById('logs-count').textContent='('+rows.length+' van '+currentLimit+' gevraagd)';" +
+      "allRows=rows;document.getElementById('logs-count').textContent=currentLimit===0?'('+rows.length+' — alle rijen)':'('+rows.length+' van '+currentLimit+' gevraagd)';" +
       "applyFilter();" +
       "}).catch(function(){});}" +
 
@@ -1523,7 +1525,7 @@ var server = http.createServer(function(req, res) {
       "+'<td style=\\'color:#3D4D6A\\'>'+( r.device||'—')+'</td></tr>';" +
       "}).join('');}" +
 
-      "function setLimit(n,btn){currentLimit=n;document.querySelectorAll('.pill').forEach(function(b){if(['50','100','500','1000'].includes(b.textContent))b.classList.remove('active');});btn.classList.add('active');loadLogs();}" +
+      "function setLimit(n,btn){currentLimit=n;document.querySelectorAll('.pill').forEach(function(b){if(['50','100','500','1000','Alles'].includes(b.textContent))b.classList.remove('active');});btn.classList.add('active');if(n===0&&liveEnabled){var lb=document.getElementById('live-btn');liveEnabled=false;lb.textContent='\\u25CB Paused';lb.classList.remove('active');clearInterval(liveTimer);}loadLogs();}" +
       "function toggleLive(btn){liveEnabled=!liveEnabled;btn.textContent=liveEnabled?'\\u25CF Live':'\\u25CB Paused';btn.classList.toggle('active',liveEnabled);if(liveEnabled)startLive();else{clearInterval(liveTimer);}}" +
       "function startLive(){liveTimer=setInterval(function(){loadStats();loadLogs();},5000);}" +
 
