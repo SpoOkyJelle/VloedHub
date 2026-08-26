@@ -16,7 +16,19 @@ var http = require("http");
 var https = require("https");
 var path = require("path");
 var fs = require("fs");
+var os = require("os");
 var sqlite3 = require("sqlite3");
+
+function getLocalIP() {
+  var ifaces = os.networkInterfaces();
+  for (var name of Object.keys(ifaces)) {
+    for (var iface of ifaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) return iface.address;
+    }
+  }
+  return "localhost";
+}
+var LOCAL_IP = getLocalIP();
 
 var priceCache = { data: null, fetchedAt: 0 };
 
@@ -289,6 +301,7 @@ var HTML = "<!DOCTYPE html>\n" +
 "    <h1><span class=\"dot\"></span>VloedHub</h1>\n" +
 "    <div style=\"display:flex;align-items:center;gap:1rem\">\n" +
 "      <span class=\"updated\" id=\"updated\">Wachten op data\u2026</span>\n" +
+"      <span style=\"font-size:0.62rem;color:#3D4D6A;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Server IP-adres\">&#127760; " + LOCAL_IP + ":5000</span>\n" +
 "      <a href=\"/debug\" style=\"font-size:0.62rem;color:#3D4D6A;text-decoration:none;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:0.15rem 0.55rem\" title=\"Debug pagina\">&#128736; Debug</a>\n" +
 "    </div>\n" +
 "  </div>\n" +
