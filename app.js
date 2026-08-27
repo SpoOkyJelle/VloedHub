@@ -224,6 +224,21 @@ function dateAms(offsetMs) {
   return new Date(Date.now() + offsetMs).toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(0, 10);
 }
 
+// Data completeness cutoff: data before this date was only logged when the app was running
+var includeOldData = false;
+var DATA_CUTOFF = '2026-08-27T00:00:00';
+
+// Returns the later of (now - ms) or DATA_CUTOFF, unless old data is included
+function effectiveCutoff(ms) {
+  var rel = cutoff(ms);
+  if (includeOldData) return rel;
+  return rel > DATA_CUTOFF ? rel : DATA_CUTOFF;
+}
+// Absolute floor for all-time queries
+function dataFloor() {
+  return includeOldData ? '2000-01-01T00:00:00' : DATA_CUTOFF;
+}
+
 var HTML = "<!DOCTYPE html>\n" +
 "<html lang=\"en\">\n" +
 "<head>\n" +
@@ -1172,7 +1187,7 @@ var server = http.createServer(function(req, res) {
           " (julianday(MAX(received_at)) - julianday(MIN(received_at))) * 24 as hours," +
           " MAX(gas_m3) - MIN(gas_m3) as gas_used, COUNT(*) as n" +
           " FROM readings WHERE received_at >= ?",
-          [cutoff(p.ms)],
+          [effectiveCutoff(p.ms)],
           function(err2, row) {
             var elec_kwh = (row && row.n > 1) ? row.avg_kw * row.hours : null;
             var gas_m3   = (row && row.n > 1) ? row.gas_used : null;
@@ -1228,7 +1243,7 @@ var server = http.createServer(function(req, res) {
       " WHERE received_at >= ?" +
       " GROUP BY period ORDER BY period ASC";
 
-    db.all(sql, [cutoff(sinceMs)], function(err, rows) {
+    db.all(sql, [effectiveCutoff(sinceMs)], function(err, rows) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows || []));
     });
@@ -1241,9 +1256,10 @@ var server = http.createServer(function(req, res) {
       " AVG(power_delivered_total_kw) as avg_del," +
       " COUNT(*) as n" +
       " FROM readings" +
-      " WHERE power_delivered_total_kw IS NOT NULL" +
+      " WHERE power_delivered_total_kw IS NOT NULL AND received_at >= ?" +
       " GROUP BY strftime('%H', received_at)" +
       " ORDER BY hour",
+      [dataFloor()],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1260,7 +1276,7 @@ var server = http.createServer(function(req, res) {
       " FROM readings" +
       " WHERE received_at >= ?" +
       " AND power_delivered_l1_kw IS NOT NULL",
-      [cutoff(604800000)],
+      [effectiveCutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1301,7 +1317,7 @@ var server = http.createServer(function(req, res) {
       " AND gas_m3 IS NOT NULL" +
       " GROUP BY date(received_at)" +
       " ORDER BY day ASC",
-      [cutoff(2592000000)],
+      [effectiveCutoff(2592000000)],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1346,7 +1362,7 @@ var server = http.createServer(function(req, res) {
       " WHERE strftime('%H', received_at) BETWEEN '00' AND '05'" +
       " AND received_at >= ?" +
       " AND power_delivered_total_kw IS NOT NULL",
-      [cutoff(604800000)],
+      [effectiveCutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1362,7 +1378,7 @@ var server = http.createServer(function(req, res) {
       " FROM readings" +
       " WHERE received_at >= ?" +
       " AND (voltage_l1 < 207 OR voltage_l1 > 253 OR voltage_l2 < 207 OR voltage_l2 > 253 OR voltage_l3 < 207 OR voltage_l3 > 253)",
-      [cutoff(604800000)],
+      [effectiveCutoff(604800000)],
       function(err, row) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
@@ -1378,7 +1394,7 @@ var server = http.createServer(function(req, res) {
       " WHERE received_at >= ?" +
       " AND power_delivered_total_kw IS NOT NULL" +
       " GROUP BY dow ORDER BY dow",
-      [cutoff(5184000000)],
+      [effectiveCutoff(5184000000)],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1390,11 +1406,12 @@ var server = http.createServer(function(req, res) {
   if (req.method === "GET" && req.url.indexOf("/api/heatmap") === 0) {
     var hmQs = req.url.indexOf("?range=");
     var hmRange = hmQs !== -1 ? req.url.slice(hmQs + 7).split("&")[0] : "alltime";
-    var hmWhere = "power_delivered_total_kw IS NOT NULL";
+    var hmWhere = "power_delivered_total_kw IS NOT NULL AND received_at >= ?";
     var hmParams = [];
-    if (hmRange === "year")  { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(365*86400000)); }
-    if (hmRange === "month") { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(2592000000)); }
-    if (hmRange === "day")   { hmWhere += " AND received_at >= ?"; hmParams.push(cutoff(86400000)); }
+    if (hmRange === "year")  { hmParams.push(effectiveCutoff(365*86400000)); }
+    else if (hmRange === "month") { hmParams.push(effectiveCutoff(2592000000)); }
+    else if (hmRange === "day")   { hmParams.push(effectiveCutoff(86400000)); }
+    else { hmParams.push(dataFloor()); }
     db.all(
       "SELECT strftime('%w', received_at) as dow, strftime('%H', received_at) as hour," +
       " AVG(power_delivered_total_kw) as avg_del, COUNT(*) as n" +
@@ -1413,8 +1430,9 @@ var server = http.createServer(function(req, res) {
     db.all(
       "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
       " FROM readings" +
-      " WHERE gas_m3 IS NOT NULL" +
+      " WHERE gas_m3 IS NOT NULL AND received_at >= ?" +
       " GROUP BY month ORDER BY month ASC",
+      [dataFloor()],
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));
@@ -1437,7 +1455,7 @@ var server = http.createServer(function(req, res) {
         " FROM readings" +
         " WHERE received_at >= ? AND power_delivered_total_kw IS NOT NULL" +
         " GROUP BY day ORDER BY day ASC",
-        [cutoff(2592000000)],
+        [effectiveCutoff(2592000000)],
         function(err2, rows) {
           var result = (rows || []).map(function(row) {
             var elec_kwh = (row.n > 1 && row.avg_kw != null && row.hours != null) ? row.avg_kw * row.hours : null;
@@ -1581,6 +1599,23 @@ var server = http.createServer(function(req, res) {
     return;
   }
 
+  if (req.method === "POST" && req.url === "/api/debug/set-old-data") {
+    var body = "";
+    req.on("data", function(c) { body += c; });
+    req.on("end", function() {
+      try { includeOldData = !!JSON.parse(body).value; } catch(e) {}
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ includeOldData: includeOldData }));
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/api/debug/old-data-setting") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ includeOldData: includeOldData, cutoffDate: DATA_CUTOFF }));
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/debug") {
     var DEBUG_HTML = "<!DOCTYPE html><html lang='nl'><head>" +
       "<meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
@@ -1617,6 +1652,18 @@ var server = http.createServer(function(req, res) {
       ".header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem}" +
       "</style></head><body>" +
       "<div class='header'><div><h1>&#128736; VloedHub Debug</h1><span style='font-size:0.72rem;color:#3D4D6A'>Databasediagnose &amp; log-viewer</span></div><a href='/'>&#8592; Terug naar dashboard</a></div>" +
+
+      "<div style='background:#141728;border:1px solid rgba(255,165,0,0.25);border-radius:12px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem'>" +
+      "<div>" +
+      "<div style='font-size:0.65rem;text-transform:uppercase;color:#F97316;letter-spacing:0.07em;font-weight:600;margin-bottom:0.25rem'>&#9888; Data vóór 27-08-2026</div>" +
+      "<div style='font-size:0.72rem;color:#94A3B8'>Data voor deze datum is onvolledig (app draaide niet altijd). Standaard wordt deze data uitgesloten.</div>" +
+      "</div>" +
+      "<div style='display:flex;align-items:center;gap:0.6rem'>" +
+      "<span style='font-size:0.65rem;color:#4A5880' id='old-data-label'>Uitgesloten</span>" +
+      "<button id='old-data-toggle' onclick='toggleOldData()' style='position:relative;width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;background:#3D4D6A;transition:background 0.2s'>" +
+      "<span id='old-data-knob' style='position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s'></span>" +
+      "</button>" +
+      "</div></div>" +
 
       "<h2>Database statistieken</h2>" +
       "<div class='stats-grid' id='stats-grid'><div class='stat'><div class='stat-label'>Laden…</div></div></div>" +
@@ -1655,6 +1702,19 @@ var server = http.createServer(function(req, res) {
 
       "<script>" +
       "var currentLimit=50, liveEnabled=true, liveTimer=null, allRows=[], filterStr='';" +
+      "function applyOldDataState(enabled){" +
+      "var btn=document.getElementById('old-data-toggle');" +
+      "var knob=document.getElementById('old-data-knob');" +
+      "var lbl=document.getElementById('old-data-label');" +
+      "btn.style.background=enabled?'#A855F7':'#3D4D6A';" +
+      "knob.style.left=enabled?'23px':'3px';" +
+      "lbl.textContent=enabled?'Inbegrepen':'Uitgesloten';" +
+      "lbl.style.color=enabled?'#C084FC':'#4A5880';}" +
+      "function toggleOldData(){" +
+      "fetch('/api/debug/old-data-setting').then(r=>r.json()).then(function(s){" +
+      "return fetch('/api/debug/set-old-data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:!s.includeOldData})});" +
+      "}).then(r=>r.json()).then(function(s){applyOldDataState(s.includeOldData);loadStats();loadGaps();}).catch(function(){});}" +
+      "fetch('/api/debug/old-data-setting').then(r=>r.json()).then(function(s){applyOldDataState(s.includeOldData);}).catch(function(){});" +
       "function n(v,d){return v!=null?Number(v).toFixed(d!=null?d:3):'—';}" +
       "function loadStats(){fetch('/api/debug/stats').then(r=>r.json()).then(function(s){" +
       "document.getElementById('stats-grid').innerHTML=" +
