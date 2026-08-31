@@ -9,28 +9,36 @@ const char* HOSTNAME      = "GoonESP32-Wasmachine";
 // ---------- Server settings ----------
 const char* SERVER_HOST = "192.168.178.10";
 const int   SERVER_PORT = 5000;
-const char* SERVER_PATH = "/api/wasmachine";
 
-// ---------- LDR ----------
-#define LDR_PIN 34
+// ---------- LDR's ----------
+// LDR 1: "in gebruik" lampje van de wasmachine
+// LDR 2: "klaar" lampje van de wasmachine
+#define LDR_RUNNING_PIN 34
+#define LDR_DONE_PIN    35
 
 // Kalibratie: open de Serial Monitor (115200 baud) en kijk naar de "LDR raw"
-// waarden met het klaar-lampje uit vs aan. Zet THRESHOLD er tussenin.
-// Let op omgevingslicht (dag/avond) — eventueel een kokertje om de LDR helpt.
-int THRESHOLD = 2000;
+// waarden met de lampjes uit vs aan. Zet de THRESHOLDs er tussenin.
+// Let op omgevingslicht (dag/avond) — eventueel een kokertje om de LDR's helpt.
+int THRESHOLD_RUNNING = 2000;
+int THRESHOLD_DONE    = 2000;
 
-const unsigned long CONFIRM_TIME      = 5000;   // ms aanhoudend licht = echt klaar (voorkomt flukes)
-const unsigned long SAMPLE_INTERVAL   = 500;    // ms tussen metingen
-const unsigned long RECONNECT_INTERVAL = 30000; // ms tussen WiFi-reconnect pogingen
+const unsigned long CONFIRM_TIME       = 5000;   // ms aanhoudend licht = echte statuswissel (voorkomt flukes)
+const unsigned long SAMPLE_INTERVAL    = 500;    // ms tussen metingen
+const unsigned long RECONNECT_INTERVAL = 30000;  // ms tussen WiFi-reconnect pogingen
 
-bool wasFinished = false;
-unsigned long lightOnSince = 0;
+bool runningReported = false;
+unsigned long runningOnSince = 0;
+
+bool doneReported = false;
+unsigned long doneOnSince = 0;
+
 unsigned long lastSample = 0;
 unsigned long lastWifiAttempt = 0;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LDR_PIN, INPUT);
+  pinMode(LDR_RUNNING_PIN, INPUT);
+  pinMode(LDR_DONE_PIN, INPUT);
 
   connectWiFi();
 
@@ -45,25 +53,45 @@ void loop() {
   if (now - lastSample < SAMPLE_INTERVAL) return;
   lastSample = now;
 
-  int raw = analogRead(LDR_PIN);
-  bool lightOn = raw > THRESHOLD;
+  int rawRunning = analogRead(LDR_RUNNING_PIN);
+  int rawDone    = analogRead(LDR_DONE_PIN);
+  bool runningOn = rawRunning > THRESHOLD_RUNNING;
+  bool doneOn    = rawDone > THRESHOLD_DONE;
 
-  Serial.printf("LDR raw: %d  (licht %s)\n", raw, lightOn ? "AAN" : "UIT");
+  Serial.printf("LDR in gebruik: %d (%s)  LDR klaar: %d (%s)\n",
+    rawRunning, runningOn ? "AAN" : "UIT",
+    rawDone, doneOn ? "AAN" : "UIT");
 
-  if (lightOn) {
-    if (lightOnSince == 0) lightOnSince = now;
+  // --- "In gebruik" lampje ---
+  if (runningOn) {
+    if (runningOnSince == 0) runningOnSince = now;
 
-    if (!wasFinished && now - lightOnSince > CONFIRM_TIME) {
-      wasFinished = true;
-      Serial.println("Was is klaar!");
-      reportFinished();
+    if (!runningReported && now - runningOnSince > CONFIRM_TIME) {
+      runningReported = true;
+      Serial.println("Wasmachine in gebruik");
+      reportEvent("/api/wasmachine/start");
     }
   } else {
-    lightOnSince = 0;
-    if (wasFinished) {
-      Serial.println("Lampje uit, klaar voor volgende cyclus");
+    runningOnSince = 0;
+    runningReported = false;
+  }
+
+  // --- "Klaar" lampje ---
+  if (doneOn) {
+    if (doneOnSince == 0) doneOnSince = now;
+
+    if (!doneReported && now - doneOnSince > CONFIRM_TIME) {
+      doneReported = true;
+      Serial.println("Was is klaar!");
+      reportEvent("/api/wasmachine");
     }
-    wasFinished = false;
+  } else {
+    doneOnSince = 0;
+    if (doneReported) {
+      Serial.println("Klaar-lampje uit, wasmachine leeggehaald");
+      reportEvent("/api/wasmachine/reset");
+    }
+    doneReported = false;
   }
 }
 
@@ -97,14 +125,14 @@ void maintainWiFi(unsigned long now) {
   connectWiFi();
 }
 
-void reportFinished() {
+void reportEvent(const char* path) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected, kan melding niet versturen");
+    Serial.println("WiFi not connected, kan event niet versturen");
     return;
   }
 
   HTTPClient http;
-  String url = String("http://") + SERVER_HOST + ":" + SERVER_PORT + SERVER_PATH;
+  String url = String("http://") + SERVER_HOST + ":" + SERVER_PORT + path;
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
 
@@ -112,9 +140,9 @@ void reportFinished() {
   int httpCode = http.POST(payload);
 
   if (httpCode > 0) {
-    Serial.printf("Melding verstuurd, HTTP %d\n", httpCode);
+    Serial.printf("Event %s verstuurd, HTTP %d\n", path, httpCode);
   } else {
-    Serial.printf("Melding mislukt: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("Event %s mislukt: %s\n", path, http.errorToString(httpCode).c_str());
   }
 
   http.end();
