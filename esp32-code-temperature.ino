@@ -17,7 +17,7 @@ const char* DEVICE_ID = "temp-node-1"; // EDIT: uniek per ESP32, bv. temp-node-1
 #define SENSOR_COUNT 1 // hoeveel LM35DZ sensoren zitten er op DIT bordje?
 
 const int   SENSOR_PINS[SENSOR_COUNT]  = { 34 };          // analoge pin(nen) op dit bordje
-const char* SENSOR_ROOMS[SENSOR_COUNT] = { "Woonkamer" }; // EDIT: kamer/locatie per sensor, moet uniek zijn over al je bordjes
+const char* SENSOR_ROOMS[SENSOR_COUNT] = { "Slaapkamer_Jelle" }; // EDIT: kamer/locatie per sensor, moet uniek zijn over al je bordjes
 
 // ---------- WiFi settings ----------
 const char* WIFI_SSID     = "Ziggo4680326";
@@ -33,9 +33,13 @@ const char* SERVER_PATH = "/api/temperature";
 // ESP32 ADC: 12-bit (0-4095), voedingsreferentie 3.3V
 const float ADC_MAX_VALUE = 4095.0;
 const float ADC_REF_VOLTAGE = 3.3;
+const float ADC_VOLTAGE_CORRECTION = 2.0; // board heeft voltage divider op ADC pins (meting is altijd /2)
 const int   SAMPLES_PER_READING = 16; // middelen tegen ADC-ruis
 
 const unsigned long UPLOAD_INTERVAL_MS  = 60000; // elke 60 sec een meting versturen
+const unsigned long DEBUG_LOG_INTERVAL  = 2000;  // DEBUG: elke 2 sec loggen
+
+unsigned long lastDebugLog = 0;
 const unsigned long RECONNECT_INTERVAL  = 30000; // ms tussen WiFi-reconnect pogingen
 
 unsigned long lastUpload = 0;
@@ -43,6 +47,7 @@ unsigned long lastWifiAttempt = 0;
 
 void setup() {
   Serial.begin(115200);
+  analogSetAttenuation(ADC_11db); // 0-3.3V bereik
   for (int i = 0; i < SENSOR_COUNT; i++) {
     pinMode(SENSOR_PINS[i], INPUT);
   }
@@ -58,6 +63,17 @@ void loop() {
   unsigned long now = millis();
 
   maintainWiFi(now);
+
+  // DEBUG: elke 2 sec raw + temp loggen
+  if (now - lastDebugLog >= DEBUG_LOG_INTERVAL) {
+    lastDebugLog = now;
+    for (int i = 0; i < SENSOR_COUNT; i++) {
+      int raw = analogRead(SENSOR_PINS[i]);
+      float voltage = raw / ADC_MAX_VALUE * ADC_REF_VOLTAGE * ADC_VOLTAGE_CORRECTION;
+      float temp = voltage * 100.0;
+      Serial.printf("[DEBUG] pin%d  raw=%d  voltage=%.3fV  temp=%.2fC\n", SENSOR_PINS[i], raw, voltage, temp);
+    }
+  }
 
   if (now - lastUpload < UPLOAD_INTERVAL_MS && lastUpload != 0) return;
   lastUpload = now;
@@ -79,7 +95,7 @@ float readTemperature(int pin) {
     delay(2);
   }
   float raw = (float)sum / SAMPLES_PER_READING;
-  float voltage = raw / ADC_MAX_VALUE * ADC_REF_VOLTAGE;
+  float voltage = raw / ADC_MAX_VALUE * ADC_REF_VOLTAGE * ADC_VOLTAGE_CORRECTION;
   return voltage * 100.0; // 10mV/°C -> V * 100 = graden Celsius
 }
 
