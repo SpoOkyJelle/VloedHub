@@ -464,12 +464,15 @@ var server = http.createServer(function(req, res) {
       var results = {};
       var pending = periods.length;
       periods.forEach(function(p) {
+        // "day" means the calendar day so far, not a rolling 24h window
+        var where = p.key === "day" ? "date(received_at) = ?" : "received_at >= ?";
+        var param = p.key === "day" ? todayAms() : effectiveCutoff(p.ms);
         db.get(
           "SELECT AVG(power_delivered_total_kw) as avg_kw," +
           " (julianday(MAX(received_at)) - julianday(MIN(received_at))) * 24 as hours," +
           " MAX(gas_m3) - MIN(gas_m3) as gas_used, COUNT(*) as n" +
-          " FROM readings WHERE received_at >= ?",
-          [effectiveCutoff(p.ms)],
+          " FROM readings WHERE " + where,
+          [param],
           function(err2, row) {
             var elec_kwh = (row && row.n > 1) ? row.avg_kw * row.hours : null;
             var gas_m3   = (row && row.n > 1) ? row.gas_used : null;
@@ -514,8 +517,11 @@ var server = http.createServer(function(req, res) {
     } else if (range === "month") {
       sinceMs = 2592000000; fmt = "'%Y-%m-%d'";
     } else {
-      sinceMs = 86400000; fmt = "'%Y-%m-%d %H:00'";
+      fmt = "'%Y-%m-%d %H:00'";
     }
+
+    // "day" means the calendar day so far, not a rolling 24h window
+    var sinceParam = range === "day" ? (todayAms() + "T00:00:00") : effectiveCutoff(sinceMs);
 
     var sql =
       "SELECT strftime(" + fmt + ", received_at) as period," +
@@ -525,7 +531,7 @@ var server = http.createServer(function(req, res) {
       " WHERE received_at >= ?" +
       " GROUP BY period ORDER BY period ASC";
 
-    db.all(sql, [effectiveCutoff(sinceMs)], function(err, rows) {
+    db.all(sql, [sinceParam], function(err, rows) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows || []));
     });
