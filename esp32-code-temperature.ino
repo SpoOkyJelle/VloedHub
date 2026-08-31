@@ -45,6 +45,35 @@ const unsigned long RECONNECT_INTERVAL  = 30000; // ms tussen WiFi-reconnect pog
 unsigned long lastUpload = 0;
 unsigned long lastWifiAttempt = 0;
 
+void sendReadings(float tempC[SENSOR_COUNT]) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected, skipping upload");
+    return;
+  }
+
+  HTTPClient http;
+  String url = String("http://") + SERVER_HOST + ":" + SERVER_PORT + SERVER_PATH;
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+
+  String payload = String("{\"device\":\"") + DEVICE_ID + "\",\"readings\":[";
+  for (int i = 0; i < SENSOR_COUNT; i++) {
+    if (i > 0) payload += ",";
+    payload += "{\"room\":\"" + String(SENSOR_ROOMS[i]) + "\",\"temp_c\":" + String(tempC[i], 1) + "}";
+  }
+  payload += "]}";
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0) {
+    Serial.printf("Upload OK, HTTP %d\n", httpCode);
+  } else {
+    Serial.printf("Upload failed: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  http.end();
+}
+
 void setup() {
   Serial.begin(115200);
   analogSetAttenuation(ADC_11db); // 0-3.3V bereik
@@ -139,33 +168,4 @@ void maintainWiFi(unsigned long now) {
   lastWifiAttempt = now;
   Serial.println("WiFi disconnected, reconnecting...");
   connectWiFi();
-}
-
-void sendReadings(float tempC[SENSOR_COUNT]) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected, skipping upload");
-    return;
-  }
-
-  HTTPClient http;
-  String url = String("http://") + SERVER_HOST + ":" + SERVER_PORT + SERVER_PATH;
-  http.begin(url);
-  http.addHeader("Content-Type", "application/json");
-
-  String payload = String("{\"device\":\"") + DEVICE_ID + "\",\"readings\":[";
-  for (int i = 0; i < SENSOR_COUNT; i++) {
-    if (i > 0) payload += ",";
-    payload += "{\"room\":\"" + String(SENSOR_ROOMS[i]) + "\",\"temp_c\":" + String(tempC[i], 1) + "}";
-  }
-  payload += "]}";
-
-  int httpCode = http.POST(payload);
-
-  if (httpCode > 0) {
-    Serial.printf("Upload OK, HTTP %d\n", httpCode);
-  } else {
-    Serial.printf("Upload failed: %s\n", http.errorToString(httpCode).c_str());
-  }
-
-  http.end();
 }
