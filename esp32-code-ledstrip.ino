@@ -4,7 +4,10 @@
  *
  * De ESP32 vraagt elke 500 ms de gewenste staat op van de hub:
  *   GET http://SERVER_HOST:5000/api/led/state
- *   → {"on":true,"effect":3,"brightness":180}
+ *   → {"on":true,"effect":3,"brightness":180,"color":{"r":255,"g":255,"b":255}}
+ *
+ * Effect 10 ("Eigen kleur", gekozen via de kleurenkiezer in het dashboard)
+ * gebruikt het "color"-veld; de andere effecten (0-9) negeren het.
  *
  * Pas NUM_LEDS aan naar jouw strip:
  *   30 LEDs/m × 1.8m =  54
@@ -17,7 +20,14 @@
 #include <FastLED.h>
 
 // ── Configuratie ──────────────────────────────────────────────
-#define LED_PIN      25
+// EDIT: uniek per ESP32 (bv. "ledstrip-huidige", "ledstrip-nieuw"), zodat je
+// de bordjes in de Serial Monitor / op het netwerk uit elkaar kunt houden.
+// Beide bordjes volgen dezelfde gedeelde staat uit /api/led/state, dus ze
+// werken automatisch samen: verander je op één plek het effect, dan doen
+// alle aangesloten strips hetzelfde.
+const char* DEVICE_ID = "ledstrip-nieuw";
+
+#define LED_PIN      19
 #define NUM_LEDS     259
 #define LED_TYPE     WS2812B
 #define COLOR_ORDER  GRB
@@ -40,6 +50,7 @@ uint8_t ledBrightness = 180;
 uint8_t  gHue      = 0;
 int      breathVal = 255;
 int      breathDir = -1;
+CRGB     customColor = CRGB::White;
 
 unsigned long lastPoll        = 0;
 unsigned long lastWifiAttempt = 0;
@@ -78,14 +89,25 @@ void loop() {
     case 7: fxMeteor();      break;
     case 8: fxTwinkle();     break;
     case 9: fxPolitie();     break;
+    case 10: fxEigenKleur(); break;
   }
 }
 
 // ── WiFi ──────────────────────────────────────────────────────
+String uniqueHostname() {
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  char suffix[6];
+  snprintf(suffix, sizeof(suffix), "%02X%02X", mac[4], mac[5]);
+  return String(DEVICE_ID) + "-" + suffix;
+}
+
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
+  String hostname = uniqueHostname();
+  WiFi.setHostname(hostname.c_str());
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("WiFi verbinden");
+  Serial.print("WiFi verbinden als " + hostname);
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
     delay(300);
@@ -127,6 +149,20 @@ void pollServer() {
     // Parse "brightness"
     int bi = body.indexOf("\"brightness\":");
     if (bi >= 0) ledBrightness = (uint8_t)constrain(body.substring(bi + 13).toInt(), 10, 255);
+    // Parse "color":{"r":..,"g":..,"b":..}
+    int ci = body.indexOf("\"color\":");
+    if (ci >= 0) {
+      String colorPart = body.substring(ci);
+      int ri = colorPart.indexOf("\"r\":");
+      int gi = colorPart.indexOf("\"g\":");
+      int biC = colorPart.indexOf("\"b\":");
+      if (ri >= 0 && gi >= 0 && biC >= 0) {
+        int r = constrain(colorPart.substring(ri + 4).toInt(), 0, 255);
+        int g = constrain(colorPart.substring(gi + 4).toInt(), 0, 255);
+        int b = constrain(colorPart.substring(biC + 4).toInt(), 0, 255);
+        customColor = CRGB(r, g, b);
+      }
+    }
   }
   http.end();
 }
@@ -219,6 +255,13 @@ void fxTwinkle() {
   fadeToBlackBy(leds, NUM_LEDS, 15);
   if (random8() < 70)
     leds[random16(NUM_LEDS)] = CRGB::White;
+  FastLED.show();
+}
+
+void fxEigenKleur() {
+  static unsigned long t = 0;
+  if (millis() - t < 100) return; t = millis();
+  fill_solid(leds, NUM_LEDS, customColor);
   FastLED.show();
 }
 
