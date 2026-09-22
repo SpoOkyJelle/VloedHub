@@ -3,8 +3,12 @@
  * Bibliotheek: FastLED (Arduino Library Manager)
  *
  * De ESP32 vraagt elke 500 ms de gewenste staat op van de hub:
- *   GET http://SERVER_HOST:5000/api/led/state
+ *   GET http://SERVER_HOST:5000/api/led/state?device=LED_GROUP
  *   → {"on":true,"effect":3,"brightness":180,"color":{"r":255,"g":255,"b":255}}
+ *
+ * LED_GROUP bepaalt welke staat dit bordje volgt: strips met dezelfde
+ * LED_GROUP worden samen bestuurd, strips met een andere LED_GROUP zijn
+ * onafhankelijk (eigen aan/uit, effect, helderheid en kleur).
  *
  * Effect 10 ("Eigen kleur", gekozen via de kleurenkiezer in het dashboard)
  * gebruikt het "color"-veld; de andere effecten (0-9) negeren het.
@@ -22,10 +26,11 @@
 // ── Configuratie ──────────────────────────────────────────────
 // EDIT: uniek per ESP32 (bv. "ledstrip-huidige", "ledstrip-nieuw"), zodat je
 // de bordjes in de Serial Monitor / op het netwerk uit elkaar kunt houden.
-// Beide bordjes volgen dezelfde gedeelde staat uit /api/led/state, dus ze
-// werken automatisch samen: verander je op één plek het effect, dan doen
-// alle aangesloten strips hetzelfde.
-const char* DEVICE_ID = "ledstrip-nieuw";
+const char* DEVICE_ID = "ledstrip-keuken";
+
+// EDIT: bepaalt welke staat dit bordje volgt (zie LED_GROUP hierboven).
+// Dit bordje bestuurt de keukenstrip onafhankelijk van de andere strip(s).
+const char* LED_GROUP = "keuken";
 
 #define LED_PIN      19
 #define NUM_LEDS     259
@@ -134,7 +139,7 @@ void pollServer() {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-  String url = "http://" + String(SERVER_HOST) + ":" + SERVER_PORT + "/api/led/state";
+  String url = "http://" + String(SERVER_HOST) + ":" + SERVER_PORT + "/api/led/state?device=" + String(LED_GROUP);
   http.begin(url);
   http.setTimeout(400);
   int code = http.GET();
