@@ -12,92 +12,141 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header class="app-header">
     <div class="app-title">
       <a href="/" class="back-link" title="Terug"><i class="fa-solid fa-arrow-left"></i></a>
       <i class="fa-solid fa-diagram-project" style="color:var(--purple)"></i>
       <span>Flows</span>
     </div>
-
     <div class="header-center">
       <input type="text" id="flow-name" class="flow-name-input" placeholder="Selecteer een flow…" disabled>
     </div>
-
     <div class="header-actions">
       <label class="toggle-wrap" id="enabled-wrap" style="display:none" title="Flow in-/uitschakelen">
         <input type="checkbox" id="flow-enabled">
         <span class="toggle-track"><span class="toggle-knob"></span></span>
         <span class="toggle-label" id="enabled-label">Inactief</span>
       </label>
-      <button class="btn btn-ghost" id="btn-run" style="display:none" title="Nu uitvoeren">
-        <i class="fa-solid fa-play"></i>
-      </button>
-      <button class="btn btn-ghost" id="btn-delete" style="display:none" title="Verwijderen">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-      <button class="btn btn-primary" id="btn-save" disabled>
-        <i class="fa-solid fa-floppy-disk"></i> Opslaan
-      </button>
+      <button class="btn btn-ghost" id="btn-run" style="display:none" title="Nu uitvoeren"><i class="fa-solid fa-play"></i></button>
+      <button class="btn btn-ghost" id="btn-delete" style="display:none" title="Verwijderen"><i class="fa-solid fa-trash"></i></button>
+      <button class="btn btn-primary" id="btn-save" disabled><i class="fa-solid fa-floppy-disk"></i> Opslaan</button>
     </div>
   </header>
 
-  <!-- Layout -->
   <div class="flows-layout">
-
-    <!-- Sidebar -->
     <aside class="flows-sidebar">
 
-      <!-- Flow list -->
       <div class="sidebar-section" style="flex-shrink:0">
         <div class="sidebar-heading">
           <span>Mijn flows</span>
           <button class="btn-icon" id="btn-new-flow" title="Nieuwe flow"><i class="fa-solid fa-plus"></i></button>
         </div>
-        <ul class="flow-list" id="flow-list">
-          <li class="flow-list-empty">Geen flows</li>
-        </ul>
+        <ul class="flow-list" id="flow-list"><li class="flow-list-empty">Geen flows</li></ul>
       </div>
 
-      <!-- Node palette -->
       <div class="sidebar-section sidebar-nodes">
         <div class="sidebar-heading"><span>Nodes</span></div>
         <p class="sidebar-hint">Sleep naar het canvas</p>
-
         <div class="node-palette">
-          <div class="palette-group-label">Triggers</div>
 
+          <div class="palette-group-label">Triggers — Tijd</div>
           <div class="palette-node" draggable="true" data-node="timer" ondragstart="drag(event)">
             <i class="fa-solid fa-clock" style="color:var(--blue)"></i>
-            <div>
-              <div class="palette-node-name">Timer</div>
-              <div class="palette-node-desc">Op een vast tijdstip</div>
-            </div>
+            <div><div class="palette-node-name">Timer</div><div class="palette-node-desc">Op een vast tijdstip</div></div>
           </div>
 
-          <div class="palette-group-label">Lampen</div>
+          <div class="palette-group-label">Triggers — Stroom</div>
+          <div class="palette-node" draggable="true" data-node="power_above" ondragstart="drag(event)">
+            <i class="fa-solid fa-bolt" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Verbruik boven</div><div class="palette-node-desc">Wattage overschrijdt drempel</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="power_below" ondragstart="drag(event)">
+            <i class="fa-solid fa-bolt-lightning" style="color:var(--dim)"></i>
+            <div><div class="palette-node-name">Verbruik onder</div><div class="palette-node-desc">Wattage daalt onder drempel</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="solar_above" ondragstart="drag(event)">
+            <i class="fa-solid fa-solar-panel" style="color:var(--yellow)"></i>
+            <div><div class="palette-node-name">Teruglevering boven</div><div class="palette-node-desc">Zonnepanelen leveren &gt; X watt</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="solar_below" ondragstart="drag(event)">
+            <i class="fa-solid fa-solar-panel" style="color:var(--dim)"></i>
+            <div><div class="palette-node-name">Teruglevering onder</div><div class="palette-node-desc">Teruglevering daalt onder X watt</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="voltage_dip" ondragstart="drag(event)">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i>
+            <div><div class="palette-node-name">Spanningsdip</div><div class="palette-node-desc">Fase zakt onder X volt</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="phase_imbalance" ondragstart="drag(event)">
+            <i class="fa-solid fa-scale-unbalanced" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Fase-onbalans</div><div class="palette-node-desc">Fases wijken &gt; X% af</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="gas_above" ondragstart="drag(event)">
+            <i class="fa-solid fa-fire" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Gas verbruik</div><div class="palette-node-desc">Gasverbruik &gt; X m³/uur</div></div>
+          </div>
 
+          <div class="palette-group-label">Triggers — Klimaat &amp; Weer</div>
+          <div class="palette-node" draggable="true" data-node="temp_above" ondragstart="drag(event)">
+            <i class="fa-solid fa-temperature-arrow-up" style="color:var(--red)"></i>
+            <div><div class="palette-node-name">Temperatuur boven</div><div class="palette-node-desc">Kamer warmer dan X°C</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="temp_below" ondragstart="drag(event)">
+            <i class="fa-solid fa-temperature-arrow-down" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Temperatuur onder</div><div class="palette-node-desc">Kamer kouder dan X°C</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="weather_rain" ondragstart="drag(event)">
+            <i class="fa-solid fa-cloud-rain" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Regenkanis</div><div class="palette-node-desc">Neerslagkans &gt; X%</div></div>
+          </div>
+
+          <div class="palette-group-label">Triggers — Apparaten</div>
+          <div class="palette-node" draggable="true" data-node="wash_started" ondragstart="drag(event)">
+            <i class="fa-solid fa-rotate" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Wasmachine start</div><div class="palette-node-desc">Wascyclus begint</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="wash_done" ondragstart="drag(event)">
+            <i class="fa-solid fa-shirt" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Wasmachine klaar</div><div class="palette-node-desc">Wascyclus voltooid</div></div>
+          </div>
+
+          <div class="palette-group-label">Logica</div>
+          <div class="palette-node" draggable="true" data-node="delay" ondragstart="drag(event)">
+            <i class="fa-solid fa-hourglass-half" style="color:var(--muted)"></i>
+            <div><div class="palette-node-name">Wacht</div><div class="palette-node-desc">Pauzeer X seconden</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="time_window" ondragstart="drag(event)">
+            <i class="fa-solid fa-calendar-check" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Tijdsvenster</div><div class="palette-node-desc">Ga door alleen tussen X en Y</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="condition" ondragstart="drag(event)">
+            <i class="fa-solid fa-code-branch" style="color:var(--purple)"></i>
+            <div><div class="palette-node-name">Conditie</div><div class="palette-node-desc">Als/dan-splitsing</div></div>
+          </div>
+
+          <div class="palette-group-label">Acties — Lampen</div>
           <div class="palette-node" draggable="true" data-node="led_on" ondragstart="drag(event)">
             <i class="fa-solid fa-lightbulb" style="color:var(--yellow)"></i>
-            <div>
-              <div class="palette-node-name">Lamp aan</div>
-              <div class="palette-node-desc">Zet een LED-strip aan</div>
-            </div>
+            <div><div class="palette-node-name">Lamp aan</div><div class="palette-node-desc">Zet LED-strip aan</div></div>
           </div>
-
           <div class="palette-node" draggable="true" data-node="led_off" ondragstart="drag(event)">
             <i class="fa-regular fa-lightbulb" style="color:var(--muted)"></i>
-            <div>
-              <div class="palette-node-name">Lamp uit</div>
-              <div class="palette-node-desc">Zet een LED-strip uit</div>
-            </div>
+            <div><div class="palette-node-name">Lamp uit</div><div class="palette-node-desc">Zet LED-strip uit</div></div>
           </div>
+          <div class="palette-node" draggable="true" data-node="led_effect" ondragstart="drag(event)">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--pl)"></i>
+            <div><div class="palette-node-name">LED effect</div><div class="palette-node-desc">Animatie instellen</div></div>
+          </div>
+
+          <div class="palette-group-label">Acties — Meldingen</div>
+          <div class="palette-node" draggable="true" data-node="notify" ondragstart="drag(event)">
+            <i class="fa-solid fa-bell" style="color:var(--purple)"></i>
+            <div><div class="palette-node-name">Discord melding</div><div class="palette-node-desc">Stuur een bericht</div></div>
+          </div>
+
         </div>
       </div>
-
     </aside>
 
-    <!-- Canvas -->
     <main class="flows-canvas-wrap">
       <div id="drawflow" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
       <div class="canvas-empty" id="canvas-empty">
@@ -105,306 +154,299 @@
         <p>Selecteer een flow of maak een nieuwe</p>
       </div>
     </main>
-
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.js"></script>
   <script>
-    // ── Node HTML templates ───────────────────────────────────────────────
-    var NODE_HTML = {
-      timer: [
-        '<div class="df-node-title df-node-title--timer">',
-        '  <i class="fa-solid fa-clock"></i> Timer',
-        '</div>',
-        '<div class="df-node-body">',
-        '  <div class="df-field">',
-        '    <label>Tijd</label>',
-        '    <input type="time" df-time>',
-        '  </div>',
-        '  <div class="df-field">',
-        '    <label>Dagen</label>',
-        '    <select df-days>',
-        '      <option value="all">Elke dag</option>',
-        '      <option value="weekdays">Werkdagen (ma\u2013vr)</option>',
-        '      <option value="weekend">Weekend (za\u2013zo)</option>',
-        '    </select>',
-        '  </div>',
-        '</div>'
-      ].join(''),
+  // ── Node HTML templates ────────────────────────────────────────────────
+  var NODE_HTML = {
 
-      led_on: [
-        '<div class="df-node-title df-node-title--action">',
-        '  <i class="fa-solid fa-lightbulb"></i> Lamp aan',
-        '</div>',
-        '<div class="df-node-body">',
-        '  <div class="df-field">',
-        '    <label>Apparaat</label>',
-        '    <select df-device>',
-        '      <option value="default">Woonkamer</option>',
-        '      <option value="keuken">Keuken</option>',
-        '    </select>',
-        '  </div>',
-        '  <div class="df-field">',
-        '    <label>Helderheid <span class="brightness-val"></span></label>',
-        '    <input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">',
-        '  </div>',
-        '  <div class="df-field df-field--row">',
-        '    <label>Kleur</label>',
-        '    <input type="color" df-color value="#ffffff">',
-        '  </div>',
-        '</div>'
-      ].join(''),
+    timer: t('df-node-title--timer','fa-clock','Timer') +
+      b(f('Tijd','<input type="time" df-time>') +
+        f('Dagen','<select df-days>' +
+          '<option value="all">Elke dag</option>' +
+          '<option value="weekdays">Werkdagen (ma\u2013vr)</option>' +
+          '<option value="weekend">Weekend (za\u2013zo)</option></select>')),
 
-      led_off: [
-        '<div class="df-node-title df-node-title--off">',
-        '  <i class="fa-regular fa-lightbulb"></i> Lamp uit',
-        '</div>',
-        '<div class="df-node-body">',
-        '  <div class="df-field">',
-        '    <label>Apparaat</label>',
-        '    <select df-device>',
-        '      <option value="default">Woonkamer</option>',
-        '      <option value="keuken">Keuken</option>',
-        '    </select>',
-        '  </div>',
-        '</div>'
-      ].join('')
-    };
+    power_above: t('df-node-title--power','fa-bolt','Verbruik boven') +
+      b(f('Drempel (watt)','<input type="number" df-watts min="0" max="15000" step="50">') + hint('Triggert \u00e9\u00e9n keer als verbruik de drempel overschrijdt.')),
 
-    var NODE_DEFAULTS = {
-      timer:   { time: '19:00', days: 'all' },
-      led_on:  { device: 'default', brightness: '180', color: '#ffffff' },
-      led_off: { device: 'default' }
-    };
+    power_below: t('df-node-title--power-low','fa-bolt-lightning','Verbruik onder') +
+      b(f('Drempel (watt)','<input type="number" df-watts min="0" max="15000" step="50">') + hint('Triggert \u00e9\u00e9n keer als verbruik onder de drempel zakt.')),
 
-    var NODE_INPUTS  = { timer: 0, led_on: 1, led_off: 1 };
-    var NODE_OUTPUTS = { timer: 1, led_on: 0, led_off: 0 };
+    solar_above: t('df-node-title--solar','fa-solar-panel','Teruglevering boven') +
+      b(f('Drempel (watt)','<input type="number" df-watts min="0" max="15000" step="50">') + hint('Triggert als zonnepanelen meer dan X watt terugleveren.')),
 
-    // ── Init Drawflow ─────────────────────────────────────────────────────
-    var editor = new Drawflow(document.getElementById('drawflow'));
-    editor.reroute = true;
-    editor.reroute_fix_curvature = true;
-    editor.force_first_input = false;
-    editor.start();
+    solar_below: t('df-node-title--solar-low','fa-solar-panel','Teruglevering onder') +
+      b(f('Drempel (watt)','<input type="number" df-watts min="0" max="15000" step="50">') + hint('Triggert als teruglevering onder X watt zakt.')),
 
-    // ── State ─────────────────────────────────────────────────────────────
-    var currentFlowId = null;
-    var flows = [];
-    var saveTimeout = null;
+    voltage_dip: t('df-node-title--danger','fa-triangle-exclamation','Spanningsdip') +
+      b(f('Spanning (volt)','<input type="number" df-volts min="150" max="250" step="1">') + hint('Triggert als een van de fasen onder X volt zakt.')),
 
-    // ── Drag & Drop ───────────────────────────────────────────────────────
-    function drag(ev) {
-      var el = ev.target.closest('[data-node]');
-      ev.dataTransfer.setData('node', el.getAttribute('data-node'));
-    }
+    phase_imbalance: t('df-node-title--power','fa-scale-unbalanced','Fase-onbalans') +
+      b(f('Max. afwijking (%)','<input type="number" df-percent min="0" max="100" step="5">') + hint('Triggert als de fasen meer dan X% van elkaar afwijken.')),
 
-    function allowDrop(ev) { ev.preventDefault(); }
+    gas_above: t('df-node-title--gas','fa-fire','Gas verbruik') +
+      b(f('Drempel (m\u00b3/uur)','<input type="number" df-rate min="0" max="10" step="0.1">') + hint('Triggert als gasverbruik de drempel overschrijdt.')),
 
-    function drop(ev) {
-      ev.preventDefault();
-      if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; }
-      var name = ev.dataTransfer.getData('node');
-      if (!NODE_HTML[name]) return;
+    temp_above: t('df-node-title--temp-high','fa-temperature-arrow-up','Temperatuur boven') +
+      b(f('Kamer','<input type="text" df-room placeholder="bijv. Woonkamer">') +
+        f('Drempel (\u00b0C)','<input type="number" df-temp min="-20" max="60" step="0.5">') +
+        hint('Triggert \u00e9\u00e9n keer als de kamer boven de drempel komt.')),
 
-      var precanvas = editor.precanvas;
-      var zoom = editor.zoom;
-      var rect = precanvas.getBoundingClientRect();
-      var pos_x = (ev.clientX - rect.left) * (precanvas.clientWidth  / (precanvas.clientWidth  * zoom));
-      var pos_y = (ev.clientY - rect.top)  * (precanvas.clientHeight / (precanvas.clientHeight * zoom));
+    temp_below: t('df-node-title--temp-low','fa-temperature-arrow-down','Temperatuur onder') +
+      b(f('Kamer','<input type="text" df-room placeholder="bijv. Woonkamer">') +
+        f('Drempel (\u00b0C)','<input type="number" df-temp min="-20" max="60" step="0.5">') +
+        hint('Triggert \u00e9\u00e9n keer als de kamer onder de drempel zakt.')),
 
-      editor.addNode(
-        name,
-        NODE_INPUTS[name],
-        NODE_OUTPUTS[name],
-        pos_x, pos_y,
-        name,
-        JSON.parse(JSON.stringify(NODE_DEFAULTS[name])),
-        NODE_HTML[name]
-      );
-    }
+    weather_rain: t('df-node-title--rain','fa-cloud-rain','Regenkanis') +
+      b(f('Drempel (%)','<input type="number" df-probability min="0" max="100" step="5">') + hint('Triggert als neerslagkans boven de drempel komt.')),
 
-    // ── Brightness label ──────────────────────────────────────────────────
-    function updateBrightness(el) {
-      var label = el.closest('.df-field').querySelector('.brightness-val');
-      if (label) label.textContent = Math.round(parseInt(el.value) / 255 * 100) + '%';
-    }
+    wash_started: t('df-node-title--wash-start','fa-rotate','Wasmachine start') +
+      b('<div class="df-node-hint">Triggert zodra de wasmachine begint met wassen.</div>'),
 
-    // ── API ───────────────────────────────────────────────────────────────
-    function apiFetch(url, opts) {
-      return fetch(url, opts).then(function(r) { return r.json(); });
-    }
+    wash_done: t('df-node-title--wash','fa-shirt','Wasmachine klaar') +
+      b('<div class="df-node-hint">Triggert zodra een wascyclus is voltooid.</div>'),
 
-    // ── Flow list ─────────────────────────────────────────────────────────
-    function loadFlowList() {
-      apiFetch('/api/flows').then(function(data) {
-        flows = data;
-        renderFlowList();
-      });
-    }
+    delay: t('df-node-title--logic','fa-hourglass-half','Wacht') +
+      b(f('Seconden','<input type="number" df-seconds min="1" max="3600" step="1">') + hint('Pauzeert de flow X seconden. Maximaal 1 uur.')),
 
-    function renderFlowList() {
-      var list = document.getElementById('flow-list');
-      if (!flows.length) {
-        list.innerHTML = '<li class="flow-list-empty">Geen flows</li>';
-        return;
-      }
-      list.innerHTML = flows.map(function(f) {
-        return '<li class="flow-list-item' + (f.id === currentFlowId ? ' active' : '') + '" onclick="selectFlow(' + f.id + ')">' +
-          '<span class="flow-item-dot ' + (f.enabled ? 'dot-on' : 'dot-off') + '"></span>' +
-          '<span class="flow-item-name">' + escHtml(f.name) + '</span>' +
-          '</li>';
-      }).join('');
-    }
+    time_window: t('df-node-title--logic','fa-calendar-check','Tijdsvenster') +
+      b('<div class="df-field df-field--row"><label>Van</label><input type="time" df-start></div>' +
+        '<div class="df-field df-field--row"><label>Tot</label><input type="time" df-end></div>' +
+        hint('Stopt de flow buiten dit tijdsvenster. Ondersteunt ook nacht-vensters (bijv. 22:00\u200900:06:00).')),
 
-    // ── Select flow ───────────────────────────────────────────────────────
-    function selectFlow(id) {
-      currentFlowId = id;
-      apiFetch('/api/flows/' + id).then(function(full) {
-        document.getElementById('flow-name').value = full.name;
-        document.getElementById('flow-name').disabled = false;
-        document.getElementById('flow-enabled').checked = !!full.enabled;
-        document.getElementById('enabled-label').textContent = full.enabled ? 'Actief' : 'Inactief';
-        document.getElementById('enabled-wrap').style.display = '';
-        document.getElementById('btn-delete').style.display = '';
-        document.getElementById('btn-run').style.display = '';
-        document.getElementById('btn-save').disabled = false;
-        document.getElementById('canvas-empty').style.display = 'none';
+    condition: t('df-node-title--condition','fa-code-branch','Conditie') +
+      b(f('Controleer','<select df-check>' +
+          '<option value="power_above">Verbruik &gt; X watt</option>' +
+          '<option value="power_below">Verbruik &lt; X watt</option>' +
+          '<option value="solar_above">Teruglevering &gt; X watt</option>' +
+          '<option value="solar_below">Teruglevering &lt; X watt</option>' +
+          '<option value="temp_above">Temp &gt; X\u00b0C</option>' +
+          '<option value="temp_below">Temp &lt; X\u00b0C</option>' +
+          '<option value="rain_above">Regenkanis &gt; X%</option>' +
+          '<option value="time_between">Tijdstip tussen</option></select>') +
+        f('Waarde','<input type="number" df-value>') +
+        f('Kamer (temp)','<input type="text" df-room placeholder="bijv. Woonkamer">') +
+        '<div class="df-field df-field--row"><label>Tijd (van\u2013tot)</label><input type="time" df-timestart><span style="color:var(--dim);font-size:0.7rem">\u2013</span><input type="time" df-timeend></div>' +
+        hint('\u25b6\ufe0e Uitgang 1: Waar \u00a0\u00b7\u00a0 \u25b6\ufe0e Uitgang 2: Niet waar')),
 
-        editor.clear();
-        try {
-          var parsed = JSON.parse(full.data || '{}');
-          if (parsed && parsed.drawflow) editor.import(parsed);
-        } catch(e) {}
+    led_on: t('df-node-title--action','fa-lightbulb','Lamp aan') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>') +
+        f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
+        '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
-        renderFlowList();
-        // Update brightness labels for existing nodes
-        setTimeout(function() {
-          document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
-        }, 50);
-      });
-    }
+    led_off: t('df-node-title--off','fa-regular fa-lightbulb','Lamp uit') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>')),
 
-    // ── New flow ──────────────────────────────────────────────────────────
-    document.getElementById('btn-new-flow').addEventListener('click', function() {
-      apiFetch('/api/flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Nieuwe flow' })
-      }).then(function(f) {
-        flows.push(f);
-        selectFlow(f.id);
-      });
-    });
+    led_effect: t('df-node-title--effect','fa-wand-magic-sparkles','LED effect') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>') +
+        f('Effect','<select df-effect>' +
+          '<option value="0">Statisch</option>' +
+          '<option value="1">Regenboog</option>' +
+          '<option value="2">Ademen (fade)</option>' +
+          '<option value="3">Kleurwisseling</option>' +
+          '<option value="4">Twinkelen</option></select>') +
+        f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
+        '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
-    // ── Save ──────────────────────────────────────────────────────────────
-    function save() {
-      if (!currentFlowId) return;
-      clearTimeout(saveTimeout);
-      var name    = document.getElementById('flow-name').value.trim() || 'Naamloos';
-      var enabled = document.getElementById('flow-enabled').checked;
-      var data    = JSON.stringify(editor.export());
+    notify: t('df-node-title--notify','fa-bell','Discord melding') +
+      b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>'))
+  };
 
-      apiFetch('/api/flows/' + currentFlowId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, enabled: enabled, data: data })
-      }).then(function() {
-        var flow = flows.find(function(f) { return f.id === currentFlowId; });
-        if (flow) { flow.name = name; flow.enabled = enabled; }
-        renderFlowList();
-        showToast('Opgeslagen \u2713');
-      });
-    }
+  // ── HTML builder helpers ───────────────────────────────────────────────
+  function t(cls, icon, label) {
+    return '<div class="df-node-title ' + cls + '"><i class="fa-solid ' + icon + '"></i> ' + label + '</div>';
+  }
+  function b(inner) { return '<div class="df-node-body">' + inner + '</div>'; }
+  function f(label, input) { return '<div class="df-field"><label>' + label + '</label>' + input + '</div>'; }
+  function hint(txt) { return '<div class="df-node-hint">' + txt + '</div>'; }
 
-    function debouncedAutoSave() {
-      if (!currentFlowId) return;
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(function() {
-        apiFetch('/api/flows/' + currentFlowId, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: JSON.stringify(editor.export()) })
-        });
-      }, 800);
-    }
+  // ── Node config ────────────────────────────────────────────────────────
+  var NODE_DEFAULTS = {
+    timer:           { time: '19:00', days: 'all' },
+    power_above:     { watts: '1000' },
+    power_below:     { watts: '200' },
+    solar_above:     { watts: '500' },
+    solar_below:     { watts: '100' },
+    voltage_dip:     { volts: '210' },
+    phase_imbalance: { percent: '30' },
+    gas_above:       { rate: '0.5' },
+    temp_above:      { room: '', temp: '25' },
+    temp_below:      { room: '', temp: '18' },
+    weather_rain:    { probability: '70' },
+    wash_started:    {},
+    wash_done:       {},
+    delay:           { seconds: '30' },
+    time_window:     { start: '18:00', end: '23:00' },
+    condition:       { check: 'power_above', value: '1000', room: '', timestart: '18:00', timeend: '23:00' },
+    led_on:          { device: 'default', brightness: '180', color: '#ffffff' },
+    led_off:         { device: 'default' },
+    led_effect:      { device: 'default', effect: '0', brightness: '180', color: '#ffffff' },
+    notify:          { message: 'Flow getriggerd!' }
+  };
 
-    document.getElementById('btn-save').addEventListener('click', save);
+  // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
+  var NODE_INPUTS  = { timer:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, led_on:1, led_off:1, led_effect:1, notify:1 };
+  var NODE_OUTPUTS = { timer:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, led_on:0, led_off:0, led_effect:0, notify:0 };
 
-    document.getElementById('flow-name').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') save();
-    });
+  // ── Init Drawflow ──────────────────────────────────────────────────────
+  var editor = new Drawflow(document.getElementById('drawflow'));
+  editor.reroute = true;
+  editor.reroute_fix_curvature = true;
+  editor.force_first_input = false;
+  editor.start();
 
-    document.getElementById('flow-enabled').addEventListener('change', function() {
-      document.getElementById('enabled-label').textContent = this.checked ? 'Actief' : 'Inactief';
-    });
+  // ── App state ──────────────────────────────────────────────────────────
+  var currentFlowId = null;
+  var flows = [];
+  var saveTimeout = null;
 
-    // ── Manual run ────────────────────────────────────────────────────────
-    document.getElementById('btn-run').addEventListener('click', function() {
-      if (!currentFlowId) return;
-      // Save first, then run
-      save();
-      apiFetch('/api/flows/' + currentFlowId + '/run', { method: 'POST' })
-        .then(function(result) {
-          var count = (result.actions || []).length;
-          showToast(count ? count + ' actie(s) uitgevoerd \u26a1' : 'Geen acties uitgevoerd');
-        });
-    });
+  // ── Drag & Drop ────────────────────────────────────────────────────────
+  function drag(ev) { ev.dataTransfer.setData('node', ev.target.closest('[data-node]').getAttribute('data-node')); }
+  function allowDrop(ev) { ev.preventDefault(); }
+  function drop(ev) {
+    ev.preventDefault();
+    if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; }
+    var name = ev.dataTransfer.getData('node');
+    if (!NODE_HTML[name]) return;
+    var pc = editor.precanvas, z = editor.zoom, r = pc.getBoundingClientRect();
+    editor.addNode(
+      name, NODE_INPUTS[name], NODE_OUTPUTS[name],
+      (ev.clientX - r.left) * (pc.clientWidth  / (pc.clientWidth  * z)),
+      (ev.clientY - r.top)  * (pc.clientHeight / (pc.clientHeight * z)),
+      name, JSON.parse(JSON.stringify(NODE_DEFAULTS[name] || {})), NODE_HTML[name]
+    );
+  }
 
-    // ── Delete ────────────────────────────────────────────────────────────
-    document.getElementById('btn-delete').addEventListener('click', function() {
-      if (!currentFlowId) return;
-      var flow = flows.find(function(f) { return f.id === currentFlowId; });
-      var name = flow ? '"' + flow.name + '"' : 'deze flow';
-      if (!confirm('Flow ' + name + ' verwijderen?')) return;
+  function updateBrightness(el) {
+    var lbl = el.closest('.df-field').querySelector('.brightness-val');
+    if (lbl) lbl.textContent = Math.round(parseInt(el.value) / 255 * 100) + '%';
+  }
 
-      apiFetch('/api/flows/' + currentFlowId, { method: 'DELETE' }).then(function() {
-        flows = flows.filter(function(f) { return f.id !== currentFlowId; });
-        currentFlowId = null;
-        editor.clear();
+  // ── API helpers ────────────────────────────────────────────────────────
+  function api(url, opts) { return fetch(url, opts).then(function(r) { return r.json(); }); }
 
-        document.getElementById('flow-name').value = '';
-        document.getElementById('flow-name').disabled = true;
-        document.getElementById('enabled-wrap').style.display = 'none';
-        document.getElementById('btn-delete').style.display = 'none';
-        document.getElementById('btn-run').style.display = 'none';
-        document.getElementById('btn-save').disabled = true;
-        document.getElementById('canvas-empty').style.display = '';
+  // ── Flow list ──────────────────────────────────────────────────────────
+  function loadFlowList() {
+    api('/api/flows').then(function(data) { flows = data; renderFlowList(); });
+  }
 
-        renderFlowList();
-      });
-    });
+  function renderFlowList() {
+    var el = document.getElementById('flow-list');
+    if (!flows.length) { el.innerHTML = '<li class="flow-list-empty">Geen flows</li>'; return; }
+    el.innerHTML = flows.map(function(f) {
+      return '<li class="flow-list-item' + (f.id === currentFlowId ? ' active' : '') + '" onclick="selectFlow(' + f.id + ')">' +
+        '<span class="flow-item-dot ' + (f.enabled ? 'dot-on' : 'dot-off') + '"></span>' +
+        '<span class="flow-item-name">' + esc(f.name) + '</span></li>';
+    }).join('');
+  }
 
-    // ── Auto-save on canvas events ────────────────────────────────────────
-    editor.on('nodeCreated',        debouncedAutoSave);
-    editor.on('nodeRemoved',        debouncedAutoSave);
-    editor.on('connectionCreated',  debouncedAutoSave);
-    editor.on('connectionRemoved',  debouncedAutoSave);
-    editor.on('nodeMoved',          debouncedAutoSave);
-    editor.on('nodeDataChanged',    debouncedAutoSave);
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-    function escHtml(s) {
-      return String(s)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;');
-    }
-
-    function showToast(msg) {
-      var t = document.createElement('div');
-      t.className = 'toast';
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(function() { t.classList.add('toast-show'); }, 10);
+  function selectFlow(id) {
+    currentFlowId = id;
+    api('/api/flows/' + id).then(function(full) {
+      document.getElementById('flow-name').value    = full.name;
+      document.getElementById('flow-name').disabled = false;
+      document.getElementById('flow-enabled').checked = !!full.enabled;
+      document.getElementById('enabled-label').textContent = full.enabled ? 'Actief' : 'Inactief';
+      ['enabled-wrap','btn-delete','btn-run'].forEach(function(id) { document.getElementById(id).style.display = ''; });
+      document.getElementById('btn-save').disabled = false;
+      document.getElementById('canvas-empty').style.display = 'none';
+      editor.clear();
+      try { var d = JSON.parse(full.data || '{}'); if (d && d.drawflow) editor.import(d); } catch(e) {}
+      renderFlowList();
       setTimeout(function() {
-        t.classList.remove('toast-show');
-        setTimeout(function() { t.remove(); }, 300);
-      }, 2200);
-    }
+        document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+      }, 60);
+    });
+  }
 
-    // ── Boot ──────────────────────────────────────────────────────────────
-    loadFlowList();
+  // ── New flow ───────────────────────────────────────────────────────────
+  document.getElementById('btn-new-flow').addEventListener('click', function() {
+    api('/api/flows', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:'Nieuwe flow'}) })
+      .then(function(f) { flows.push(f); selectFlow(f.id); });
+  });
+
+  // ── Save ───────────────────────────────────────────────────────────────
+  function save() {
+    if (!currentFlowId) return;
+    clearTimeout(saveTimeout);
+    var name = document.getElementById('flow-name').value.trim() || 'Naamloos';
+    var enabled = document.getElementById('flow-enabled').checked;
+    api('/api/flows/' + currentFlowId, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name: name, enabled: enabled, data: JSON.stringify(editor.export()) })
+    }).then(function() {
+      var f = flows.find(function(x) { return x.id === currentFlowId; });
+      if (f) { f.name = name; f.enabled = enabled; }
+      renderFlowList();
+      showToast('Opgeslagen \u2713');
+    });
+  }
+
+  function autoSave() {
+    if (!currentFlowId) return;
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(function() {
+      api('/api/flows/' + currentFlowId, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: JSON.stringify(editor.export()) })
+      });
+    }, 800);
+  }
+
+  document.getElementById('btn-save').addEventListener('click', save);
+  document.getElementById('flow-name').addEventListener('keydown', function(e) { if (e.key === 'Enter') save(); });
+  document.getElementById('flow-enabled').addEventListener('change', function() {
+    document.getElementById('enabled-label').textContent = this.checked ? 'Actief' : 'Inactief';
+  });
+
+  // ── Manual run ─────────────────────────────────────────────────────────
+  document.getElementById('btn-run').addEventListener('click', function() {
+    if (!currentFlowId) return;
+    save();
+    setTimeout(function() {
+      api('/api/flows/' + currentFlowId + '/run', { method: 'POST' }).then(function(r) {
+        showToast((r.actions || []).length ? (r.actions.length) + ' actie(s) uitgevoerd \u26a1' : 'Geen acties uitgevoerd');
+      });
+    }, 350);
+  });
+
+  // ── Delete ─────────────────────────────────────────────────────────────
+  document.getElementById('btn-delete').addEventListener('click', function() {
+    if (!currentFlowId) return;
+    var f = flows.find(function(x) { return x.id === currentFlowId; });
+    if (!confirm('Flow "' + (f ? f.name : '') + '" verwijderen?')) return;
+    api('/api/flows/' + currentFlowId, { method: 'DELETE' }).then(function() {
+      flows = flows.filter(function(x) { return x.id !== currentFlowId; });
+      currentFlowId = null;
+      editor.clear();
+      document.getElementById('flow-name').value    = '';
+      document.getElementById('flow-name').disabled = true;
+      ['enabled-wrap','btn-delete','btn-run'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+      document.getElementById('btn-save').disabled = true;
+      document.getElementById('canvas-empty').style.display = '';
+      renderFlowList();
+    });
+  });
+
+  // ── Canvas events ──────────────────────────────────────────────────────
+  ['nodeCreated','nodeRemoved','connectionCreated','connectionRemoved','nodeMoved','nodeDataChanged']
+    .forEach(function(ev) { editor.on(ev, autoSave); });
+
+  // ── Utilities ──────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function showToast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast'; el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function() { el.classList.add('toast-show'); }, 10);
+    setTimeout(function() { el.classList.remove('toast-show'); setTimeout(function() { el.remove(); }, 300); }, 2500);
+  }
+
+  loadFlowList();
   </script>
 </body>
 </html>

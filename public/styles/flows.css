@@ -388,6 +388,36 @@ html, body {
   border-bottom: 1px solid rgba(56,189,248,0.18);
 }
 
+.df-node-title--power {
+  background: rgba(249,115,22,0.12);
+  color: var(--orange);
+  border-bottom: 1px solid rgba(249,115,22,0.18);
+}
+
+.df-node-title--power-low {
+  background: rgba(74,88,128,0.15);
+  color: var(--muted);
+  border-bottom: 1px solid rgba(74,88,128,0.18);
+}
+
+.df-node-title--temp-high {
+  background: rgba(248,113,113,0.12);
+  color: var(--red);
+  border-bottom: 1px solid rgba(248,113,113,0.18);
+}
+
+.df-node-title--temp-low {
+  background: rgba(56,189,248,0.12);
+  color: var(--blue);
+  border-bottom: 1px solid rgba(56,189,248,0.18);
+}
+
+.df-node-title--wash {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+  border-bottom: 1px solid rgba(34,197,94,0.18);
+}
+
 .df-node-title--action {
   background: rgba(251,191,36,0.12);
   color: var(--yellow);
@@ -398,6 +428,79 @@ html, body {
   background: rgba(74,88,128,0.18);
   color: var(--muted);
   border-bottom: 1px solid rgba(74,88,128,0.18);
+}
+
+.df-node-title--solar {
+  background: rgba(251,191,36,0.12);
+  color: var(--yellow);
+  border-bottom: 1px solid rgba(251,191,36,0.18);
+}
+.df-node-title--solar-low {
+  background: rgba(56,189,248,0.08);
+  color: var(--dim);
+  border-bottom: 1px solid rgba(56,189,248,0.12);
+}
+.df-node-title--danger {
+  background: rgba(248,113,113,0.14);
+  color: var(--red);
+  border-bottom: 1px solid rgba(248,113,113,0.2);
+}
+.df-node-title--gas {
+  background: rgba(249,115,22,0.12);
+  color: var(--orange);
+  border-bottom: 1px solid rgba(249,115,22,0.18);
+}
+.df-node-title--rain {
+  background: rgba(56,189,248,0.12);
+  color: var(--blue);
+  border-bottom: 1px solid rgba(56,189,248,0.18);
+}
+.df-node-title--wash-start {
+  background: rgba(56,189,248,0.1);
+  color: var(--blue);
+  border-bottom: 1px solid rgba(56,189,248,0.15);
+}
+.df-node-title--logic {
+  background: rgba(74,88,128,0.2);
+  color: var(--muted);
+  border-bottom: 1px solid rgba(74,88,128,0.2);
+}
+.df-node-title--condition {
+  background: rgba(168,85,247,0.1);
+  color: var(--pl);
+  border-bottom: 1px solid rgba(168,85,247,0.18);
+}
+.df-node-title--effect {
+  background: rgba(192,132,252,0.12);
+  color: var(--pl);
+  border-bottom: 1px solid rgba(192,132,252,0.18);
+}
+.df-node-title--notify {
+  background: rgba(168,85,247,0.12);
+  color: var(--pl);
+  border-bottom: 1px solid rgba(168,85,247,0.18);
+}
+
+/* Condition node: label the two output ports */
+.drawflow-node.condition .output_1::after {
+  content: 'Waar';
+  position: absolute;
+  right: 18px;
+  top: -1px;
+  font-size: 0.55rem;
+  color: var(--green);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.drawflow-node.condition .output_2::after {
+  content: 'Niet waar';
+  position: absolute;
+  right: 18px;
+  top: -1px;
+  font-size: 0.55rem;
+  color: var(--red);
+  white-space: nowrap;
+  font-weight: 600;
 }
 
 .df-node-body {
@@ -420,6 +523,9 @@ html, body {
 }
 
 .df-field input[type=time],
+.df-field input[type=number],
+.df-field input[type=text],
+.df-field textarea,
 .df-field select {
   width: 100%;
   background: rgba(255,255,255,0.04);
@@ -433,7 +539,24 @@ html, body {
   transition: border-color 0.15s;
 }
 .df-field input[type=time]:focus,
+.df-field input[type=number]:focus,
+.df-field input[type=text]:focus,
+.df-field textarea:focus,
 .df-field select:focus { border-color: rgba(168,85,247,0.5); }
+
+.df-field textarea {
+  resize: vertical;
+  min-height: 52px;
+  line-height: 1.4;
+}
+
+/* Hint text inside a node */
+.df-node-hint {
+  font-size: 0.62rem;
+  color: var(--dim);
+  line-height: 1.45;
+  padding-top: 0.1rem;
+}
 
 .df-field input[type=range] {
   width: 100%;

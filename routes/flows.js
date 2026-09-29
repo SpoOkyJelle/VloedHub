@@ -101,9 +101,10 @@ module.exports = function(req, res) {
     var runner = require('../services/flowrunner');
     db.get('SELECT * FROM flows WHERE id = ?', [runId], function(err, flow) {
       if (!flow) { res.writeHead(404); res.end('{}'); return; }
-      var actions = runner.runFlow(flow);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, actions: actions }));
+      runner.runFlow(flow, db, function(actions) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, actions: actions }));
+      });
     });
     return true;
   }
