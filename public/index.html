@@ -856,6 +856,7 @@ function updateHomeLed3Status() {
 var relayGangState = {on: false};
 
 function updateRelayGangUI() {
+  if (!relayGangState) return;
   var btn = document.getElementById('relay-gang-onoff');
   var txt = document.getElementById('relay-gang-status-text');
   if (btn) { btn.textContent = relayGangState.on ? 'AAN' : 'UIT'; btn.style.borderColor = relayGangState.on ? 'rgba(34,197,94,0.6)' : 'rgba(34,197,94,0.2)'; btn.style.background = relayGangState.on ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.05)'; btn.style.color = relayGangState.on ? '#4ADE80' : 'var(--muted)'; }
