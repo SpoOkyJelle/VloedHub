@@ -717,10 +717,9 @@ function buildLedGrid() {
   if (!grid || grid.children.length) return;
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button data-idx=' + _i + ' id=led-btn-' + _i + ' style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led-btn-' + _i + '" onclick="ledSetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
-  grid.onclick = function(e) { var b = e.target.closest('button'); if (b && b.dataset && b.dataset.idx !== undefined) ledSetEffect(parseInt(b.dataset.idx)); };
   updateLedUI();
 }
 
@@ -775,10 +774,9 @@ function buildLed2Grid() {
   if (!grid || grid.children.length) return;
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button data-idx=' + _i + ' id=led2-btn-' + _i + ' style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led2-btn-' + _i + '" onclick="led2SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
-  grid.onclick = function(e) { var b = e.target.closest('button'); if (b && b.dataset && b.dataset.idx !== undefined) led2SetEffect(parseInt(b.dataset.idx)); };
   updateLed2UI();
 }
 
@@ -834,10 +832,9 @@ function buildLed3Grid() {
   if (!grid || grid.children.length) return;
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button data-idx=' + _i + ' id=led3-btn-' + _i + ' style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led3-btn-' + _i + '" onclick="led3SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
-  grid.onclick = function(e) { var b = e.target.closest('button'); if (b && b.dataset && b.dataset.idx !== undefined) led3SetEffect(parseInt(b.dataset.idx)); };
   updateLed3UI();
 }
 
