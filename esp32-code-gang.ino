@@ -41,7 +41,7 @@ const char* RELAY_GROUP = "gang";  // Relais-staat van de server
 #define COLOR_ORDER      GRB
 
 #define RELAY_PIN        18     // GPIO voor het relaismodule
-#define RELAY_ACTIVE_LOW true   // true = LOW zet relais aan (meest gangbaar)
+#define RELAY_ACTIVE_LOW false  // false = HIGH zet relais aan (actief-hoog module)
 
 const char* WIFI_SSID     = "Ziggo4680326";
 const char* WIFI_PASSWORD = "eyrfTfdp77gfdrxt";
