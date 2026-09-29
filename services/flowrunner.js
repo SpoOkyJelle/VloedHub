@@ -1,12 +1,14 @@
 var state   = require('../utils/state');
 var discord = require('./discord');
 var weather = require('./weather');
+var sun     = require('./sun');
 
 // ── Node categories ────────────────────────────────────────────────────────
 var TRIGGERS = {
   timer: 1, power_above: 1, power_below: 1, temp_above: 1, temp_below: 1,
   wash_done: 1, wash_started: 1, gas_above: 1, voltage_dip: 1,
-  phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1
+  phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
+  sunrise: 1, sunset: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -341,6 +343,41 @@ function checkSensorTriggers(rows, ctx) {
   lastWashCount = ctx.cycleCount;
 }
 
+// ── Sun trigger helpers ────────────────────────────────────────────────────
+function addMinutes(timeStr, minutes) {
+  var parts = timeStr.split(':');
+  var total = parseInt(parts[0]) * 60 + parseInt(parts[1]) + minutes;
+  total = ((total % 1440) + 1440) % 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
+function checkSunTriggers(rows, dateStr, timeStr, sunTimes) {
+  rows.forEach(function(flow) {
+    try {
+      var data  = JSON.parse(flow.data || '{}');
+      if (!data.drawflow) return;
+      var nodes = (data.drawflow.Home || {}).data || {};
+
+      Object.values(nodes).forEach(function(node) {
+        if (node.name !== 'sunrise' && node.name !== 'sunset') return;
+
+        var base   = node.name === 'sunrise' ? sunTimes.sunrise : sunTimes.sunset;
+        var offset = parseInt(node.data.offset) || 0;
+        var target = addMinutes(base, offset);
+
+        if (target !== timeStr) return;
+
+        var key = flow.id + ':' + node.id + ':' + dateStr;
+        if (lastFired[key]) return;
+        lastFired[key] = true;
+
+        console.log('[Flow] ' + node.name + ' (offset ' + offset + 'min, ' + target + ') — flow ' + flow.id + ' "' + flow.name + '"');
+        traverseOutputs(node, nodes, {});
+      });
+    } catch(e) {}
+  });
+}
+
 // ── Timer checking ─────────────────────────────────────────────────────────
 var lastFired = {};
 
@@ -387,6 +424,10 @@ function checkAll(db) {
     if (err || !rows || !rows.length) return;
 
     checkTimerTriggers(rows, dateStr, timeStr, isWeekday);
+
+    sun.getSunTimes(function(err, sunTimes) {
+      if (!err && sunTimes) checkSunTriggers(rows, dateStr, timeStr, sunTimes);
+    });
 
     gatherContext(db, function(ctx) {
       checkSensorTriggers(rows, ctx);
