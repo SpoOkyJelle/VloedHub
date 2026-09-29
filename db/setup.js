@@ -62,6 +62,16 @@ db.serialize(function() {
     "  device TEXT" +
     ")"
   );
+
+  db.run(
+    "CREATE TABLE IF NOT EXISTS flows (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  name TEXT NOT NULL DEFAULT 'Naamloos'," +
+    "  enabled INTEGER NOT NULL DEFAULT 1," +
+    "  data TEXT NOT NULL DEFAULT '{}'," +
+    "  created_at TEXT NOT NULL" +
+    ")"
+  );
 });
 
 module.exports = db;

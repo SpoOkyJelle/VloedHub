@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VloedHub — Flows</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css">
+  <link rel="stylesheet" href="/styles/flows.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="app-title">
+      <a href="/" class="back-link" title="Terug"><i class="fa-solid fa-arrow-left"></i></a>
+      <i class="fa-solid fa-diagram-project" style="color:var(--purple)"></i>
+      <span>Flows</span>
+    </div>
+
+    <div class="header-center">
+      <input type="text" id="flow-name" class="flow-name-input" placeholder="Selecteer een flow…" disabled>
+    </div>
+
+    <div class="header-actions">
+      <label class="toggle-wrap" id="enabled-wrap" style="display:none" title="Flow in-/uitschakelen">
+        <input type="checkbox" id="flow-enabled">
+        <span class="toggle-track"><span class="toggle-knob"></span></span>
+        <span class="toggle-label" id="enabled-label">Inactief</span>
+      </label>
+      <button class="btn btn-ghost" id="btn-run" style="display:none" title="Nu uitvoeren">
+        <i class="fa-solid fa-play"></i>
+      </button>
+      <button class="btn btn-ghost" id="btn-delete" style="display:none" title="Verwijderen">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+      <button class="btn btn-primary" id="btn-save" disabled>
+        <i class="fa-solid fa-floppy-disk"></i> Opslaan
+      </button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="flows-layout">
+
+    <!-- Sidebar -->
+    <aside class="flows-sidebar">
+
+      <!-- Flow list -->
+      <div class="sidebar-section" style="flex-shrink:0">
+        <div class="sidebar-heading">
+          <span>Mijn flows</span>
+          <button class="btn-icon" id="btn-new-flow" title="Nieuwe flow"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <ul class="flow-list" id="flow-list">
+          <li class="flow-list-empty">Geen flows</li>
+        </ul>
+      </div>
+
+      <!-- Node palette -->
+      <div class="sidebar-section sidebar-nodes">
+        <div class="sidebar-heading"><span>Nodes</span></div>
+        <p class="sidebar-hint">Sleep naar het canvas</p>
+
+        <div class="node-palette">
+          <div class="palette-group-label">Triggers</div>
+
+          <div class="palette-node" draggable="true" data-node="timer" ondragstart="drag(event)">
+            <i class="fa-solid fa-clock" style="color:var(--blue)"></i>
+            <div>
+              <div class="palette-node-name">Timer</div>
+              <div class="palette-node-desc">Op een vast tijdstip</div>
+            </div>
+          </div>
+
+          <div class="palette-group-label">Lampen</div>
+
+          <div class="palette-node" draggable="true" data-node="led_on" ondragstart="drag(event)">
+            <i class="fa-solid fa-lightbulb" style="color:var(--yellow)"></i>
+            <div>
+              <div class="palette-node-name">Lamp aan</div>
+              <div class="palette-node-desc">Zet een LED-strip aan</div>
+            </div>
+          </div>
+
+          <div class="palette-node" draggable="true" data-node="led_off" ondragstart="drag(event)">
+            <i class="fa-regular fa-lightbulb" style="color:var(--muted)"></i>
+            <div>
+              <div class="palette-node-name">Lamp uit</div>
+              <div class="palette-node-desc">Zet een LED-strip uit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Canvas -->
+    <main class="flows-canvas-wrap">
+      <div id="drawflow" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+      <div class="canvas-empty" id="canvas-empty">
+        <i class="fa-solid fa-diagram-project"></i>
+        <p>Selecteer een flow of maak een nieuwe</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.js"></script>
+  <script>
+    // ── Node HTML templates ───────────────────────────────────────────────
+    var NODE_HTML = {
+      timer: [
+        '<div class="df-node-title df-node-title--timer">',
+        '  <i class="fa-solid fa-clock"></i> Timer',
+        '</div>',
+        '<div class="df-node-body">',
+        '  <div class="df-field">',
+        '    <label>Tijd</label>',
+        '    <input type="time" df-time>',
+        '  </div>',
+        '  <div class="df-field">',
+        '    <label>Dagen</label>',
+        '    <select df-days>',
+        '      <option value="all">Elke dag</option>',
+        '      <option value="weekdays">Werkdagen (ma\u2013vr)</option>',
+        '      <option value="weekend">Weekend (za\u2013zo)</option>',
+        '    </select>',
+        '  </div>',
+        '</div>'
+      ].join(''),
+
+      led_on: [
+        '<div class="df-node-title df-node-title--action">',
+        '  <i class="fa-solid fa-lightbulb"></i> Lamp aan',
+        '</div>',
+        '<div class="df-node-body">',
+        '  <div class="df-field">',
+        '    <label>Apparaat</label>',
+        '    <select df-device>',
+        '      <option value="default">Woonkamer</option>',
+        '      <option value="keuken">Keuken</option>',
+        '    </select>',
+        '  </div>',
+        '  <div class="df-field">',
+        '    <label>Helderheid <span class="brightness-val"></span></label>',
+        '    <input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">',
+        '  </div>',
+        '  <div class="df-field df-field--row">',
+        '    <label>Kleur</label>',
+        '    <input type="color" df-color value="#ffffff">',
+        '  </div>',
+        '</div>'
+      ].join(''),
+
+      led_off: [
+        '<div class="df-node-title df-node-title--off">',
+        '  <i class="fa-regular fa-lightbulb"></i> Lamp uit',
+        '</div>',
+        '<div class="df-node-body">',
+        '  <div class="df-field">',
+        '    <label>Apparaat</label>',
+        '    <select df-device>',
+        '      <option value="default">Woonkamer</option>',
+        '      <option value="keuken">Keuken</option>',
+        '    </select>',
+        '  </div>',
+        '</div>'
+      ].join('')
+    };
+
+    var NODE_DEFAULTS = {
+      timer:   { time: '19:00', days: 'all' },
+      led_on:  { device: 'default', brightness: '180', color: '#ffffff' },
+      led_off: { device: 'default' }
+    };
+
+    var NODE_INPUTS  = { timer: 0, led_on: 1, led_off: 1 };
+    var NODE_OUTPUTS = { timer: 1, led_on: 0, led_off: 0 };
+
+    // ── Init Drawflow ─────────────────────────────────────────────────────
+    var editor = new Drawflow(document.getElementById('drawflow'));
+    editor.reroute = true;
+    editor.reroute_fix_curvature = true;
+    editor.force_first_input = false;
+    editor.start();
+
+    // ── State ─────────────────────────────────────────────────────────────
+    var currentFlowId = null;
+    var flows = [];
+    var saveTimeout = null;
+
+    // ── Drag & Drop ───────────────────────────────────────────────────────
+    function drag(ev) {
+      var el = ev.target.closest('[data-node]');
+      ev.dataTransfer.setData('node', el.getAttribute('data-node'));
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+
+    function drop(ev) {
+      ev.preventDefault();
+      if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; }
+      var name = ev.dataTransfer.getData('node');
+      if (!NODE_HTML[name]) return;
+
+      var precanvas = editor.precanvas;
+      var zoom = editor.zoom;
+      var rect = precanvas.getBoundingClientRect();
+      var pos_x = (ev.clientX - rect.left) * (precanvas.clientWidth  / (precanvas.clientWidth  * zoom));
+      var pos_y = (ev.clientY - rect.top)  * (precanvas.clientHeight / (precanvas.clientHeight * zoom));
+
+      editor.addNode(
+        name,
+        NODE_INPUTS[name],
+        NODE_OUTPUTS[name],
+        pos_x, pos_y,
+        name,
+        JSON.parse(JSON.stringify(NODE_DEFAULTS[name])),
+        NODE_HTML[name]
+      );
+    }
+
+    // ── Brightness label ──────────────────────────────────────────────────
+    function updateBrightness(el) {
+      var label = el.closest('.df-field').querySelector('.brightness-val');
+      if (label) label.textContent = Math.round(parseInt(el.value) / 255 * 100) + '%';
+    }
+
+    // ── API ───────────────────────────────────────────────────────────────
+    function apiFetch(url, opts) {
+      return fetch(url, opts).then(function(r) { return r.json(); });
+    }
+
+    // ── Flow list ─────────────────────────────────────────────────────────
+    function loadFlowList() {
+      apiFetch('/api/flows').then(function(data) {
+        flows = data;
+        renderFlowList();
+      });
+    }
+
+    function renderFlowList() {
+      var list = document.getElementById('flow-list');
+      if (!flows.length) {
+        list.innerHTML = '<li class="flow-list-empty">Geen flows</li>';
+        return;
+      }
+      list.innerHTML = flows.map(function(f) {
+        return '<li class="flow-list-item' + (f.id === currentFlowId ? ' active' : '') + '" onclick="selectFlow(' + f.id + ')">' +
+          '<span class="flow-item-dot ' + (f.enabled ? 'dot-on' : 'dot-off') + '"></span>' +
+          '<span class="flow-item-name">' + escHtml(f.name) + '</span>' +
+          '</li>';
+      }).join('');
+    }
+
+    // ── Select flow ───────────────────────────────────────────────────────
+    function selectFlow(id) {
+      currentFlowId = id;
+      apiFetch('/api/flows/' + id).then(function(full) {
+        document.getElementById('flow-name').value = full.name;
+        document.getElementById('flow-name').disabled = false;
+        document.getElementById('flow-enabled').checked = !!full.enabled;
+        document.getElementById('enabled-label').textContent = full.enabled ? 'Actief' : 'Inactief';
+        document.getElementById('enabled-wrap').style.display = '';
+        document.getElementById('btn-delete').style.display = '';
+        document.getElementById('btn-run').style.display = '';
+        document.getElementById('btn-save').disabled = false;
+        document.getElementById('canvas-empty').style.display = 'none';
+
+        editor.clear();
+        try {
+          var parsed = JSON.parse(full.data || '{}');
+          if (parsed && parsed.drawflow) editor.import(parsed);
+        } catch(e) {}
+
+        renderFlowList();
+        // Update brightness labels for existing nodes
+        setTimeout(function() {
+          document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+        }, 50);
+      });
+    }
+
+    // ── New flow ──────────────────────────────────────────────────────────
+    document.getElementById('btn-new-flow').addEventListener('click', function() {
+      apiFetch('/api/flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Nieuwe flow' })
+      }).then(function(f) {
+        flows.push(f);
+        selectFlow(f.id);
+      });
+    });
+
+    // ── Save ──────────────────────────────────────────────────────────────
+    function save() {
+      if (!currentFlowId) return;
+      clearTimeout(saveTimeout);
+      var name    = document.getElementById('flow-name').value.trim() || 'Naamloos';
+      var enabled = document.getElementById('flow-enabled').checked;
+      var data    = JSON.stringify(editor.export());
+
+      apiFetch('/api/flows/' + currentFlowId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, enabled: enabled, data: data })
+      }).then(function() {
+        var flow = flows.find(function(f) { return f.id === currentFlowId; });
+        if (flow) { flow.name = name; flow.enabled = enabled; }
+        renderFlowList();
+        showToast('Opgeslagen \u2713');
+      });
+    }
+
+    function debouncedAutoSave() {
+      if (!currentFlowId) return;
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(function() {
+        apiFetch('/api/flows/' + currentFlowId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: JSON.stringify(editor.export()) })
+        });
+      }, 800);
+    }
+
+    document.getElementById('btn-save').addEventListener('click', save);
+
+    document.getElementById('flow-name').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') save();
+    });
+
+    document.getElementById('flow-enabled').addEventListener('change', function() {
+      document.getElementById('enabled-label').textContent = this.checked ? 'Actief' : 'Inactief';
+    });
+
+    // ── Manual run ────────────────────────────────────────────────────────
+    document.getElementById('btn-run').addEventListener('click', function() {
+      if (!currentFlowId) return;
+      // Save first, then run
+      save();
+      apiFetch('/api/flows/' + currentFlowId + '/run', { method: 'POST' })
+        .then(function(result) {
+          var count = (result.actions || []).length;
+          showToast(count ? count + ' actie(s) uitgevoerd \u26a1' : 'Geen acties uitgevoerd');
+        });
+    });
+
+    // ── Delete ────────────────────────────────────────────────────────────
+    document.getElementById('btn-delete').addEventListener('click', function() {
+      if (!currentFlowId) return;
+      var flow = flows.find(function(f) { return f.id === currentFlowId; });
+      var name = flow ? '"' + flow.name + '"' : 'deze flow';
+      if (!confirm('Flow ' + name + ' verwijderen?')) return;
+
+      apiFetch('/api/flows/' + currentFlowId, { method: 'DELETE' }).then(function() {
+        flows = flows.filter(function(f) { return f.id !== currentFlowId; });
+        currentFlowId = null;
+        editor.clear();
+
+        document.getElementById('flow-name').value = '';
+        document.getElementById('flow-name').disabled = true;
+        document.getElementById('enabled-wrap').style.display = 'none';
+        document.getElementById('btn-delete').style.display = 'none';
+        document.getElementById('btn-run').style.display = 'none';
+        document.getElementById('btn-save').disabled = true;
+        document.getElementById('canvas-empty').style.display = '';
+
+        renderFlowList();
+      });
+    });
+
+    // ── Auto-save on canvas events ────────────────────────────────────────
+    editor.on('nodeCreated',        debouncedAutoSave);
+    editor.on('nodeRemoved',        debouncedAutoSave);
+    editor.on('connectionCreated',  debouncedAutoSave);
+    editor.on('connectionRemoved',  debouncedAutoSave);
+    editor.on('nodeMoved',          debouncedAutoSave);
+    editor.on('nodeDataChanged',    debouncedAutoSave);
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    function showToast(msg) {
+      var t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(function() { t.classList.add('toast-show'); }, 10);
+      setTimeout(function() {
+        t.classList.remove('toast-show');
+        setTimeout(function() { t.remove(); }, 300);
+      }, 2200);
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────
+    loadFlowList();
+  </script>
+</body>
+</html>

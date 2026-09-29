@@ -12,12 +12,15 @@
  *     http://192.168.178.10:5000/api/p1data
  */
 
-var server = require("./server");
-var discord = require("./services/discord");
+var server     = require("./server");
+var discord    = require("./services/discord");
+var flowrunner = require("./services/flowrunner");
+var db         = require("./db/setup");
 
 var PORT = 5000;
 
 discord.init();
+flowrunner.start(db);
 
 server.listen(PORT, "0.0.0.0", function() {
   console.log("Server listening on http://0.0.0.0:" + PORT);
