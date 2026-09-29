@@ -8,7 +8,14 @@
       "WebFetch(domain:brandfetch.com)",
       "WebFetch(domain:www.homewizard.com)",
       "WebFetch(domain:helpdesk.homewizard.com)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(awk '{print $9}')",
+      "Bash(python3 *)",
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/routes /c/Users/thepu/Desktop/VloedHub/)",
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/services /c/Users/thepu/Desktop/VloedHub/)",
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/utils /c/Users/thepu/Desktop/VloedHub/)",
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/db /c/Users/thepu/Desktop/VloedHub/)",
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/public /c/Users/thepu/Desktop/VloedHub/)"
     ]
   }
 }

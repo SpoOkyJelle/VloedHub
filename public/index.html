@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang='nl'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1,viewport-fit=cover'>
+<meta name='apple-mobile-web-app-capable' content='yes'>
+<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'>
+<title>VloedHub</title>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'>
+<link rel='preconnect' href='https://fonts.googleapis.com'>
+<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+<link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' rel='stylesheet'>
+<link rel='stylesheet' href='/styles/main.css'>
+<script src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'></script>
+</head>
+<body>
+<header class='app-header'>
+  <div class='app-title'><span class='dot'></span>VloedHub</div>
+  <div class='header-right'>
+    <span class='updated-text' id='updated'>Wachten op data…</span>
+    <a href='/debug' class='icon-link' title='Debug'><i class='fa-solid fa-gear'></i></a>
+  </div>
+</header>
+<div class='screens-outer' id='screens-outer'>
+<div class='screens-track' id='screens-track'>
+
+<!-- SCREEN 0: LIVE -->
+<div class='screen screen-entering' id='screen-0'>
+  <div class='ip-row'>
+    <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
+    <span class='ip-badge' id='wan-ip-badge'><i class='fa-solid fa-globe'></i> …</span>
+  </div>
+  <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-temperature-half'></i></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-droplet'></i></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-water'></i></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-wind'></i></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div></div>
+  <div class='power-hero'>
+    <div class='power-label'>Huidig verbruik</div>
+    <div class='power-value delivered' id='del-total'>—<span class='unit'>kW</span></div>
+    <div class='power-sub' id='price-elec'>— €/kWh</div>
+  </div>
+  <div class='info-strip'>
+    <div class='info-card'>
+      <div class='info-label'>Kosten vandaag</div>
+      <div class='info-value' style='color:var(--yellow)' id='hero-cost-today'>—<span class='card-unit'>€</span></div>
+    </div>
+    <div class='info-card'>
+      <div class='info-label'>Gas</div>
+      <div class='info-value gas-c' id='gas'>—<span class='card-unit'>m³</span></div>
+      <div class='info-sub' id='price-gas'>— €/m³</div>
+    </div>
+    <div class='info-card'>
+      <div class='info-label'>Metingen</div>
+      <div class='info-value' id='stat-readings'>—</div>
+      <div class='info-sub'>vandaag</div>
+    </div>
+    <div class='info-card'><div class='info-label'>Huistemp</div><div class='info-value' id='home-temp'>—<span class='card-unit'>°C</span></div></div>
+  </div>
+  <div class='info-strip' style='grid-template-columns:repeat(3,1fr)'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledQuickToggle()'><div class='info-label'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card'><div class='info-label'>Wasbeurten</div><div class='info-value' style='color:var(--blue)' id='home-wash-total'>—</div><div class='info-sub'>totaal</div></div></div>
+  <div class='phase-row'>
+    <div class='phase-card'>
+      <div class='phase-name'>L1</div>
+      <div class='phase-power' id='del-l1'>—<span class='card-unit'>kW</span></div>
+      <div class='phase-volt' id='v-l1'>—<span class='card-unit'>V</span></div>
+      <div class='phase-amp' id='a-l1'>—<span class='card-unit'>A</span></div>
+      <div class='phase-bar-track'><div class='phase-bar-fill' id='bar-l1' style='width:0%'></div></div>
+    </div>
+    <div class='phase-card'>
+      <div class='phase-name'>L2</div>
+      <div class='phase-power' id='del-l2'>—<span class='card-unit'>kW</span></div>
+      <div class='phase-volt' id='v-l2'>—<span class='card-unit'>V</span></div>
+      <div class='phase-amp' id='a-l2'>—<span class='card-unit'>A</span></div>
+      <div class='phase-bar-track'><div class='phase-bar-fill' id='bar-l2' style='width:0%'></div></div>
+    </div>
+    <div class='phase-card'>
+      <div class='phase-name'>L3</div>
+      <div class='phase-power' id='del-l3'>—<span class='card-unit'>kW</span></div>
+      <div class='phase-volt' id='v-l3'>—<span class='card-unit'>V</span></div>
+      <div class='phase-amp' id='a-l3'>—<span class='card-unit'>A</span></div>
+      <div class='phase-bar-track'><div class='phase-bar-fill' id='bar-l3' style='width:0%'></div></div>
+    </div>
+  </div>
+  <div class='log-card'>
+    <div class='log-header'><span class='section-title'>Recente metingen</span></div>
+    <div class='log-table-wrap'>
+      <table class='log-table'>
+        <thead><tr><th>Tijd</th><th>Verbruik (kW)</th><th>Gas (m³)</th></tr></thead>
+        <tbody id='rows'></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 1: ELEKTRA -->
+<div class='screen' id='screen-1'>
+
+  <div class='chart-card'>
+    <div class='chart-header'>
+      <span class='chart-title'>Elektra verloop</span>
+      <div class='tab-bar'>
+        <button class='tab active' data-range='day' onclick='loadChart("day",this)'>Dag</button>
+        <button class='tab' data-range='week' onclick='loadChart("week",this)'>Week</button>
+        <button class='tab' data-range='month' onclick='loadChart("month",this)'>Maand</button>
+      </div>
+    </div>
+    <div class='chart-wrap'><canvas id='chart'></canvas></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Piekuren (gem. per uur)</span></div>
+    <div class='chart-wrap'><canvas id='chart-peaks'></canvas></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Weekdaggemiddelde (60 dgn)</span></div>
+    <div class='chart-wrap'><canvas id='chart-weekday'></canvas></div>
+  </div>
+
+
+  <div class='compare-grid'>
+    <div class='compare-card'>
+      <div class='compare-title'>Vandaag</div>
+      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-today-elec'>—</span></div>
+      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-today-gas'>—</span></div>
+      <div class='compare-row'><span class='compare-label'>Verwacht</span><span class='compare-value' id='cmp-today-exp' style='color:var(--yellow)'>—</span></div>
+    </div>
+    <div class='compare-card'>
+      <div class='compare-title'>Gisteren</div>
+      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-yest-elec'>—</span></div>
+      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-yest-gas'>—</span></div>
+    </div>
+    <div class='compare-card'>
+      <div class='compare-title'>Vr. week</div>
+      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-week-elec'>—</span></div>
+      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-week-gas'>—</span></div>
+    </div>
+  </div>
+  <div class='card'>
+    <div class='section-title' style='margin-bottom:0.5rem'>Geschatte kosten <span style='color:var(--dim);font-size:0.55rem;font-weight:400'>(stroom = huidig uur · gas = vandaag)</span></div>
+    <table class='cost-table'>
+      <thead><tr><th>Periode</th><th class='num'>kWh</th><th class='num'>Stroom €</th><th class='num'>m³</th><th class='num'>Gas €</th></tr></thead>
+      <tbody id='cost-rows'><tr><td colspan='5' style='color:var(--dim);padding:0.3rem 0.5rem'>Laden…</td></tr></tbody>
+    </table>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Kosten per dag (30 dgn)</span></div>
+    <div class='chart-wrap'><canvas id='chart-costs-daily'></canvas></div>
+  </div>
+  <div class='card'>
+    <div class='section-title'>Goedkoopste uren vandaag</div>
+    <div class='cheap-hours-grid' id='cheap-hours-grid'></div>
+  </div>
+
+</div>
+
+<!-- SCREEN 2: GAS -->
+<div class='screen' id='screen-2'>
+
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Faseverdeling (gem. + piek, 7 dgn)</span></div>
+    <div class='chart-wrap'><canvas id='chart-phases'></canvas></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Gas dagverbruik (30 dgn)</span></div>
+    <div class='chart-wrap'><canvas id='chart-gas'></canvas></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Gas per maand</span></div>
+    <div class='chart-wrap'><canvas id='chart-gas-monthly'></canvas></div>
+  </div>
+
+</div>
+
+<!-- SCREEN 3: INFO -->
+<div class='screen' id='screen-3'>
+
+  <div class='stats-grid'>
+    <div class='stat-card'><div class='stat-label'>Gem. verbruik vandaag</div><div class='stat-value delivered' id='stat-avg-del'>—<span class='stat-unit'>kW</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Piekverbruik vandaag</div><div class='stat-value delivered' id='stat-max-del'>—<span class='stat-unit'>kW</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Gem. spanning</div><div class='stat-value voltage' id='stat-avg-v'>—<span class='stat-unit'>V</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Meest actieve fase</div><div class='stat-value voltage' id='stat-top-phase'>—</div></div>
+    <div class='stat-card'><div class='stat-label'>Spanning min–max</div><div class='stat-value' id='stat-voltage-range'>—<span class='stat-unit'>V</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Metingen vandaag</div><div class='stat-value' id='stat-readings-info'>—</div></div>
+  </div>
+  <div class='safety-grid'>
+    <div class='stat-card'><div class='stat-label'>Spanningsdips (7 dgn)</div><div class='stat-value' id='saf-dips' style='color:var(--red)'>—</div></div>
+    <div class='stat-card'><div class='stat-label'>Max stroom L1/L2/L3</div><div class='stat-value voltage' id='saf-max-amp'>—</div></div>
+    <div class='stat-card'><div class='stat-label'>Nachtverbruik standby</div><div class='stat-value' style='color:var(--purple)' id='saf-night'>—<span class='stat-unit'>kW</span></div></div>
+    <div class='stat-card'><div class='stat-label'>CO₂ vandaag (est.)</div><div class='stat-value' id='saf-co2'>—<span class='stat-unit'>kg</span></div></div>
+  </div>
+  <div class='card'>
+    <div style='display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem'>
+      <span class='section-title'>Heatmap (uur × weekdag)</span>
+      <div class='tab-bar'>
+        <button class='tab active' data-hm='alltime' onclick='loadHeatmap("alltime",this)'>Alles</button>
+        <button class='tab' data-hm='year' onclick='loadHeatmap("year",this)'>Jaar</button>
+        <button class='tab' data-hm='month' onclick='loadHeatmap("month",this)'>Maand</button>
+        <button class='tab' data-hm='day' onclick='loadHeatmap("day",this)'>Dag</button>
+      </div>
+    </div>
+    <div class='heatmap-wrap'><div class='heatmap' id='heatmap'></div></div>
+  </div>
+
+</div>
+
+<!-- SCREEN 4: THUIS -->
+<div class='screen' id='screen-4'>
+<div class='section-title'>Wasmachine</div>
+<div class='wash-status-pill idle' id='wash-status-pill'><i class='fa-solid fa-moon' id='wash-status-icon'></i><span id='wash-status-text'>Laden…</span></div><div class='power-hero'><div class='power-label'>Totaal wasbeurten</div><div class='power-value' style='color:var(--blue)' id='wash-total'>—</div><div class='power-sub' id='wash-last'>Laatste: —</div></div><div class='stats-grid'><div class='stat-card'><div class='stat-label'>Vandaag</div><div class='stat-value' id='wash-today'>—</div></div><div class='stat-card'><div class='stat-label'>Deze week</div><div class='stat-value' id='wash-week'>—</div></div><div class='stat-card'><div class='stat-label'>Deze maand</div><div class='stat-value' id='wash-month'>—</div></div></div><div class='chart-card'><div class='chart-header'><span class='chart-title'>Wasbeurten per weekdag</span></div><div class='chart-wrap'><canvas id='chart-wash-weekday'></canvas></div></div><div class='log-card'><div class='log-header'><span class='section-title'>Recente wasbeurten</span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Tijd</th><th>Apparaat</th></tr></thead><tbody id='wash-rows'></tbody></table></div></div>
+<div class='section-title'>Temperatuur</div>
+<div class='temp-grid' id='temp-grid'></div><div class='chart-card'><div class='chart-header'><span class='chart-title'>Temperatuurverloop</span><div class='tab-bar'><button class='tab active' data-temprange='day' onclick='loadTempChart("day",this)'>Dag</button><button class='tab' data-temprange='week' onclick='loadTempChart("week",this)'>Week</button><button class='tab' data-temprange='month' onclick='loadTempChart("month",this)'>Maand</button></div></div><div class='chart-wrap'><canvas id='chart-temp'></canvas></div></div>
+<div class='section-title'>LED Strip</div>
+<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem'><div><div class='power-label'>LED Strip</div><div style='font-size:1.4rem;font-weight:700;color:var(--pl)' id='led-effect-name'>—</div></div><button id='led-onoff' onclick='ledToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button></div><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led-brightness' oninput='ledBrightness(this.value)' style='flex:1;accent-color:#A855F7'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led-brightness-val'>180</span></div></div><div id='led-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led-color' value='#ffffff' oninput='ledSetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'></div>
+<div class='section-title'>Ledstrip Keuken</div>
+<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem'><div><div class='power-label'>Ledstrip Keuken</div><div style='font-size:1.4rem;font-weight:700;color:var(--pl)' id='led2-effect-name'>—</div></div><button id='led2-onoff' onclick='led2Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button></div><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led2-brightness' oninput='led2Brightness(this.value)' style='flex:1;accent-color:#A855F7'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led2-brightness-val'>180</span></div></div><div id='led2-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led2-color' value='#ffffff' oninput='led2SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led2-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'></div>
+</div>
+</div><!-- /screens-track -->
+</div><!-- /screens-outer -->
+
+<nav class='bottom-nav'>
+  <button class='nav-item active' data-screen='0' onclick='showScreen(0,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-house'></i></span><span class='nav-label'>Home</span>
+  </button>
+  <button class='nav-item' data-screen='1' onclick='showScreen(1,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-bolt'></i></span><span class='nav-label'>Elektra</span>
+  </button>
+  <button class='nav-item' data-screen='2' onclick='showScreen(2,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-fire'></i></span><span class='nav-label'>Gas</span>
+  </button>
+  <button class='nav-item' data-screen='3' onclick='showScreen(3,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-chart-column'></i></span><span class='nav-label'>Info</span>
+  </button>
+  <button class='nav-item' data-screen='4' onclick='showScreen(4,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-couch'></i></span><span class='nav-label'>Thuis</span>
+  </button>
+</nav>
+
+<script>
+// ── Screen navigation ──
+var currentScreen = 0;
+var screenTrack = document.getElementById('screens-track');
+var screenLoaded = [true, false, false, false, false];
+
+function showScreen(n, btn, fromSwipe) {
+  currentScreen = n;
+  screenTrack.style.transition = fromSwipe
+    ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
+    : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
+  screenTrack.style.transform = 'translateX(calc(-' + (100/5) + '% * ' + n + '))';
+  document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    var nb = document.querySelector('.nav-item[data-screen="' + n + '"]');
+    if (nb) nb.classList.add('active');
+  }
+  var screenEl = document.getElementById('screen-' + n);
+  if (screenEl) {
+    screenEl.classList.add('screen-entering');
+    setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
+  }
+  if (!screenLoaded[n]) {
+    screenLoaded[n] = true;
+    if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); refreshCosts(); refreshComparison(); loadCostsDaily(); refreshCheapHours(); }
+    if (n === 2) { loadPhaseChart(); loadGasDaily(); loadGasMonthly(); }
+    if (n === 3) { refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
+    if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); buildLedGrid(); refreshLedState(); buildLed2Grid(); refreshLed2State(); }
+  }
+}
+
+// ── Touch swipe ──
+var touchX0 = 0, touchY0 = 0, isSwiping = false;
+var outerEl = document.getElementById('screens-outer');
+outerEl.addEventListener('touchstart', function(e) {
+  touchX0 = e.touches[0].clientX;
+  touchY0 = e.touches[0].clientY;
+  isSwiping = false;
+}, {passive: true});
+outerEl.addEventListener('touchmove', function(e) {
+  var dx = e.touches[0].clientX - touchX0;
+  var dy = e.touches[0].clientY - touchY0;
+  if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }
+  if (isSwiping) {
+    var pct = (currentScreen * (100/5)) - (dx / window.innerWidth * (100/5));
+    pct = Math.max(0, Math.min(400/5, pct));
+    screenTrack.style.transition = 'none';
+    screenTrack.style.transform = 'translateX(-' + pct + '%)';
+  }
+}, {passive: true});
+outerEl.addEventListener('touchend', function(e) {
+  var dx = e.changedTouches[0].clientX - touchX0;
+  if (isSwiping) {
+    if (dx < -50 && currentScreen < 4) showScreen(currentScreen + 1, null, true);
+    else if (dx > 50 && currentScreen > 0) showScreen(currentScreen - 1, null, true);
+    else showScreen(currentScreen, null, true);
+  }
+  isSwiping = false;
+}, {passive: true});
+
+// ── Ripple on nav ──
+function addRipple(btn, e) {
+  var rect = btn.getBoundingClientRect();
+  var x = (e.clientX !== undefined ? e.clientX : rect.left + rect.width / 2) - rect.left;
+  var y = (e.clientY !== undefined ? e.clientY : rect.top + rect.height / 2) - rect.top;
+  var r = document.createElement('div');
+  r.className = 'ripple-circle';
+  r.style.left = x + 'px';
+  r.style.top = y + 'px';
+  btn.appendChild(r);
+  setTimeout(function() { if (r.parentNode) r.parentNode.removeChild(r); }, 500);
+}
+document.querySelectorAll('.nav-item').forEach(function(btn) {
+  btn.addEventListener('click', function(e) { addRipple(btn, e); });
+});
+
+// ── Value flash ──
+function flashEl(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+  setTimeout(function() { el.classList.remove('flash'); }, 500);
+}
+
+// ── WAN IP ──
+fetch('/api/network-info').then(function(r) { return r.json(); }).then(function(d) {
+  var el = document.getElementById('wan-ip-badge');
+  if (el) el.innerHTML = '<i class="fa-solid fa-globe"></i> ' + d.wan;
+}).catch(function() {});
+
+// ── Helpers ──
+function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '—'; }
+function setEl(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
+function setCard(id, v, dec, unit) {
+  setEl(id, val(v, dec) + '<span class="card-unit">' + unit + '</span>');
+}
+
+// ── Live refresh ──
+var lastPowerVal = null;
+function refresh() {
+  fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {
+    var l = d.latest;
+    if (!l) return;
+    if (lastPowerVal !== null && Math.abs(l.power_delivered_total_kw - lastPowerVal) > 0.01) flashEl('del-total');
+    lastPowerVal = l.power_delivered_total_kw;
+    setCard('del-total', l.power_delivered_total_kw, 3, 'kW');
+    setCard('gas',       l.gas_m3,                  3, 'm³');
+    setCard('del-l1', l.power_delivered_l1_kw, 3, 'kW');
+    setCard('del-l2', l.power_delivered_l2_kw, 3, 'kW');
+    setCard('del-l3', l.power_delivered_l3_kw, 3, 'kW');
+    setCard('v-l1', l.voltage_l1, 1, 'V');
+    setCard('v-l2', l.voltage_l2, 1, 'V');
+    setCard('v-l3', l.voltage_l3, 1, 'V');
+    setCard('a-l1', l.current_l1, 0, 'A');
+    setCard('a-l2', l.current_l2, 0, 'A');
+    setCard('a-l3', l.current_l3, 0, 'A');
+    var p1 = l.power_delivered_l1_kw || 0;
+    var p2 = l.power_delivered_l2_kw || 0;
+    var p3 = l.power_delivered_l3_kw || 0;
+    var pMax = Math.max(p1, p2, p3, 0.001);
+    var b1 = document.getElementById('bar-l1'); if (b1) b1.style.width = Math.round(p1/pMax*100) + '%';
+    var b2 = document.getElementById('bar-l2'); if (b2) b2.style.width = Math.round(p2/pMax*100) + '%';
+    var b3 = document.getElementById('bar-l3'); if (b3) b3.style.width = Math.round(p3/pMax*100) + '%';
+    var updEl = document.getElementById('updated');
+    if (updEl) {
+      var age = Math.round((Date.now() - new Date(l.received_at).getTime()) / 1000);
+      updEl.textContent = new Date(l.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + ' (' + age + 's)';
+      updEl.style.color = age > 60 ? '#F87171' : age > 30 ? '#FBBF24' : '#3D4D6A';
+    }
+    var html = '';
+    for (var i = 0; i < d.recent.length; i++) {
+      var rec = d.recent[i];
+      html += '<tr><td>' + new Date(rec.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + '</td>' +
+        '<td>' + val(rec.power_delivered_total_kw) + '</td>' +
+        '<td>' + val(rec.gas_m3) + '</td></tr>';
+    }
+    setEl('rows', html);
+  }).catch(function(e) { console.error('[refresh]', e); });
+  updateHomeLedStatus();
+  updateHomeLed2Status();
+}
+refresh();
+setInterval(refresh, 3000);
+
+// ── Chart ──
+var chart = null;
+function loadChart(range, btn) {
+  document.querySelectorAll('[data-range]').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  fetch('/api/history?range=' + range).then(function(r) { return r.json(); }).then(function(rows) {
+    var labels = rows.map(function(r) { return r.period; });
+    var del    = rows.map(function(r) { return r.del != null ? Number(r.del).toFixed(3) : null; });
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: { labels: labels, datasets: [
+        { label: 'Verbruik (kW)', data: del, borderColor: '#A855F7', backgroundColor: 'rgba(168,85,247,0.1)', tension: 0.3, pointRadius: 2, fill: true }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } },
+        scales: {
+          x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        }
+      }
+    });
+  }).catch(function() {});
+}
+
+function eur(v) { return v != null ? '€' + Number(v).toFixed(2) : '—'; }
+function num(v, d) { return v != null ? Number(v).toFixed(d != null ? d : 3) : '—'; }
+
+// ── Costs ──
+function refreshCosts() {
+  fetch('/api/costs').then(function(r) { return r.json(); }).then(function(c) {
+    var rows = [['Uur','hour'],['Dag','day'],['Week','week'],['Maand','month']];
+    setEl('cost-rows', rows.map(function(r) {
+      var d = c[r[1]];
+      return '<tr><td>' + r[0] + '</td><td class="num">' + num(d.elec_kwh) + '</td><td class="num">' + eur(d.elec_cost) + '</td><td class="num">' + num(d.gas_m3) + '</td><td class="num">' + eur(d.gas_cost) + '</td></tr>';
+    }).join(''));
+    var day = c.day;
+    if (day && (day.elec_cost != null || day.gas_cost != null)) {
+      var total = (day.elec_cost || 0) + (day.gas_cost || 0);
+      setEl('hero-cost-today', '€' + total.toFixed(2) + '<span class="card-unit">/dag</span>');
+    }
+  }).catch(function() {});
+}
+refreshCosts();
+setInterval(refreshCosts, 60000);
+
+// ── Prices ──
+function refreshPrices() {
+  fetch('/api/prices').then(function(r) { return r.json(); }).then(function(p) {
+    if (p.electricity_eur_kwh != null)
+      setEl('price-elec', Number(p.electricity_eur_kwh).toFixed(4) + '<span class="card-unit">€/kWh</span>');
+    if (p.gas_eur_m3 != null)
+      setEl('price-gas', Number(p.gas_eur_m3).toFixed(4) + '<span class="card-unit">€/m³</span>');
+  }).catch(function() {});
+}
+refreshPrices();
+setInterval(refreshPrices, 900000);
+
+// ── Weather ──
+function refreshWeather() { fetch('/api/weather').then(function(r){return r.json();}).then(function(w) { if (!w || w.temp == null) return; setEl('weather-icon', '<i class="fa-solid fa-' + w.icon + '"></i>'); setEl('weather-desc', w.condition); setEl('weather-temp', Math.round(w.temp) + '°'); setEl('weather-feels', Math.round(w.feels_like) + '°C'); setEl('weather-precip', (w.precipitation_probability != null ? w.precipitation_probability : '—') + '%'); setEl('weather-humidity', w.humidity + '%'); setEl('weather-wind', Math.round(w.wind_speed) + ' km/h'); }).catch(function(){}); }
+refreshWeather();
+setInterval(refreshWeather, 900000);
+function refreshHomeTemp() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows) { var vals = rows.map(function(r){ return r.temp_c; }).filter(function(v){ return v != null; }); if (!vals.length) return; var avg = vals.reduce(function(a,b){ return a+b; }, 0) / vals.length; setCard('home-temp', avg, 1, '°C'); }).catch(function(){}); }
+refreshHomeTemp();
+setInterval(refreshHomeTemp, 60000);
+
+// ── Stats ──
+function refreshStats() {
+  fetch('/api/stats').then(function(r) { return r.json(); }).then(function(s) {
+    if (!s || s.avg_del == null) return;
+    setEl('stat-avg-del', num(s.avg_del, 3) + '<span class="stat-unit">kW</span>');
+    setEl('stat-max-del', num(s.max_del, 3) + '<span class="stat-unit">kW</span>');
+    var phases = [['L1', s.avg_l1], ['L2', s.avg_l2], ['L3', s.avg_l3]];
+    var top = phases.filter(function(p) { return p[1] != null; }).sort(function(a,b) { return b[1]-a[1]; })[0];
+    var topEl = document.getElementById('stat-top-phase'); if (topEl) topEl.textContent = top ? top[0] : '—';
+    if (s.min_v1 != null && s.max_v1 != null) {
+      setEl('stat-voltage-range', num(s.min_v1,1) + '–' + num(s.max_v1,1) + '<span class="stat-unit">V</span>');
+      setEl('stat-avg-v', num((s.min_v1+s.max_v1)/2,1) + '<span class="stat-unit">V</span>');
+    }
+    var rd = s.total_readings != null ? s.total_readings : '—';
+    var rdEl = document.getElementById('stat-readings'); if (rdEl) rdEl.textContent = rd;
+    var rdEl2 = document.getElementById('stat-readings-info'); if (rdEl2) rdEl2.textContent = rd;
+  }).catch(function() {});
+}
+refreshStats();
+setInterval(refreshStats, 30000);
+
+// ── Peaks ──
+var chartPeaks = null;
+function loadPeaks() {
+  fetch('/api/peaks').then(function(r) { return r.json(); }).then(function(rows) {
+    var byHour = {};
+    rows.forEach(function(r) { byHour[parseInt(r.hour,10)] = r; });
+    var labels = [], delData = [], counts = [];
+    for (var h = 0; h < 24; h++) {
+      labels.push(h + ':00');
+      var d = byHour[h];
+      delData.push(d && d.avg_del != null ? Number(d.avg_del).toFixed(3) : 0);
+      counts.push(d ? d.n : 0);
+    }
+    if (chartPeaks) chartPeaks.destroy();
+    chartPeaks = new Chart(document.getElementById('chart-peaks'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [
+        { label: 'Gem. verbruik (kW)', data: delData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } } },
+        scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } }
+      }
+    });
+  }).catch(function() {});
+}
+
+// ── Phase chart ──
+var chartPhases = null;
+function loadPhaseChart() {
+  fetch('/api/phase-stats').then(function(r) { return r.json(); }).then(function(s) {
+    if (!s || s.avg_l1 == null) return;
+    if (chartPhases) chartPhases.destroy();
+    chartPhases = new Chart(document.getElementById('chart-phases'), {
+      type: 'bar',
+      data: { labels: ['L1','L2','L3'], datasets: [
+        { label: 'Gemiddeld (kW)', data: [s.avg_l1,s.avg_l2,s.avg_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(168,85,247,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'], borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },
+        { label: 'Piek (kW)', data: [s.max_l1,s.max_l2,s.max_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(168,85,247,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'], borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }, y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }).catch(function() {});
+}
+
+// ── Gas daily ──
+var chartGas = null;
+function loadGasDaily() {
+  fetch('/api/gas-daily').then(function(r) { return r.json(); }).then(function(rows) {
+    var labels = rows.map(function(r) { return r.day.slice(5); });
+    var data   = rows.map(function(r) { return r.gas_used != null ? Number(r.gas_used).toFixed(3) : 0; });
+    if (chartGas) chartGas.destroy();
+    chartGas = new Chart(document.getElementById('chart-gas'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+    });
+  }).catch(function() {});
+}
+
+// ── Day comparison ──
+function refreshComparison() {
+  fetch('/api/day-comparison').then(function(r){return r.json();}).then(function(c) {
+    var t = c.today, y = c.yesterday, w = c.lastweek;
+    function kwh(v) { return v != null ? num(v,2)+' kWh' : '—'; }
+    function m3(v)  { return v != null ? num(v,3)+' m³' : '—'; }
+    function delta(now, ref) {
+      if (now == null || ref == null || ref === 0) return '';
+      var pct = ((now - ref) / ref * 100);
+      var cls = pct > 5 ? 'delta-up' : pct < -5 ? 'delta-down' : 'delta-same';
+      return '<span class="'+cls+'">'+(pct>0?'+':'')+pct.toFixed(0)+'%</span>';
+    }
+    setEl('cmp-today-elec', kwh(t && t.elec_kwh) + delta(t && t.elec_kwh, y && y.elec_kwh));
+    setEl('cmp-today-gas',  m3(t && t.gas_used)  + delta(t && t.gas_used,  y && y.gas_used));
+    setEl('cmp-yest-elec',  kwh(y && y.elec_kwh));
+    setEl('cmp-yest-gas',   m3(y && y.gas_used));
+    setEl('cmp-week-elec',  kwh(w && w.elec_kwh));
+    setEl('cmp-week-gas',   m3(w && w.gas_used));
+    if (t && t.elec_kwh != null) {
+      var h = new Date().getHours() + new Date().getMinutes()/60;
+      if (h > 0) setEl('cmp-today-exp', '~' + num(t.elec_kwh/h*24,2) + ' kWh/dag');
+    }
+  }).catch(function(){});
+}
+
+// ── Safety ──
+function refreshSafety() {
+  fetch('/api/voltage-dips').then(function(r){return r.json();}).then(function(s) {
+    if (!s) return;
+    var dipsEl = document.getElementById('saf-dips');
+    if (dipsEl) { dipsEl.textContent = s.dips != null ? s.dips : '—'; dipsEl.style.color = (s.dips > 0) ? '#F87171' : '#4ADE80'; }
+    if (s.max_a1 != null) setEl('saf-max-amp', num(s.max_a1,0)+'A / '+num(s.max_a2,0)+'A / '+num(s.max_a3,0)+'A<span class="stat-unit"> max</span>');
+  }).catch(function(){});
+  fetch('/api/night-usage').then(function(r){return r.json();}).then(function(s) {
+    if (!s) return;
+    if (s.night_avg != null) setEl('saf-night', num(s.night_avg,3)+'<span class="stat-unit">kW</span>');
+  }).catch(function(){});
+  fetch('/api/stats').then(function(r){return r.json();}).then(function(s) {
+    if (!s || s.avg_del == null) return;
+    var h = new Date().getHours() + new Date().getMinutes()/60;
+    var co2 = s.avg_del * h * 0.4;
+    setEl('saf-co2', num(co2,2)+'<span class="stat-unit">kg</span>');
+  }).catch(function(){});
+}
+
+// ── Wasmachine ──
+var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(56,189,248,0.55)', borderColor: '#38BDF8', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } } }); }).catch(function(){}); }
+
+function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste: ' + (s.last_finished_at ? new Date(s.last_finished_at).toLocaleString('nl-NL', {hour12:false}) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + new Date(r.finished_at).toLocaleString('nl-NL', {hour12:false}) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
+function refreshTemperature() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('temp-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">' + r.room + '</div><div class="temp-value">' + (r.temp_c != null ? Number(r.temp_c).toFixed(1) : '—') + '°C</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
+var chartTemp = null;
+function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#A855F7','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', tension: 0.3, pointRadius: 2, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } }); }).catch(function(){}); }
+function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? new Date(s.since).toLocaleString('nl-NL', {hour12:false}) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
+
+// ── Cheap hours ──
+function refreshCheapHours() {
+  fetch('/api/prices').then(function(r){return r.json();}).then(function(p) {
+    var grid = document.getElementById('cheap-hours-grid');
+    if (!grid) return;
+    if (p.electricity_eur_kwh != null) {
+      var price = p.electricity_eur_kwh;
+      var now = new Date().getHours();
+      var html = '<div style="font-size:0.7rem;color:#94A3B8;width:100%">Huidig uur (' + now + ':00): <strong style="color:#FBBF24">€' + price.toFixed(4) + '/kWh</strong></div>';
+      html += '<div style="font-size:0.62rem;color:#3D4D6A;width:100%;margin-top:0.3rem">Tip: plan grote apparaten in de avond (vaak lager tarief)</div>';
+      grid.innerHTML = html;
+    }
+  }).catch(function(){});
+}
+
+// ── Weekday chart ──
+var chartWeekday = null;
+function loadWeekdayChart() {
+  fetch('/api/weekday-avg').then(function(r){return r.json();}).then(function(rows) {
+    var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+    var byDow = {};
+    rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; });
+    var labels = [], data = [];
+    for (var d = 0; d < 7; d++) {
+      labels.push(dayNames[d]);
+      var r = byDow[d];
+      data.push(r && r.avg_del != null ? Number(r.avg_del).toFixed(3) : 0);
+    }
+    if (chartWeekday) chartWeekday.destroy();
+    chartWeekday = new Chart(document.getElementById('chart-weekday'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ label: 'Gem. verbruik (kW)', data: data, backgroundColor: ['rgba(168,85,247,0.4)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.4)'], borderColor: '#A855F7', borderWidth: 1, borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+    });
+  }).catch(function(){});
+}
+
+// ── Heatmap ──
+function loadHeatmap(range, btn) {
+  document.querySelectorAll('[data-hm]').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  fetch('/api/heatmap?range=' + (range || 'alltime')).then(function(r){return r.json();}).then(function(rows) {
+    var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+    var grid = {}, maxVal = 0;
+    rows.forEach(function(r) {
+      var v = r.avg_del != null ? Number(r.avg_del) : 0;
+      grid[r.dow + '_' + parseInt(r.hour,10)] = v;
+      if (v > maxVal) maxVal = v;
+    });
+    if (maxVal === 0) maxVal = 1;
+    var html = '<div class="hm-label"></div>';
+    for (var h = 0; h < 24; h++) html += '<div class="hm-hour-label">' + h + '</div>';
+    for (var d = 0; d < 7; d++) {
+      html += '<div class="hm-label">' + dayNames[d] + '</div>';
+      for (var h = 0; h < 24; h++) {
+        var v = grid[d + '_' + h] || 0;
+        var ratio = v / maxVal;
+        var r2 = Math.round(168 + ratio*(248-168)), g2 = Math.round(85 - ratio*85), b2 = Math.round(247 - ratio*100);
+        var alpha = 0.1 + ratio*0.8;
+        var bg = 'rgba('+r2+','+g2+','+b2+','+alpha.toFixed(2)+')';
+        html += '<div class="hm-cell" style="background:'+bg+'" title="'+dayNames[d]+' '+h+':00 — '+v.toFixed(3)+' kW"></div>';
+      }
+    }
+    var hmEl = document.getElementById('heatmap'); if (hmEl) hmEl.innerHTML = html;
+  }).catch(function(){});
+}
+
+// ── Daily costs chart ──
+var chartCostsDaily = null;
+function loadCostsDaily() {
+  fetch('/api/costs-daily').then(function(r){return r.json();}).then(function(rows) {
+    var labels  = rows.map(function(r){ return r.day.slice(5); });
+    var elecD   = rows.map(function(r){ return r.elec_cost != null ? Number(r.elec_cost).toFixed(2) : 0; });
+    var gasD    = rows.map(function(r){ return r.gas_cost  != null ? Number(r.gas_cost).toFixed(2)  : 0; });
+    if (chartCostsDaily) chartCostsDaily.destroy();
+    chartCostsDaily = new Chart(document.getElementById('chart-costs-daily'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [
+        { label: 'Stroom (€)', data: elecD, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3, stack: 'cost' },
+        { label: 'Gas (€)',    data: gasD,  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+    });
+  }).catch(function(){});
+}
+
+// ── Gas monthly ──
+var chartGasMonthly = null;
+function loadGasMonthly() {
+  fetch('/api/gas-monthly').then(function(r){return r.json();}).then(function(rows) {
+    var labels = rows.map(function(r){ return r.month; });
+    var data   = rows.map(function(r){ return r.gas_used != null ? Number(r.gas_used).toFixed(2) : 0; });
+    if (chartGasMonthly) chartGasMonthly.destroy();
+    chartGasMonthly = new Chart(document.getElementById('chart-gas-monthly'), {
+      type: 'bar',
+      data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+    });
+  }).catch(function(){});
+}
+
+// ── Periodic refresh for non-active screens ──
+setInterval(function() {
+  if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshCosts(); refreshComparison(); }
+  if (currentScreen === 2) { loadPhaseChart(); loadGasDaily(); }
+  if (currentScreen === 3) { refreshStats(); refreshSafety(); }
+  if (currentScreen === 4) { refreshWasmachine(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); }
+}, 60000);
+setInterval(function() {
+  if (currentScreen === 1) { loadPeaks(); loadWeekdayChart(); loadCostsDaily(); }
+  if (currentScreen === 2) { loadGasMonthly(); }
+  if (currentScreen === 3) { var hb = document.querySelector('[data-hm].active'); loadHeatmap(hb ? hb.dataset.hm : 'alltime', hb || null); }
+  if (currentScreen === 4) { loadWashWeekdayChart(); }
+}, 300000);
+// ── LED Strip ──
+var LED_EFFECTS = ['Warm Wit','Ijs Wit','Rainbow','Rainbow Wave','Fade Aan/Uit','Confetti','Vuur','Meteor Regen','Twinkle','Politielichten','Eigen kleur'];
+var ledClientState = {on: true, effect: 0, brightness: 180, color: {r:255,g:255,b:255}};
+
+function buildLedGrid() {
+  if (typeof LED_EFFECTS === 'undefined') return;
+  var grid = document.getElementById('led-effects-grid');
+  if (!grid || grid.children.length) return;
+  var _h = '';
+  for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
+    _h += '<button data-idx=' + _i + ' id=led-btn-' + _i + ' style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+  }
+  grid.innerHTML = _h;
+  grid.onclick = function(e) { var b = e.target.closest('button'); if (b && b.dataset && b.dataset.idx !== undefined) ledSetEffect(parseInt(b.dataset.idx)); };
+  updateLedUI();
+}
+
+function updateLedUI() {
+  var onBtn = document.getElementById('led-onoff');
+  if (onBtn) { onBtn.textContent = ledClientState.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState.on ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState.on ? 'var(--pl)' : 'var(--muted)'; }
+  var nameEl = document.getElementById('led-effect-name');
+  if (nameEl) nameEl.textContent = ledClientState.on ? LED_EFFECTS[ledClientState.effect] : 'Uit';
+  LED_EFFECTS.forEach(function(_, i) {
+    var btn = document.getElementById('led-btn-' + i);
+    if (!btn) return;
+    var active = i === ledClientState.effect && ledClientState.on;
+    btn.style.background = active ? 'rgba(168,85,247,0.2)' : 'var(--surface)';
+    btn.style.borderColor = active ? 'rgba(168,85,247,0.6)' : 'var(--border)';
+    btn.style.color = active ? 'var(--pl)' : 'var(--text)';
+  });
+  var bEl = document.getElementById('led-brightness'); if (bEl) bEl.value = ledClientState.brightness;
+  var bVal = document.getElementById('led-brightness-val'); if (bVal) bVal.textContent = ledClientState.brightness;
+  var colorRow = document.getElementById('led-color-row'); if (colorRow) colorRow.style.display = (ledClientState.effect === LED_EFFECTS.length - 1) ? 'flex' : 'none';
+  var colorEl = document.getElementById('led-color'); if (colorEl && ledClientState.color) { var toHex = function(v){ return ('0'+Number(v).toString(16)).slice(-2); }; colorEl.value = '#' + toHex(ledClientState.color.r) + toHex(ledClientState.color.g) + toHex(ledClientState.color.b); }
+}
+
+function ledToggle() { ledClientState.on = !ledClientState.on; ledSend(); }
+function ledSetEffect(n) { ledClientState.effect = n; ledClientState.on = true; ledSend(); }
+function ledSetColor(hex) { var r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16); ledClientState.color = {r:r,g:g,b:b}; ledClientState.effect = LED_EFFECTS.length - 1; ledClientState.on = true; ledSend(); }
+function ledBrightness(v) { ledClientState.brightness = parseInt(v); var bVal = document.getElementById('led-brightness-val'); if (bVal) bVal.textContent = v; ledSend(); }
+
+function ledSend() {
+  fetch('/api/led/state', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ledClientState)})
+    .then(function(r){return r.json();}).then(function(s) { ledClientState = s; updateLedUI(); }).catch(function(){});
+}
+
+function refreshLedState() {
+  fetch('/api/led/state').then(function(r){return r.json();}).then(function(s) { ledClientState = s; updateLedUI(); }).catch(function(){});
+}
+function ledQuickToggle() {
+  ledClientState.on = !ledClientState.on;
+  fetch('/api/led/state', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ledClientState)})
+    .then(function(r){return r.json();}).then(function(s) { ledClientState = s; updateHomeLedStatus(); }).catch(function(){});
+}
+function updateHomeLedStatus() {
+  if (!ledClientState) return;
+  var el = document.getElementById('home-led-status');
+  if (el) el.textContent = ledClientState.on ? 'AAN' : 'UIT';
+}
+
+var ledClientState2 = {on: true, effect: 0, brightness: 180, color: {r:255,g:255,b:255}};
+
+function buildLed2Grid() {
+  if (typeof LED_EFFECTS === 'undefined') return;
+  var grid = document.getElementById('led2-effects-grid');
+  if (!grid || grid.children.length) return;
+  var _h = '';
+  for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
+    _h += '<button data-idx=' + _i + ' id=led2-btn-' + _i + ' style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+  }
+  grid.innerHTML = _h;
+  grid.onclick = function(e) { var b = e.target.closest('button'); if (b && b.dataset && b.dataset.idx !== undefined) led2SetEffect(parseInt(b.dataset.idx)); };
+  updateLed2UI();
+}
+
+function updateLed2UI() {
+  var onBtn = document.getElementById('led2-onoff');
+  if (onBtn) { onBtn.textContent = ledClientState2.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState2.on ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState2.on ? 'var(--pl)' : 'var(--muted)'; }
+  var nameEl = document.getElementById('led2-effect-name');
+  if (nameEl) nameEl.textContent = ledClientState2.on ? LED_EFFECTS[ledClientState2.effect] : 'Uit';
+  LED_EFFECTS.forEach(function(_, i) {
+    var btn = document.getElementById('led2-btn-' + i);
+    if (!btn) return;
+    var active = i === ledClientState2.effect && ledClientState2.on;
+    btn.style.background = active ? 'rgba(168,85,247,0.2)' : 'var(--surface)';
+    btn.style.borderColor = active ? 'rgba(168,85,247,0.6)' : 'var(--border)';
+    btn.style.color = active ? 'var(--pl)' : 'var(--text)';
+  });
+  var bEl = document.getElementById('led2-brightness'); if (bEl) bEl.value = ledClientState2.brightness;
+  var bVal = document.getElementById('led2-brightness-val'); if (bVal) bVal.textContent = ledClientState2.brightness;
+  var colorRow = document.getElementById('led2-color-row'); if (colorRow) colorRow.style.display = (ledClientState2.effect === LED_EFFECTS.length - 1) ? 'flex' : 'none';
+  var colorEl = document.getElementById('led2-color'); if (colorEl && ledClientState2.color) { var toHex = function(v){ return ('0'+Number(v).toString(16)).slice(-2); }; colorEl.value = '#' + toHex(ledClientState2.color.r) + toHex(ledClientState2.color.g) + toHex(ledClientState2.color.b); }
+}
+
+function led2Toggle() { ledClientState2.on = !ledClientState2.on; led2Send(); }
+function led2SetEffect(n) { ledClientState2.effect = n; ledClientState2.on = true; led2Send(); }
+function led2SetColor(hex) { var r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16); ledClientState2.color = {r:r,g:g,b:b}; ledClientState2.effect = LED_EFFECTS.length - 1; ledClientState2.on = true; led2Send(); }
+function led2Brightness(v) { ledClientState2.brightness = parseInt(v); var bVal = document.getElementById('led2-brightness-val'); if (bVal) bVal.textContent = v; led2Send(); }
+
+function led2Send() {
+  fetch('/api/led/state?device=keuken', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ledClientState2)})
+    .then(function(r){return r.json();}).then(function(s) { ledClientState2 = s; updateLed2UI(); }).catch(function(){});
+}
+
+function refreshLed2State() {
+  fetch('/api/led/state?device=keuken').then(function(r){return r.json();}).then(function(s) { ledClientState2 = s; updateLed2UI(); }).catch(function(){});
+}
+function ledKeukenQuickToggle() {
+  ledClientState2.on = !ledClientState2.on;
+  fetch('/api/led/state?device=keuken', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ledClientState2)})
+    .then(function(r){return r.json();}).then(function(s) { ledClientState2 = s; updateHomeLed2Status(); }).catch(function(){});
+}
+function updateHomeLed2Status() {
+  if (!ledClientState2) return;
+  var el = document.getElementById('home-led-keuken-status');
+  if (el) el.textContent = ledClientState2.on ? 'AAN' : 'UIT';
+}
+</script>
+</body>
+</html>
