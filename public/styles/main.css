@@ -744,3 +744,17 @@ to {
 .safety-grid {
   grid-template-columns:repeat(4,1fr)}
 }
+.effect-btn {
+  padding:0.75rem 0.5rem;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.15);
+  background:#1C2140;
+  color:#F1F5F9;
+  font-family:inherit;
+  font-size:0.72rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent;
+  text-align:center;
+}
