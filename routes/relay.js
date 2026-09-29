@@ -24,6 +24,7 @@ module.exports = function(req, res) {
     readBody(req, function(err, body) {
       var rs = state.getRelayState(device);
       if (body.on !== undefined) rs.on = !!body.on;
+      state.saveState();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(rs));
     });

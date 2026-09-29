@@ -385,8 +385,6 @@ function refresh() {
 }
 refresh();
 setInterval(refresh, 3000);
-// Build LED effect grids immediately on page load (divs exist in HTML from the start)
-buildLedGrid(); buildLed2Grid(); buildLed3Grid();
 // Pre-load LED/relay states
 fetch('/api/led/state').then(function(r){return r.json();}).then(function(s){ledClientState=s;updateLedUI();updateHomeLedStatus();}).catch(function(){});
 fetch('/api/led/state?device=keuken').then(function(r){return r.json();}).then(function(s){ledClientState2=s;updateLed2UI();updateHomeLed2Status();}).catch(function(){});
@@ -908,6 +906,8 @@ function refreshRelayGangState() {
   fetch('/api/relay/state?device=gang').then(function(r){return r.json();}).then(function(s) { relayGangState = s; updateRelayGangUI(); }).catch(function(){});
 }
 function relayGangQuickToggle() { relayGangState.on = !relayGangState.on; relayGangSend(); }
+// Build effect grids now — LED_EFFECTS and all functions are defined above
+buildLedGrid(); buildLed2Grid(); buildLed3Grid();
 </script>
 </body>
 </html>

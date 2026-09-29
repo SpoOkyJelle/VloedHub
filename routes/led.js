@@ -26,6 +26,7 @@ module.exports = function(req, res) {
           ledStateP.color = { r: clamp255(d.color.r), g: clamp255(d.color.g), b: clamp255(d.color.b) };
         }
       } catch(e) {}
+      state.saveState();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(ledStateP));
     });
