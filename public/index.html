@@ -719,7 +719,7 @@ function buildLedGrid() {
   grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button id="led-btn-' + _i + '" onclick="ledSetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led-btn-' + _i + '" onclick="ledSetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:#1C2140;color:#F1F5F9;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
   updateLedUI();
@@ -734,9 +734,9 @@ function updateLedUI() {
     var btn = document.getElementById('led-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState.effect && ledClientState.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.2)' : 'var(--surface)';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.6)' : 'var(--border)';
-    btn.style.color = active ? 'var(--pl)' : 'var(--text)';
+    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#C084FC' : '#F1F5F9';
   });
   var bEl = document.getElementById('led-brightness'); if (bEl) bEl.value = ledClientState.brightness;
   var bVal = document.getElementById('led-brightness-val'); if (bVal) bVal.textContent = ledClientState.brightness;
@@ -777,7 +777,7 @@ function buildLed2Grid() {
   grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button id="led2-btn-' + _i + '" onclick="led2SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led2-btn-' + _i + '" onclick="led2SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:#1C2140;color:#F1F5F9;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
   updateLed2UI();
@@ -792,9 +792,9 @@ function updateLed2UI() {
     var btn = document.getElementById('led2-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState2.effect && ledClientState2.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.2)' : 'var(--surface)';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.6)' : 'var(--border)';
-    btn.style.color = active ? 'var(--pl)' : 'var(--text)';
+    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#C084FC' : '#F1F5F9';
   });
   var bEl = document.getElementById('led2-brightness'); if (bEl) bEl.value = ledClientState2.brightness;
   var bVal = document.getElementById('led2-brightness-val'); if (bVal) bVal.textContent = ledClientState2.brightness;
@@ -836,7 +836,7 @@ function buildLed3Grid() {
   grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
-    _h += '<button id="led3-btn-' + _i + '" onclick="led3SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
+    _h += '<button id="led3-btn-' + _i + '" onclick="led3SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:#1C2140;color:#F1F5F9;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
   }
   grid.innerHTML = _h;
   updateLed3UI();
@@ -851,9 +851,9 @@ function updateLed3UI() {
     var btn = document.getElementById('led3-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState3.effect && ledClientState3.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.2)' : 'var(--surface)';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.6)' : 'var(--border)';
-    btn.style.color = active ? 'var(--pl)' : 'var(--text)';
+    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#C084FC' : '#F1F5F9';
   });
   var bEl = document.getElementById('led3-brightness'); if (bEl) bEl.value = ledClientState3.brightness;
   var bVal = document.getElementById('led3-brightness-val'); if (bVal) bVal.textContent = ledClientState3.brightness;
