@@ -8,6 +8,7 @@ var routes = [
   require("./routes/costs"),
   require("./routes/weather"),
   require("./routes/led"),
+  require("./routes/relay"),
   require("./routes/flows"),
   require("./routes/debug"),
   require("./routes/pages")

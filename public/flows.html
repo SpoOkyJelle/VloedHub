@@ -137,6 +137,16 @@
             <div><div class="palette-node-name">LED effect</div><div class="palette-node-desc">Animatie instellen</div></div>
           </div>
 
+          <div class="palette-group-label">Acties — Relais</div>
+          <div class="palette-node" draggable="true" data-node="relay_on" ondragstart="drag(event)">
+            <i class="fa-solid fa-toggle-on" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Relais aan</div><div class="palette-node-desc">Zet een lamp/apparaat aan</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="relay_off" ondragstart="drag(event)">
+            <i class="fa-solid fa-toggle-off" style="color:var(--dim)"></i>
+            <div><div class="palette-node-name">Relais uit</div><div class="palette-node-desc">Zet een lamp/apparaat uit</div></div>
+          </div>
+
           <div class="palette-group-label">Acties — Meldingen</div>
           <div class="palette-node" draggable="true" data-node="notify" ondragstart="drag(event)">
             <i class="fa-solid fa-bell" style="color:var(--purple)"></i>
@@ -231,16 +241,24 @@
         '<div class="df-field df-field--row"><label>Tijd (van\u2013tot)</label><input type="time" df-timestart><span style="color:var(--dim);font-size:0.7rem">\u2013</span><input type="time" df-timeend></div>' +
         hint('\u25b6\ufe0e Uitgang 1: Waar \u00a0\u00b7\u00a0 \u25b6\ufe0e Uitgang 2: Niet waar')),
 
+    relay_on: t('df-node-title--relay','fa-toggle-on','Relais aan') +
+      b(f('Apparaat','<select df-device><option value="gang">Gang</option></select>') +
+        hint('Zet de relaisuitgang aan (schakelaar voor lamp/apparaat).')),
+
+    relay_off: t('df-node-title--relay-off','fa-toggle-off','Relais uit') +
+      b(f('Apparaat','<select df-device><option value="gang">Gang</option></select>') +
+        hint('Zet de relaisuitgang uit.')),
+
     led_on: t('df-node-title--action','fa-lightbulb','Lamp aan') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
         f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
         '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
     led_off: t('df-node-title--off','fa-regular fa-lightbulb','Lamp uit') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>')),
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>')),
 
     led_effect: t('df-node-title--effect','fa-wand-magic-sparkles','LED effect') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
         f('Effect','<select df-effect>' +
           '<option value="0">Statisch</option>' +
           '<option value="1">Regenboog</option>' +
@@ -280,6 +298,8 @@
     delay:           { seconds: '30' },
     time_window:     { start: '18:00', end: '23:00' },
     condition:       { check: 'power_above', value: '1000', room: '', timestart: '18:00', timeend: '23:00' },
+    relay_on:        { device: 'gang' },
+    relay_off:       { device: 'gang' },
     led_on:          { device: 'default', brightness: '180', color: '#ffffff' },
     led_off:         { device: 'default' },
     led_effect:      { device: 'default', effect: '0', brightness: '180', color: '#ffffff' },
@@ -287,8 +307,8 @@
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { timer:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, led_on:1, led_off:1, led_effect:1, notify:1 };
-  var NODE_OUTPUTS = { timer:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, led_on:0, led_off:0, led_effect:0, notify:0 };
+  var NODE_INPUTS  = { timer:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1 };
+  var NODE_OUTPUTS = { timer:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));

@@ -63,6 +63,18 @@ function executeNode(node) {
     return { action: 'led_effect', device: device, effect: ls.effect };
   }
 
+  if (node.name === 'relay_on') {
+    state.getRelayState(device).on = true;
+    console.log('[Flow] Relais aan:', device);
+    return { action: 'relay_on', device: device };
+  }
+
+  if (node.name === 'relay_off') {
+    state.getRelayState(device).on = false;
+    console.log('[Flow] Relais uit:', device);
+    return { action: 'relay_off', device: device };
+  }
+
   if (node.name === 'notify') {
     var msg = (node.data.message || 'VloedHub flow getriggerd').trim();
     discord.sendDiscord('\uD83D\uDD14 ' + msg);
