@@ -385,10 +385,12 @@ function refresh() {
 }
 refresh();
 setInterval(refresh, 3000);
-// Pre-load LED/relay states so home strip shows accurate values before screen 4 is opened
-fetch('/api/led/state').then(function(r){return r.json();}).then(function(s){ledClientState=s;updateHomeLedStatus();}).catch(function(){});
-fetch('/api/led/state?device=keuken').then(function(r){return r.json();}).then(function(s){ledClientState2=s;updateHomeLed2Status();}).catch(function(){});
-fetch('/api/led/state?device=gang').then(function(r){return r.json();}).then(function(s){ledClientState3=s;updateHomeLed3Status();}).catch(function(){});
+// Build LED effect grids immediately on page load (divs exist in HTML from the start)
+buildLedGrid(); buildLed2Grid(); buildLed3Grid();
+// Pre-load LED/relay states
+fetch('/api/led/state').then(function(r){return r.json();}).then(function(s){ledClientState=s;updateLedUI();updateHomeLedStatus();}).catch(function(){});
+fetch('/api/led/state?device=keuken').then(function(r){return r.json();}).then(function(s){ledClientState2=s;updateLed2UI();updateHomeLed2Status();}).catch(function(){});
+fetch('/api/led/state?device=gang').then(function(r){return r.json();}).then(function(s){ledClientState3=s;updateLed3UI();updateHomeLed3Status();}).catch(function(){});
 fetch('/api/relay/state?device=gang').then(function(r){return r.json();}).then(function(s){relayGangState=s;updateRelayGangUI();}).catch(function(){});
 
 // ── Chart ──
