@@ -187,12 +187,12 @@
           '<option value="weekend">Weekend (za\u2013zo)</option></select>')),
 
     sunrise: t('df-node-title--timer','fa-sun','Zonsopgang') +
-      b(f('Offset (minuten)','<input type="number" df-offset min="-120" max="120" step="5" placeholder="0">') +
-        hint('Triggert bij zonsopkomst. Negatief = eerder, positief = later. Zontijden via Open-Meteo.')),
+      b(f('Offset (minuten)','<input type="number" df-offset min="-120" max="120" step="5" placeholder="0" oninput="updateSunEst(this)">') +
+        '<div class="df-node-hint sun-est" data-type="sunrise">Berekenen\u2026</div>'),
 
     sunset: t('df-node-title--timer','fa-moon','Zonsondergang') +
-      b(f('Offset (minuten)','<input type="number" df-offset min="-120" max="120" step="5" placeholder="0">') +
-        hint('Triggert bij zonsondergang. Negatief = eerder, positief = later. Zontijden via Open-Meteo.')),
+      b(f('Offset (minuten)','<input type="number" df-offset min="-120" max="120" step="5" placeholder="0" oninput="updateSunEst(this)">') +
+        '<div class="df-node-hint sun-est" data-type="sunset">Berekenen\u2026</div>'),
 
     power_above: t('df-node-title--power','fa-bolt','Verbruik boven') +
       b(f('Drempel (watt)','<input type="number" df-watts min="0" max="15000" step="50">') + hint('Triggert \u00e9\u00e9n keer als verbruik de drempel overschrijdt.')),
@@ -395,6 +395,7 @@
       renderFlowList();
       setTimeout(function() {
         document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+        refreshSunEsts();
       }, 60);
     });
   }
@@ -471,6 +472,7 @@
   // ── Canvas events ──────────────────────────────────────────────────────
   ['nodeCreated','nodeRemoved','connectionCreated','connectionRemoved','nodeMoved','nodeDataChanged']
     .forEach(function(ev) { editor.on(ev, autoSave); });
+  editor.on('nodeCreated', function() { setTimeout(refreshSunEsts, 30); });
 
   // ── Utilities ──────────────────────────────────────────────────────────
   function esc(s) {
@@ -482,6 +484,43 @@
     document.body.appendChild(el);
     setTimeout(function() { el.classList.add('toast-show'); }, 10);
     setTimeout(function() { el.classList.remove('toast-show'); setTimeout(function() { el.remove(); }, 300); }, 2500);
+  }
+
+  // ── Sun estimate ──────────────────────────────────────────────────────
+  var sunTimesCache = null;
+  function loadSunTimes(cb) {
+    if (sunTimesCache) return cb(sunTimesCache);
+    fetch('/api/sun').then(function(r) { return r.json(); }).then(function(d) {
+      if (d) sunTimesCache = d;
+      cb(d);
+    }).catch(function() { cb(null); });
+  }
+  function sunAddMinutes(t, mins) {
+    var p = t.split(':'), total = parseInt(p[0]) * 60 + parseInt(p[1]) + mins;
+    total = ((total % 1440) + 1440) % 1440;
+    return String(Math.floor(total / 60)).padStart(2,'0') + ':' + String(total % 60).padStart(2,'0');
+  }
+  function updateSunEst(input) {
+    var body = input.closest('.df-node-body');
+    if (!body) return;
+    var estEl = body.querySelector('.sun-est');
+    if (!estEl) return;
+    var type = estEl.dataset.type;
+    var offset = parseInt(input.value) || 0;
+    loadSunTimes(function(times) {
+      if (!times) { estEl.textContent = 'Tijden niet beschikbaar'; return; }
+      var base = type === 'sunrise' ? times.sunrise : times.sunset;
+      var fire = sunAddMinutes(base, offset);
+      var label = type === 'sunrise' ? '\u2600\ufe0f Zonsopgang' : '\ud83c\udf19 Zonsondergang';
+      estEl.textContent = label + ' vandaag: ' + base +
+        (offset !== 0 ? '  \u2192  trigger om ' + fire + ' (' + (offset > 0 ? '+' : '') + offset + ' min)' : '  \u2192  trigger om ' + fire);
+    });
+  }
+  function refreshSunEsts() {
+    document.querySelectorAll('.sun-est').forEach(function(estEl) {
+      var input = estEl.closest('.df-node-body').querySelector('[df-offset]');
+      if (input) updateSunEst(input);
+    });
   }
 
   loadFlowList();
