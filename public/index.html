@@ -259,12 +259,13 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
+  if (n === 4) { buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); refreshCosts(); refreshComparison(); loadCostsDaily(); refreshCheapHours(); }
     if (n === 2) { loadPhaseChart(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
-    if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); buildLedGrid(); refreshLedState(); buildLed2Grid(); refreshLed2State(); buildLed3Grid(); refreshLed3State(); refreshRelayGangState(); }
+    if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
   }
 }
 
@@ -714,7 +715,8 @@ var ledClientState = {on: true, effect: 0, brightness: 180, color: {r:255,g:255,
 function buildLedGrid() {
   if (typeof LED_EFFECTS === 'undefined') return;
   var grid = document.getElementById('led-effects-grid');
-  if (!grid || grid.children.length) return;
+  if (!grid) return;
+  grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
     _h += '<button id="led-btn-' + _i + '" onclick="ledSetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
@@ -771,7 +773,8 @@ var ledClientState2 = {on: true, effect: 0, brightness: 180, color: {r:255,g:255
 function buildLed2Grid() {
   if (typeof LED_EFFECTS === 'undefined') return;
   var grid = document.getElementById('led2-effects-grid');
-  if (!grid || grid.children.length) return;
+  if (!grid) return;
+  grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
     _h += '<button id="led2-btn-' + _i + '" onclick="led2SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
@@ -829,7 +832,8 @@ var ledClientState3 = {on: true, effect: 0, brightness: 180, color: {r:255,g:255
 function buildLed3Grid() {
   if (typeof LED_EFFECTS === 'undefined') return;
   var grid = document.getElementById('led3-effects-grid');
-  if (!grid || grid.children.length) return;
+  if (!grid) return;
+  grid.innerHTML = '';
   var _h = '';
   for (var _i = 0; _i < LED_EFFECTS.length; _i++) {
     _h += '<button id="led3-btn-' + _i + '" onclick="led3SetEffect(' + _i + ')" style="padding:0.75rem 0.5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent">' + LED_EFFECTS[_i] + '</button>';
