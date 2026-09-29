@@ -340,6 +340,7 @@ html, body {
 }
 
 .drawflow .drawflow-node.selected {
+  background: var(--surface);
   border-color: var(--purple);
   box-shadow: 0 0 0 2px rgba(168,85,247,0.25), 0 4px 20px rgba(0,0,0,0.45);
 }
@@ -528,7 +529,7 @@ html, body {
 .df-field textarea,
 .df-field select {
   width: 100%;
-  background: rgba(255,255,255,0.04);
+  background: #1A1E35;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -537,12 +538,27 @@ html, body {
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: dark;
 }
 .df-field input[type=time]:focus,
 .df-field input[type=number]:focus,
 .df-field input[type=text]:focus,
 .df-field textarea:focus,
 .df-field select:focus { border-color: rgba(168,85,247,0.5); }
+
+.df-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A5880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.8rem;
+}
+
+.df-field select option {
+  background: #141728;
+  color: #F1F5F9;
+}
 
 .df-field textarea {
   resize: vertical;

@@ -15,7 +15,8 @@
       "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/services /c/Users/thepu/Desktop/VloedHub/)",
       "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/utils /c/Users/thepu/Desktop/VloedHub/)",
       "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/db /c/Users/thepu/Desktop/VloedHub/)",
-      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/public /c/Users/thepu/Desktop/VloedHub/)"
+      "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/public /c/Users/thepu/Desktop/VloedHub/)",
+      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css\")"
     ]
   }
 }
