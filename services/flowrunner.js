@@ -76,11 +76,26 @@ function amsTime() {
   return new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(11, 16);
 }
 
-function timeInWindow(start, end) {
+// Last known sun times — refreshed every checkAll cycle
+var cachedSunTimes = null;
+
+function resolveTime(type, value) {
+  if (type === 'sunrise' || type === 'sunset') {
+    if (!cachedSunTimes) return null;
+    var base = type === 'sunrise' ? cachedSunTimes.sunrise : cachedSunTimes.sunset;
+    return addMinutes(base, parseInt(value) || 0);
+  }
+  return value || '00:00';
+}
+
+function timeInWindow(startType, startVal, endType, endVal) {
+  var start = resolveTime(startType, startVal);
+  var end   = resolveTime(endType,   endVal);
+  if (!start || !end) return false;
   var now = amsTime();
   return start <= end
     ? (now >= start && now <= end)
-    : (now >= start || now <= end); // overnight: e.g. 22:00–06:00
+    : (now >= start || now <= end); // overnight e.g. 22:00–06:00
 }
 
 // ── Execute action node ────────────────────────────────────────────────────
@@ -351,7 +366,11 @@ function traverseFrom(allNodes, nodeId, ctx, visited, results) {
   }
 
   if (node.name === 'time_window') {
-    if (timeInWindow(node.data.start || '00:00', node.data.end || '23:59')) followAll();
+    var twStartType = node.data['start-type'] || 'time';
+    var twEndType   = node.data['end-type']   || 'time';
+    var twStart     = node.data.start  || '00:00';
+    var twEnd       = node.data.end    || '23:59';
+    if (timeInWindow(twStartType, twStart, twEndType, twEnd)) followAll();
     return;
   }
 
@@ -661,7 +680,7 @@ function checkAll(db) {
     checkTimerTriggers(rows, dateStr, timeStr, isWeekday);
 
     sun.getSunTimes(function(err, sunTimes) {
-      if (!err && sunTimes) checkSunTriggers(rows, dateStr, timeStr, sunTimes);
+      if (!err && sunTimes) { cachedSunTimes = sunTimes; checkSunTriggers(rows, dateStr, timeStr, sunTimes); }
     });
 
     gatherContext(db, function(ctx) {

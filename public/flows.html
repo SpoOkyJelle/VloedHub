@@ -704,9 +704,27 @@
       b(f('Seconden','<input type="number" df-seconds min="1" max="3600" step="1">') + hint('Pauzeert de flow X seconden. Maximaal 1 uur.')),
 
     time_window: t('df-node-title--logic','fa-calendar-check','Tijdsvenster') +
-      b('<div class="df-field df-field--row"><label>Van</label><input type="time" df-start></div>' +
-        '<div class="df-field df-field--row"><label>Tot</label><input type="time" df-end></div>' +
-        hint('Stopt de flow buiten dit tijdsvenster. Ondersteunt ook nacht-vensters (bijv. 22:00\u200900:06:00).')),
+      b(f('Van',
+          '<select df-start-type onchange="twToggle(this,\'start\')">' +
+            '<option value="time">Tijdstip</option>' +
+            '<option value="sunrise">Zonsopgang</option>' +
+            '<option value="sunset">Zonsondergang</option>' +
+          '</select>') +
+        '<div class="df-field tw-time-start"><input type="time" df-start></div>' +
+        '<div class="df-field tw-offset-start" style="display:none">' +
+          f('Offset (min)','<input type="number" df-start min="-120" max="120" step="5" placeholder="0">') +
+        '</div>' +
+        f('Tot',
+          '<select df-end-type onchange="twToggle(this,\'end\')">' +
+            '<option value="time">Tijdstip</option>' +
+            '<option value="sunrise">Zonsopgang</option>' +
+            '<option value="sunset">Zonsondergang</option>' +
+          '</select>') +
+        '<div class="df-field tw-time-end"><input type="time" df-end></div>' +
+        '<div class="df-field tw-offset-end" style="display:none">' +
+          f('Offset (min)','<input type="number" df-end min="-120" max="120" step="5" placeholder="0">') +
+        '</div>' +
+        hint('Ondersteunt ook nacht-vensters. Bij zon-opties: offset in minuten (negatief = eerder).')),
 
     condition: t('df-node-title--condition','fa-code-branch','Conditie') +
       b(f('Controleer','<select df-check>' +
@@ -835,7 +853,7 @@
     wash_started:    {},
     wash_done:       {},
     delay:           { seconds: '30' },
-    time_window:     { start: '18:00', end: '23:00' },
+    time_window:     { 'start-type': 'time', start: '18:00', 'end-type': 'time', end: '23:00' },
     condition:       { check: 'power_above', value: '1000', room: '', timestart: '18:00', timeend: '23:00' },
     relay_on:        { device: 'gang' },
     relay_off:       { device: 'gang' },
@@ -895,6 +913,14 @@
   function updateBrightness(el) {
     var lbl = el.closest('.df-field').querySelector('.brightness-val');
     if (lbl) lbl.textContent = Math.round(parseInt(el.value) / 255 * 100) + '%';
+  }
+
+  function twToggle(sel, side) {
+    var node = sel.closest('.drawflow-node');
+    if (!node) return;
+    var isSun = sel.value === 'sunrise' || sel.value === 'sunset';
+    node.querySelector('.tw-time-' + side).style.display   = isSun ? 'none' : '';
+    node.querySelector('.tw-offset-' + side).style.display = isSun ? '' : 'none';
   }
 
   // ── API helpers ────────────────────────────────────────────────────────
@@ -1472,7 +1498,13 @@
   // ── Canvas events ──────────────────────────────────────────────────────
   ['nodeCreated','nodeRemoved','connectionCreated','connectionRemoved','nodeMoved','nodeDataChanged']
     .forEach(function(ev) { editor.on(ev, function() { autoSave(); pushHistory(); }); });
-  editor.on('nodeCreated', function() { setTimeout(refreshSunEsts, 30); });
+  editor.on('nodeCreated', function() {
+    setTimeout(refreshSunEsts, 30);
+    setTimeout(function() {
+      document.querySelectorAll('.drawflow-node select[df-start-type]').forEach(function(sel) { twToggle(sel, 'start'); });
+      document.querySelectorAll('.drawflow-node select[df-end-type]').forEach(function(sel) { twToggle(sel, 'end'); });
+    }, 30);
+  });
 
   // ── Global keyboard shortcuts ──────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
