@@ -15,7 +15,7 @@ function readBody(req, cb) {
 module.exports = function(req, res) {
 
   // ── PIN entry page ──────────────────────────────────────────────────────
-  if (req.method === 'GET' && req.url === '/pin') {
+  if (req.method === 'GET' && req.url.split('?')[0] === '/pin') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(PIN_PAGE);
     return true;
