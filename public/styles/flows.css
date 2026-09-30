@@ -643,6 +643,9 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
 
+/* Hide mobile-only elements on desktop */
+.mobile-only { display: none !important; }
+
 /* ══════════════════════════════════════════════════════════════════════
    MOBILE  (<768px) — everything below is mobile-only
    ══════════════════════════════════════════════════════════════════════ */
@@ -657,6 +660,8 @@ html, body {
   .flows-sidebar {
     display: none !important;
   }
+
+  .mobile-only { display: inline-flex !important; }
 
   /* ── Header: single-row, compact ───────────────────────────────────── */
   .app-header {

@@ -467,6 +467,9 @@
       <div class="canvas-empty" id="canvas-empty">
         <i class="fa-solid fa-diagram-project"></i>
         <p>Selecteer een flow of maak een nieuwe</p>
+        <button class="btn btn-primary mobile-only" onclick="mobileNavTab('flows')" style="margin-top:0.5rem">
+          <i class="fa-solid fa-list"></i> Mijn flows
+        </button>
       </div>
 
       <!-- Canvas toolbar (zoom controls) -->
@@ -1021,7 +1024,17 @@
 
   // ── Flow list ──────────────────────────────────────────────────────────
   function loadFlowList() {
-    api('/api/flows').then(function(data) { flows = data; renderFlowList(); });
+    api('/api/flows').then(function(data) {
+      flows = data;
+      renderFlowList();
+      // On mobile with no flow selected, auto-open the flows sheet
+      if (isMobile() && !currentFlowId) {
+        renderMobileFlowList();
+        openSheet('sheet-flows');
+        document.getElementById('nav-tab-flows').classList.add('active');
+        document.getElementById('nav-tab-canvas').classList.remove('active');
+      }
+    });
   }
 
   function sortFlows(arr) {
