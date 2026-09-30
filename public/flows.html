@@ -258,6 +258,8 @@
       <button class="btn btn-ghost" id="btn-delete" style="display:none" title="Verwijderen"><i class="fa-solid fa-trash"></i></button>
       <button class="btn btn-primary" id="btn-save" disabled><i class="fa-solid fa-floppy-disk"></i> Opslaan</button>
       <button class="btn btn-ghost btn-ghost-neutral" id="btn-shortcuts" title="Sneltoetsen (?)"><i class="fa-solid fa-question"></i></button>
+      <!-- Mobile overflow button (hidden on desktop via inline style, shown on mobile via CSS) -->
+      <button class="btn-icon" id="btn-mobile-overflow" title="Meer opties" style="display:none"><i class="fa-solid fa-ellipsis-vertical"></i></button>
     </div>
   </header>
 
@@ -487,6 +489,120 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- ══ MOBILE-ONLY UI ═══════════════════════════════════════════════════ -->
+
+  <!-- Backdrop for sheets/drawers -->
+  <div class="mobile-backdrop" id="mobile-backdrop"></div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" style="display:none">
+    <button class="mobile-nav-tab" id="nav-tab-flows" onclick="mobileNavTab('flows')">
+      <i class="fa-solid fa-diagram-project"></i>
+      <span>Flows</span>
+    </button>
+    <button class="mobile-nav-tab" id="nav-tab-nodes" onclick="mobileNavTab('nodes')">
+      <i class="fa-solid fa-plus"></i>
+      <span>+ Nodes</span>
+    </button>
+    <button class="mobile-nav-tab active" id="nav-tab-canvas" onclick="mobileNavTab('canvas')">
+      <i class="fa-solid fa-expand"></i>
+      <span>Canvas</span>
+    </button>
+  </nav>
+
+  <!-- Bottom Sheet: Node Palette -->
+  <div class="mobile-sheet" id="sheet-nodes">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title"><i class="fa-solid fa-plus" style="color:var(--purple);margin-right:0.4rem"></i>Nodes toevoegen</span>
+      <button class="sheet-close" onclick="closeSheet('sheet-nodes')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-search-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" class="sheet-search-input" id="mobile-palette-search" placeholder="Zoek node…" oninput="filterMobilePalette(this.value)">
+      </div>
+      <div id="mobile-palette-list"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Flow List -->
+  <div class="mobile-sheet" id="sheet-flows">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title"><i class="fa-solid fa-diagram-project" style="color:var(--purple);margin-right:0.4rem"></i>Mijn flows</span>
+      <button class="sheet-close" onclick="closeSheet('sheet-flows')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheet-body">
+      <ul class="mobile-flow-list" id="mobile-flow-list"></ul>
+      <button class="mobile-flow-new-btn" id="mobile-btn-new-flow">
+        <i class="fa-solid fa-plus"></i> Nieuwe flow
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Overflow Menu -->
+  <div class="mobile-sheet" id="sheet-overflow">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Meer opties</span>
+      <button class="sheet-close" onclick="closeSheet('sheet-overflow')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheet-body" style="padding-bottom:env(safe-area-inset-bottom,1rem)">
+      <div class="overflow-menu-item" id="mob-btn-undo" onclick="mobileOverflowAction('undo')">
+        <i class="fa-solid fa-rotate-left"></i> Ongedaan maken
+      </div>
+      <div class="overflow-menu-item" id="mob-btn-redo" onclick="mobileOverflowAction('redo')">
+        <i class="fa-solid fa-rotate-right"></i> Opnieuw
+      </div>
+      <div class="overflow-menu-sep"></div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('run')">
+        <i class="fa-solid fa-play"></i> Nu uitvoeren
+      </div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('log')">
+        <i class="fa-solid fa-list"></i> Run log
+      </div>
+      <div class="overflow-menu-sep"></div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('duplicate')">
+        <i class="fa-solid fa-copy"></i> Flow dupliceren
+      </div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('export')">
+        <i class="fa-solid fa-download"></i> Exporteren
+      </div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('import')">
+        <i class="fa-solid fa-upload"></i> Importeren
+      </div>
+      <div class="overflow-menu-sep"></div>
+      <div class="overflow-menu-item" onclick="mobileOverflowAction('shortcuts')">
+        <i class="fa-solid fa-question"></i> Sneltoetsen
+      </div>
+      <div class="overflow-menu-sep"></div>
+      <div class="overflow-menu-item danger" onclick="mobileOverflowAction('delete')">
+        <i class="fa-solid fa-trash"></i> Flow verwijderen
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Node Edit -->
+  <div class="mobile-sheet" id="sheet-node-edit">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="node-edit-title">Node</span>
+      <button class="sheet-close" onclick="closeSheet('sheet-node-edit')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheet-body">
+      <div class="node-edit-form" id="node-edit-form"></div>
+    </div>
+    <div class="node-edit-actions">
+      <button class="btn btn-ghost" onclick="mobileDeleteNode()" style="color:var(--red);border-color:rgba(248,113,113,0.3)">
+        <i class="fa-solid fa-trash"></i> Verwijderen
+      </button>
+      <button class="btn btn-primary" onclick="mobileNodeEditDone()">
+        <i class="fa-solid fa-check"></i> Klaar
+      </button>
+    </div>
   </div>
 
   <!-- Delete confirmation modal -->
@@ -1421,6 +1537,504 @@
   }
 
   loadFlowList();
+
+  // ════════════════════════════════════════════════════════════════════════
+  // MOBILE UI
+  // ════════════════════════════════════════════════════════════════════════
+
+  var isMobile = function() { return window.innerWidth < 768; };
+
+  // ── Show/hide mobile chrome based on viewport ──────────────────────────
+  function applyMobileLayout() {
+    var mobile = isMobile();
+    document.getElementById('mobile-bottom-nav').style.display = mobile ? 'flex' : 'none';
+    if (!mobile) {
+      // Close any open sheets if window is resized to desktop
+      ['sheet-nodes','sheet-flows','sheet-overflow','sheet-node-edit'].forEach(function(id) {
+        document.getElementById(id).classList.remove('open');
+      });
+      document.getElementById('mobile-backdrop').classList.remove('open');
+    }
+  }
+
+  applyMobileLayout();
+  window.addEventListener('resize', applyMobileLayout);
+
+  // ── Bottom nav tab switching ───────────────────────────────────────────
+  function mobileNavTab(tab) {
+    ['flows','nodes','canvas'].forEach(function(t) {
+      document.getElementById('nav-tab-' + t).classList.toggle('active', t === tab);
+    });
+
+    if (tab === 'flows') {
+      renderMobileFlowList();
+      openSheet('sheet-flows');
+    } else if (tab === 'nodes') {
+      buildMobilePalette();
+      openSheet('sheet-nodes');
+      setTimeout(function() {
+        var inp = document.getElementById('mobile-palette-search');
+        if (inp) inp.focus();
+      }, 350);
+    } else {
+      // Canvas tab — dismiss everything
+      closeAllSheets();
+    }
+  }
+
+  // ── Sheet helpers ──────────────────────────────────────────────────────
+  function openSheet(id) {
+    // Close other sheets first (except the one we're opening)
+    ['sheet-nodes','sheet-flows','sheet-overflow','sheet-node-edit'].forEach(function(sid) {
+      if (sid !== id) document.getElementById(sid).classList.remove('open');
+    });
+    document.getElementById(id).classList.add('open');
+    document.getElementById('mobile-backdrop').classList.add('open');
+  }
+
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove('open');
+    // Check if any sheet is still open
+    var anyOpen = ['sheet-nodes','sheet-flows','sheet-overflow','sheet-node-edit'].some(function(sid) {
+      return document.getElementById(sid).classList.contains('open');
+    });
+    if (!anyOpen) {
+      document.getElementById('mobile-backdrop').classList.remove('open');
+      // Reset nav tabs to canvas
+      ['flows','nodes','canvas'].forEach(function(t) {
+        document.getElementById('nav-tab-' + t).classList.toggle('active', t === 'canvas');
+      });
+    }
+  }
+
+  function closeAllSheets() {
+    ['sheet-nodes','sheet-flows','sheet-overflow','sheet-node-edit'].forEach(function(id) {
+      document.getElementById(id).classList.remove('open');
+    });
+    document.getElementById('mobile-backdrop').classList.remove('open');
+  }
+
+  // Backdrop click closes all sheets
+  document.getElementById('mobile-backdrop').addEventListener('click', function() {
+    closeAllSheets();
+    // Reset canvas tab active
+    ['flows','nodes','canvas'].forEach(function(t) {
+      document.getElementById('nav-tab-' + t).classList.toggle('active', t === 'canvas');
+    });
+  });
+
+  // ── Overflow menu button ───────────────────────────────────────────────
+  document.getElementById('btn-mobile-overflow').addEventListener('click', function() {
+    openSheet('sheet-overflow');
+  });
+
+  function mobileOverflowAction(action) {
+    closeSheet('sheet-overflow');
+    setTimeout(function() {
+      if (action === 'undo')       { undo(); }
+      else if (action === 'redo')  { redo(); }
+      else if (action === 'run')   { if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; } document.getElementById('btn-run').click(); }
+      else if (action === 'log')   { if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; } document.getElementById('btn-log').click(); }
+      else if (action === 'duplicate') { if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; } document.getElementById('btn-duplicate').click(); }
+      else if (action === 'export')    { if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; } document.getElementById('btn-export').click(); }
+      else if (action === 'import')    { document.getElementById('btn-import').click(); }
+      else if (action === 'shortcuts') { openModal('modal-shortcuts'); }
+      else if (action === 'delete')    { if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; } document.getElementById('btn-delete').click(); }
+    }, 150);
+  }
+
+  // ── Mobile Flow List ───────────────────────────────────────────────────
+  function renderMobileFlowList() {
+    var el = document.getElementById('mobile-flow-list');
+    var sorted = sortFlows(flows);
+    if (!sorted.length) {
+      el.innerHTML = '<li style="font-size:0.75rem;color:var(--dim);padding:0.75rem">Geen flows</li>';
+      return;
+    }
+    el.innerHTML = sorted.map(function(f) {
+      return '<li class="mobile-flow-item' + (f.id === currentFlowId ? ' active' : '') + '" onclick="mobileSelectFlow(' + f.id + ')">' +
+        '<div class="mobile-flow-item-row">' +
+        '<span class="flow-item-dot ' + (f.enabled ? 'dot-on' : 'dot-off') + '"></span>' +
+        '<span class="mobile-flow-item-name">' + esc(f.name) + '</span>' +
+        '</div>' +
+        '<div class="mobile-flow-item-meta">' + formatRelativeTime(f.last_run) + '</div>' +
+        '</li>';
+    }).join('');
+  }
+
+  function mobileSelectFlow(id) {
+    closeAllSheets();
+    selectFlow(id);
+  }
+
+  // New flow button in mobile sheet
+  document.getElementById('mobile-btn-new-flow').addEventListener('click', function() {
+    closeAllSheets();
+    api('/api/flows', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:'Nieuwe flow'}) })
+      .then(function(f) { flows.push(f); selectFlow(f.id); });
+  });
+
+  // ── Mobile Node Palette ────────────────────────────────────────────────
+  // Palette definition: same nodes as the sidebar
+  var MOBILE_PALETTE = [
+    { group: 'Triggers — Tijd', nodes: [
+      { type:'timer',           icon:'fa-clock',                    color:'var(--blue)',   name:'Timer',               desc:'Op een vast tijdstip' },
+      { type:'sunrise',         icon:'fa-sun',                      color:'var(--yellow)', name:'Zonsopgang',          desc:'Bij zonsopkomst (± offset)' },
+      { type:'sunset',          icon:'fa-moon',                     color:'var(--orange)', name:'Zonsondergang',       desc:'Bij zonsondergang (± offset)' }
+    ]},
+    { group: 'Triggers — Stroom', nodes: [
+      { type:'power_above',     icon:'fa-bolt',                     color:'var(--orange)', name:'Verbruik boven',      desc:'Wattage overschrijdt drempel' },
+      { type:'power_below',     icon:'fa-bolt-lightning',           color:'var(--dim)',    name:'Verbruik onder',      desc:'Wattage daalt onder drempel' },
+      { type:'solar_above',     icon:'fa-solar-panel',              color:'var(--yellow)', name:'Teruglevering boven', desc:'Zonnepanelen leveren > X watt' },
+      { type:'solar_below',     icon:'fa-solar-panel',              color:'var(--dim)',    name:'Teruglevering onder', desc:'Teruglevering daalt onder X watt' },
+      { type:'voltage_dip',     icon:'fa-triangle-exclamation',     color:'var(--red)',    name:'Spanningsdip',        desc:'Fase zakt onder X volt' },
+      { type:'phase_imbalance', icon:'fa-scale-unbalanced',         color:'var(--orange)', name:'Fase-onbalans',       desc:'Fases wijken > X% af' },
+      { type:'gas_above',       icon:'fa-fire',                     color:'var(--orange)', name:'Gas verbruik',        desc:'Gasverbruik > X m³/uur' }
+    ]},
+    { group: 'Triggers — Klimaat & Weer', nodes: [
+      { type:'temp_above',      icon:'fa-temperature-arrow-up',     color:'var(--red)',    name:'Temperatuur boven',   desc:'Kamer warmer dan X°C' },
+      { type:'temp_below',      icon:'fa-temperature-arrow-down',   color:'var(--blue)',   name:'Temperatuur onder',   desc:'Kamer kouder dan X°C' },
+      { type:'weather_rain',    icon:'fa-cloud-rain',               color:'var(--blue)',   name:'Regenkanis',          desc:'Neerslagkans > X%' }
+    ]},
+    { group: 'Triggers — Apparaten', nodes: [
+      { type:'wash_started',    icon:'fa-rotate',                   color:'var(--blue)',   name:'Wasmachine start',    desc:'Wascyclus begint' },
+      { type:'wash_done',       icon:'fa-shirt',                    color:'var(--green)',  name:'Wasmachine klaar',    desc:'Wascyclus voltooid' }
+    ]},
+    { group: 'Triggers — Integraties', nodes: [
+      { type:'webhook_trigger', icon:'fa-globe',                    color:'var(--blue)',   name:'Webhook trigger',     desc:'Starten via HTTP POST' },
+      { type:'mqtt_trigger',    icon:'fa-tower-broadcast',          color:'var(--orange)', name:'MQTT trigger',        desc:'Starten via MQTT bericht' }
+    ]},
+    { group: 'Logica', nodes: [
+      { type:'delay',           icon:'fa-hourglass-half',           color:'var(--muted)',  name:'Wacht',               desc:'Pauzeer X seconden' },
+      { type:'time_window',     icon:'fa-calendar-check',           color:'var(--blue)',   name:'Tijdsvenster',        desc:'Ga door alleen tussen X en Y' },
+      { type:'condition',       icon:'fa-code-branch',              color:'var(--purple)', name:'Conditie',            desc:'Als/dan-splitsing' }
+    ]},
+    { group: 'Acties — Lampen', nodes: [
+      { type:'led_on',          icon:'fa-lightbulb',                color:'var(--yellow)', name:'Lamp aan',            desc:'Zet LED-strip aan' },
+      { type:'led_off',         icon:'fa-regular fa-lightbulb',     color:'var(--muted)',  name:'Lamp uit',            desc:'Zet LED-strip uit' },
+      { type:'led_effect',      icon:'fa-wand-magic-sparkles',      color:'var(--pl)',     name:'LED effect',          desc:'Animatie instellen' },
+      { type:'dim_to',          icon:'fa-sliders',                  color:'var(--yellow)', name:'Dim naar',            desc:'Fade naar helderheid in X sec' },
+      { type:'dim_relative',    icon:'fa-sliders',                  color:'var(--muted)',  name:'Dim relatief',        desc:'Pas helderheid +/- % aan' },
+      { type:'color_temp',      icon:'fa-temperature-half',         color:'var(--orange)', name:'Kleurtemperatuur',    desc:'Stel Kelvin-waarde in' },
+      { type:'adaptive_light',  icon:'fa-wand-magic-sparkles',      color:'var(--blue)',   name:'Adaptief licht',      desc:'Automatisch op tijdstip' },
+      { type:'wake_light',      icon:'fa-sun',                      color:'var(--yellow)', name:'Wekker-licht',        desc:'Langzaam opfaden' },
+      { type:'flash',           icon:'fa-bolt',                     color:'var(--yellow)', name:'Flits',               desc:'Knippert X keer' }
+    ]},
+    { group: 'Acties — Relais', nodes: [
+      { type:'relay_on',        icon:'fa-toggle-on',                color:'var(--green)',  name:'Relais aan',          desc:'Zet een lamp/apparaat aan' },
+      { type:'relay_off',       icon:'fa-toggle-off',               color:'var(--dim)',    name:'Relais uit',          desc:'Zet een lamp/apparaat uit' }
+    ]},
+    { group: 'Acties — Meldingen', nodes: [
+      { type:'notify',          icon:'fa-bell',                     color:'var(--purple)', name:'Discord melding',     desc:'Stuur een bericht' },
+      { type:'telegram',        icon:'fa-paper-plane',              color:'var(--blue)',   name:'Telegram',            desc:'Stuur een Telegram bericht' },
+      { type:'mqtt_publish',    icon:'fa-tower-broadcast',          color:'var(--green)',  name:'MQTT publiceer',      desc:'Stuur bericht naar topic' }
+    ]},
+    { group: 'Acties — Integraties', nodes: [
+      { type:'webhook',         icon:'fa-globe',                    color:'var(--green)',  name:'Webhook',             desc:'HTTP POST naar externe URL' }
+    ]}
+  ];
+
+  function buildMobilePalette() {
+    var container = document.getElementById('mobile-palette-list');
+    var html = '';
+    MOBILE_PALETTE.forEach(function(group) {
+      html += '<div class="mobile-palette-group-label" data-group="' + group.group + '">' + group.group + '</div>';
+      group.nodes.forEach(function(node) {
+        // Support icons that already include the style prefix (e.g. 'fa-regular fa-lightbulb')
+        var iconClass = node.icon.indexOf('fa-') === 0 && node.icon.split(' ').length === 1
+          ? 'fa-solid ' + node.icon
+          : node.icon;
+        html += '<div class="mobile-palette-node" data-node-type="' + node.type + '" onclick="mobileAddNode(\'' + node.type + '\')">' +
+          '<i class="' + iconClass + '" style="color:' + node.color + '"></i>' +
+          '<div>' +
+          '<div class="mobile-palette-node-name">' + node.name + '</div>' +
+          '<div class="mobile-palette-node-desc">' + node.desc + '</div>' +
+          '</div>' +
+          '</div>';
+      });
+    });
+    container.innerHTML = html;
+  }
+
+  function filterMobilePalette(query) {
+    query = (query || '').toLowerCase().trim();
+    var container = document.getElementById('mobile-palette-list');
+    container.querySelectorAll('.mobile-palette-node').forEach(function(el) {
+      var name = (el.querySelector('.mobile-palette-node-name') || {}).textContent || '';
+      var desc = (el.querySelector('.mobile-palette-node-desc') || {}).textContent || '';
+      var match = !query || name.toLowerCase().indexOf(query) !== -1 || desc.toLowerCase().indexOf(query) !== -1;
+      el.style.display = match ? '' : 'none';
+    });
+    // Hide group labels with no visible nodes
+    container.querySelectorAll('.mobile-palette-group-label').forEach(function(label) {
+      var sib = label.nextElementSibling;
+      var hasVisible = false;
+      while (sib && !sib.classList.contains('mobile-palette-group-label')) {
+        if (sib.classList.contains('mobile-palette-node') && sib.style.display !== 'none') { hasVisible = true; break; }
+        sib = sib.nextElementSibling;
+      }
+      label.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  // Add a node to the center of the visible canvas
+  function mobileAddNode(nodeType) {
+    if (!currentFlowId) { showToast('Selecteer eerst een flow'); return; }
+    if (!NODE_HTML[nodeType]) return;
+
+    // Calculate center position in canvas space
+    var canvasWrap = document.getElementById('flows-canvas-wrap');
+    var wrapRect = canvasWrap.getBoundingClientRect();
+    var centerX = wrapRect.width / 2;
+    var centerY = wrapRect.height / 2;
+
+    // Convert to Drawflow canvas coordinates
+    var pc = editor.precanvas;
+    var z  = editor.zoom || 1;
+    var tx = editor.canvas_x || 0;
+    var ty = editor.canvas_y || 0;
+
+    var posX = (centerX - tx) / z;
+    var posY = (centerY - ty) / z;
+
+    // Small random offset so stacked nodes don't fully overlap
+    posX += (Math.random() - 0.5) * 40;
+    posY += (Math.random() - 0.5) * 40;
+
+    editor.addNode(
+      nodeType,
+      NODE_INPUTS[nodeType],
+      NODE_OUTPUTS[nodeType],
+      posX,
+      posY,
+      nodeType,
+      JSON.parse(JSON.stringify(NODE_DEFAULTS[nodeType] || {})),
+      NODE_HTML[nodeType]
+    );
+    pushHistory();
+    closeSheet('sheet-nodes');
+    // Reset to canvas tab
+    ['flows','nodes','canvas'].forEach(function(t) {
+      document.getElementById('nav-tab-' + t).classList.toggle('active', t === 'canvas');
+    });
+    showToast('Node toegevoegd');
+  }
+
+  // ── Mobile Node Editing ────────────────────────────────────────────────
+  var mobileEditingNodeId = null;
+
+  // Field type map to determine input type for each df-* attribute
+  var FIELD_META = {
+    // key → { label, type, options?, min?, max?, step?, rows?, placeholder? }
+    time:         { label: 'Tijd',                type: 'time' },
+    days:         { label: 'Dagen',               type: 'select', options: [['all','Elke dag'],['weekdays','Werkdagen (ma–vr)'],['weekend','Weekend (za–zo)']] },
+    offset:       { label: 'Offset (minuten)',    type: 'number', min: -120, max: 120, step: 5, placeholder: '0' },
+    watts:        { label: 'Drempel (watt)',       type: 'number', min: 0, max: 15000, step: 50 },
+    volts:        { label: 'Spanning (volt)',      type: 'number', min: 150, max: 250, step: 1 },
+    percent:      { label: 'Max. afwijking (%)',   type: 'number', min: 0, max: 100, step: 5 },
+    rate:         { label: 'Drempel (m³/uur)',     type: 'number', min: 0, max: 10, step: 0.1 },
+    room:         { label: 'Kamer',               type: 'text', placeholder: 'bijv. Woonkamer' },
+    temp:         { label: 'Drempel (°C)',         type: 'number', min: -20, max: 60, step: 0.5 },
+    probability:  { label: 'Drempel (%)',          type: 'number', min: 0, max: 100, step: 5 },
+    seconds:      { label: 'Seconden',            type: 'number', min: 1, max: 3600, step: 1 },
+    start:        { label: 'Van',                 type: 'time' },
+    end:          { label: 'Tot',                 type: 'time' },
+    check:        { label: 'Controleer',          type: 'select', options: [
+      ['power_above','Verbruik > X watt'],['power_below','Verbruik < X watt'],
+      ['solar_above','Teruglevering > X watt'],['solar_below','Teruglevering < X watt'],
+      ['temp_above','Temp > X°C'],['temp_below','Temp < X°C'],
+      ['rain_above','Regenkanis > X%'],['time_between','Tijdstip tussen']
+    ]},
+    value:        { label: 'Waarde',              type: 'number' },
+    timestart:    { label: 'Tijd van',            type: 'time' },
+    timeend:      { label: 'Tijd tot',            type: 'time' },
+    device:       { label: 'Apparaat',            type: 'select', options: [['default','Woonkamer'],['keuken','Keuken'],['gang','Gang']] },
+    brightness:   { label: 'Helderheid',          type: 'range', min: 0, max: 255, step: 1 },
+    color:        { label: 'Kleur',               type: 'color' },
+    effect:       { label: 'Effect',              type: 'select', options: [
+      ['0','Statisch'],['1','Regenboog'],['2','Ademen (fade)'],['3','Kleurwisseling'],['4','Twinkelen']
+    ]},
+    message:      { label: 'Bericht',             type: 'textarea', rows: 3, placeholder: 'Flow getriggerd!' },
+    token:        { label: 'Token',               type: 'text', placeholder: 'mijn-geheime-token' },
+    broker:       { label: 'Broker',              type: 'text', placeholder: 'mqtt://localhost:1883' },
+    topic:        { label: 'Topic',               type: 'text', placeholder: 'home/sensor/#' },
+    username:     { label: 'Gebruiker',           type: 'text' },
+    password:     { label: 'Wachtwoord',          type: 'password' },
+    url:          { label: 'URL',                 type: 'text', placeholder: 'https://...' },
+    body:         { label: 'Body',                type: 'textarea', rows: 3 },
+    delta:        { label: 'Delta %',             type: 'number', min: -100, max: 100, step: 5 },
+    kelvin:       { label: 'Kelvin',              type: 'number', min: 2000, max: 6500, step: 100 },
+    minutes:      { label: 'Minuten',             type: 'number', min: 1, max: 60, step: 1 },
+    times:        { label: 'Aantal keer',         type: 'number', min: 1, max: 20, step: 1 },
+    interval_ms:  { label: 'Interval (ms)',       type: 'number', min: 100, max: 5000, step: 100 },
+    chat_id:      { label: 'Chat ID',             type: 'text' }
+  };
+
+  function buildNodeEditForm(nodeType, data) {
+    var defaults = NODE_DEFAULTS[nodeType] || {};
+    var keys = Object.keys(defaults);
+    if (!keys.length) {
+      return '<p style="color:var(--dim);font-size:0.78rem;padding:0.5rem 0">Geen instelbare velden.</p>';
+    }
+
+    var html = '';
+    keys.forEach(function(key) {
+      var meta = FIELD_META[key];
+      if (!meta) {
+        // Fallback: generic text field
+        meta = { label: key, type: 'text' };
+      }
+      var val = (data[key] !== undefined) ? data[key] : (defaults[key] !== undefined ? defaults[key] : '');
+      html += '<div class="node-edit-field" data-key="' + key + '">';
+
+      if (meta.type === 'select') {
+        html += '<label>' + meta.label + '</label>';
+        html += '<select data-field="' + key + '">';
+        (meta.options || []).forEach(function(opt) {
+          var selected = String(val) === String(opt[0]) ? ' selected' : '';
+          html += '<option value="' + opt[0] + '"' + selected + '>' + opt[1] + '</option>';
+        });
+        html += '</select>';
+      } else if (meta.type === 'textarea') {
+        html += '<label>' + meta.label + '</label>';
+        html += '<textarea data-field="' + key + '" rows="' + (meta.rows || 3) + '"' +
+          (meta.placeholder ? ' placeholder="' + meta.placeholder + '"' : '') + '>' +
+          esc(String(val)) + '</textarea>';
+      } else if (meta.type === 'range') {
+        var pct = Math.round(parseInt(val || 0) / 255 * 100);
+        html += '<div class="node-edit-field--row">' +
+          '<label>' + meta.label + '</label>' +
+          '<span class="node-edit-brightness-val" id="nef-bval-' + key + '">' + pct + '%</span>' +
+          '</div>';
+        html += '<input type="range" data-field="' + key + '"' +
+          ' min="' + (meta.min || 0) + '" max="' + (meta.max || 255) + '"' +
+          ' step="' + (meta.step || 1) + '" value="' + val + '"' +
+          ' oninput="mobileUpdateBrightness(this, \'' + key + '\')">';
+      } else if (meta.type === 'color') {
+        html += '<div class="node-edit-field--row">' +
+          '<label>' + meta.label + '</label>' +
+          '<input type="color" data-field="' + key + '" value="' + (val || '#ffffff') + '">' +
+          '</div>';
+      } else {
+        html += '<label>' + meta.label + '</label>';
+        var inputAttrs = ' type="' + meta.type + '" data-field="' + key + '" value="' + esc(String(val)) + '"';
+        if (meta.min !== undefined) inputAttrs += ' min="' + meta.min + '"';
+        if (meta.max !== undefined) inputAttrs += ' max="' + meta.max + '"';
+        if (meta.step !== undefined) inputAttrs += ' step="' + meta.step + '"';
+        if (meta.placeholder) inputAttrs += ' placeholder="' + meta.placeholder + '"';
+        html += '<input' + inputAttrs + '>';
+      }
+
+      html += '</div>';
+    });
+    return html;
+  }
+
+  function mobileUpdateBrightness(input, key) {
+    var pct = Math.round(parseInt(input.value) / 255 * 100);
+    var lbl = document.getElementById('nef-bval-' + key);
+    if (lbl) lbl.textContent = pct + '%';
+  }
+
+  function mobileNodeEditDone() {
+    if (!mobileEditingNodeId) return;
+    var node = editor.getNodeFromId(mobileEditingNodeId);
+    if (!node) return;
+
+    var newData = JSON.parse(JSON.stringify(node.data || {}));
+    document.querySelectorAll('#node-edit-form [data-field]').forEach(function(el) {
+      newData[el.getAttribute('data-field')] = el.value;
+    });
+
+    editor.updateNodeDataFromId(mobileEditingNodeId, newData);
+
+    // Also update the live inputs inside the drawflow node DOM
+    var nodeEl = document.getElementById('node-' + mobileEditingNodeId);
+    if (nodeEl) {
+      Object.keys(newData).forEach(function(key) {
+        var dfEl = nodeEl.querySelector('[df-' + key + ']');
+        if (dfEl) dfEl.value = newData[key];
+      });
+      // Refresh brightness labels and sun estimates inside the node
+      nodeEl.querySelectorAll('input[type=range]').forEach(updateBrightness);
+      var sunInput = nodeEl.querySelector('[df-offset]');
+      if (sunInput) updateSunEst(sunInput);
+    }
+
+    autoSave();
+    pushHistory();
+    closeSheet('sheet-node-edit');
+    mobileEditingNodeId = null;
+  }
+
+  function mobileDeleteNode() {
+    if (!mobileEditingNodeId) return;
+    var id = mobileEditingNodeId;
+    closeSheet('sheet-node-edit');
+    mobileEditingNodeId = null;
+    editor.removeNodeId('node-' + id);
+    pushHistory();
+  }
+
+  // Listen for node selection on mobile
+  editor.on('nodeSelected', function(id) {
+    if (!isMobile()) return;
+    // Prevent re-entrance
+    mobileEditingNodeId = id;
+    var node = editor.getNodeFromId(id);
+    if (!node) return;
+
+    // Set the sheet title
+    var titleEl = document.getElementById('node-edit-title');
+    // Get the friendly name from palette
+    var friendlyName = node.name;
+    var allPaletteNodes = [];
+    MOBILE_PALETTE.forEach(function(g) { g.nodes.forEach(function(n) { allPaletteNodes.push(n); }); });
+    var found = allPaletteNodes.filter(function(n) { return n.type === node.name; })[0];
+    if (found) friendlyName = found.name;
+
+    titleEl.innerHTML = friendlyName + '<span class="node-edit-type-badge">' + node.name + '</span>';
+
+    // Build the form
+    var formEl = document.getElementById('node-edit-form');
+    formEl.innerHTML = buildNodeEditForm(node.name, node.data || {});
+
+    openSheet('sheet-node-edit');
+  });
+
+  // When a node is unselected, close the edit sheet if no other sheet is pending
+  editor.on('nodeUnselected', function() {
+    if (!isMobile()) return;
+    // Only close if the node-edit sheet is open and user didn't just tap a button inside it
+    // We use a small delay so Done/Delete button clicks fire first
+    setTimeout(function() {
+      var sheet = document.getElementById('sheet-node-edit');
+      if (sheet.classList.contains('open') && mobileEditingNodeId !== null) {
+        // Don't auto-close — let user explicitly close via Done / close button
+      }
+    }, 100);
+  });
+
+  // ── Sheet drag-to-dismiss ──────────────────────────────────────────────
+  // Simple touch drag on sheet-handle to dismiss
+  document.querySelectorAll('.mobile-sheet').forEach(function(sheet) {
+    var handle = sheet.querySelector('.sheet-handle');
+    if (!handle) return;
+    var startY = 0;
+    handle.addEventListener('touchstart', function(e) {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    handle.addEventListener('touchend', function(e) {
+      var dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) {
+        closeSheet(sheet.id);
+        ['flows','nodes','canvas'].forEach(function(t) {
+          document.getElementById('nav-tab-' + t).classList.toggle('active', t === 'canvas');
+        });
+      }
+    }, { passive: true });
+  });
+
   </script>
 </body>
 </html>
