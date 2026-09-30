@@ -2,13 +2,15 @@ var state   = require('../utils/state');
 var discord = require('./discord');
 var weather = require('./weather');
 var sun     = require('./sun');
+var http    = require('http');
+var https   = require('https');
 
 // ── Node categories ────────────────────────────────────────────────────────
 var TRIGGERS = {
   timer: 1, power_above: 1, power_below: 1, temp_above: 1, temp_below: 1,
   wash_done: 1, wash_started: 1, gas_above: 1, voltage_dip: 1,
   phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
-  sunrise: 1, sunset: 1
+  sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -22,6 +24,51 @@ function hexToRgb(hex) {
     g: parseInt(hex.slice(2,4), 16) || 255,
     b: parseInt(hex.slice(4,6), 16) || 255
   };
+}
+
+// Tanner Helland algorithm: Kelvin (1000–40000) → {r,g,b} (0–255)
+function kelvinToRgb(kelvin) {
+  var temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
+  var r, g, b;
+
+  // Red
+  if (temp <= 66) {
+    r = 255;
+  } else {
+    r = temp - 60;
+    r = 329.698727446 * Math.pow(r, -0.1332047592);
+    r = Math.max(0, Math.min(255, r));
+  }
+
+  // Green
+  if (temp <= 66) {
+    g = temp;
+    g = 99.4708025861 * Math.log(g) - 161.1195681661;
+  } else {
+    g = temp - 60;
+    g = 288.1221695283 * Math.pow(g, -0.0755148492);
+  }
+  g = Math.max(0, Math.min(255, g));
+
+  // Blue
+  if (temp >= 66) {
+    b = 255;
+  } else if (temp <= 19) {
+    b = 0;
+  } else {
+    b = temp - 10;
+    b = 138.5177312231 * Math.log(b) - 305.0447927307;
+    b = Math.max(0, Math.min(255, b));
+  }
+
+  return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
+}
+
+function amsHour() {
+  var t = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' });
+  var hm = t.slice(11, 16);
+  var parts = hm.split(':');
+  return parseInt(parts[0]) + parseInt(parts[1]) / 60;
 }
 
 function amsTime() {
@@ -82,6 +129,170 @@ function executeNode(node) {
     discord.sendDiscord('\uD83D\uDD14 ' + msg);
     console.log('[Flow] Melding:', msg);
     return { action: 'notify', message: msg };
+  }
+
+  if (node.name === 'webhook') {
+    var webhookUrl = (node.data.url || '').trim();
+    var webhookBody = (node.data.body || '').trim();
+    if (webhookUrl) {
+      var mod = webhookUrl.startsWith('https') ? https : http;
+      try {
+        var parsed = require('url').parse(webhookUrl);
+        var reqOpts = {
+          hostname: parsed.hostname,
+          port: parsed.port,
+          path: parsed.path || '/',
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain', 'Content-Length': Buffer.byteLength(webhookBody) }
+        };
+        var outReq = mod.request(reqOpts, function(r) {
+          r.resume(); // discard response
+        });
+        outReq.on('error', function(e) { console.error('[Flow] webhook error:', e.message); });
+        outReq.write(webhookBody);
+        outReq.end();
+      } catch(e) { console.error('[Flow] webhook error:', e.message); }
+    }
+    console.log('[Flow] Webhook POST:', webhookUrl);
+    return { action: 'webhook', url: webhookUrl };
+  }
+
+  if (node.name === 'dim_to') {
+    var dimDevice = node.data.device || 'default';
+    var dimTarget = Math.max(0, Math.min(255, parseInt(node.data.brightness) || 180));
+    var dimSecs   = Math.max(1, Math.min(300, parseInt(node.data.seconds) || 5));
+    var dimLs     = state.getLedState(dimDevice);
+    var dimStart  = dimLs.brightness || 0;
+    var dimSteps  = dimSecs * 30; // ~30fps
+    var dimStep   = 0;
+    dimLs.on = true;
+    var dimInterval = setInterval(function() {
+      dimStep++;
+      dimLs.brightness = Math.round(dimStart + (dimTarget - dimStart) * (dimStep / dimSteps));
+      if (dimStep >= dimSteps) {
+        dimLs.brightness = dimTarget;
+        clearInterval(dimInterval);
+      }
+    }, Math.round(1000 / 30));
+    console.log('[Flow] dim_to:', dimDevice, dimStart, '->', dimTarget, 'in', dimSecs, 's');
+    return { action: 'dim_to', device: dimDevice, target: dimTarget };
+  }
+
+  if (node.name === 'dim_relative') {
+    var relDevice = node.data.device || 'default';
+    var relDelta  = Math.max(-100, Math.min(100, parseFloat(node.data.delta) || 20));
+    var relLs     = state.getLedState(relDevice);
+    var relNew    = Math.max(0, Math.min(255, Math.round(relLs.brightness + relDelta / 100 * 255)));
+    relLs.brightness = relNew;
+    console.log('[Flow] dim_relative:', relDevice, 'delta=' + relDelta + '% new=' + relNew);
+    return { action: 'dim_relative', device: relDevice, brightness: relNew };
+  }
+
+  if (node.name === 'color_temp') {
+    var ctDevice = node.data.device || 'default';
+    var ctKelvin = Math.max(2000, Math.min(6500, parseInt(node.data.kelvin) || 3000));
+    var ctLs     = state.getLedState(ctDevice);
+    ctLs.color   = kelvinToRgb(ctKelvin);
+    ctLs.on      = true;
+    console.log('[Flow] color_temp:', ctDevice, ctKelvin + 'K', ctLs.color);
+    return { action: 'color_temp', device: ctDevice, kelvin: ctKelvin };
+  }
+
+  if (node.name === 'adaptive_light') {
+    var alDevice = node.data.device || 'default';
+    var alLs     = state.getLedState(alDevice);
+    var alHour   = amsHour();
+    var alBrightness, alKelvin;
+    if (alHour >= 10 && alHour < 17) {
+      alBrightness = 230; alKelvin = 6500; // Daytime: bright + cool
+    } else if (alHour >= 17 && alHour < 22) {
+      alBrightness = 160; alKelvin = 3000; // Evening: medium + warm
+    } else if (alHour >= 22 || alHour < 2) {
+      alBrightness = 60;  alKelvin = 2200; // Night: dim + warm
+    } else {
+      alBrightness = 20;  alKelvin = 2000; // Very dim warm
+    }
+    alLs.brightness = alBrightness;
+    alLs.color      = kelvinToRgb(alKelvin);
+    alLs.on         = true;
+    console.log('[Flow] adaptive_light:', alDevice, alBrightness, alKelvin + 'K');
+    return { action: 'adaptive_light', device: alDevice, brightness: alBrightness, kelvin: alKelvin };
+  }
+
+  if (node.name === 'wake_light') {
+    var wlDevice  = node.data.device || 'default';
+    var wlTarget  = Math.max(0, Math.min(255, parseInt(node.data.brightness) || 200));
+    var wlMins    = Math.max(1, Math.min(60, parseInt(node.data.minutes) || 30));
+    var wlLs      = state.getLedState(wlDevice);
+    var wlSteps   = wlMins * 60 * 30; // 30fps equivalent steps
+    var wlStep    = 0;
+    wlLs.brightness = 0;
+    wlLs.on = true;
+    var wlInterval = setInterval(function() {
+      wlStep++;
+      wlLs.brightness = Math.round(wlTarget * wlStep / wlSteps);
+      if (wlStep >= wlSteps) {
+        wlLs.brightness = wlTarget;
+        clearInterval(wlInterval);
+      }
+    }, Math.round(1000 / 30));
+    console.log('[Flow] wake_light:', wlDevice, '0 ->', wlTarget, 'in', wlMins, 'min');
+    return { action: 'wake_light', device: wlDevice, target: wlTarget };
+  }
+
+  if (node.name === 'flash') {
+    var flDevice   = node.data.device || 'default';
+    var flTimes    = Math.max(1, Math.min(20, parseInt(node.data.times) || 3));
+    var flInterval = Math.max(100, Math.min(5000, parseInt(node.data.interval_ms) || 500));
+    var flLs       = state.getLedState(flDevice);
+    var flOrigOn   = flLs.on;
+    var flCount    = 0;
+    function flashTick() {
+      if (flCount >= flTimes * 2) {
+        flLs.on = flOrigOn; // restore original state
+        return;
+      }
+      flLs.on = (flCount % 2 === 0); // even = on, odd = off
+      flCount++;
+      setTimeout(flashTick, flInterval);
+    }
+    flashTick();
+    console.log('[Flow] flash:', flDevice, flTimes, 'x', flInterval + 'ms');
+    return { action: 'flash', device: flDevice, times: flTimes };
+  }
+
+  if (node.name === 'telegram') {
+    var tgToken  = (node.data.token   || '').trim();
+    var tgChatId = (node.data.chat_id || '').trim();
+    var tgMsg    = (node.data.message || 'VloedHub flow getriggerd').trim();
+    if (tgToken && tgChatId) {
+      var tgBody = JSON.stringify({ chat_id: tgChatId, text: tgMsg });
+      var tgPath = '/bot' + tgToken + '/sendMessage';
+      var tgReq  = https.request({
+        hostname: 'api.telegram.org',
+        path: tgPath,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(tgBody) }
+      }, function(r) { r.resume(); });
+      tgReq.on('error', function(e) { console.error('[Flow] telegram error:', e.message); });
+      tgReq.write(tgBody);
+      tgReq.end();
+    }
+    console.log('[Flow] Telegram:', tgChatId, tgMsg);
+    return { action: 'telegram', chat_id: tgChatId, message: tgMsg };
+  }
+
+  if (node.name === 'mqtt_publish') {
+    var mqttSvc = require('./mqtt');
+    mqttSvc.publish(
+      node.data.broker   || 'mqtt://localhost:1883',
+      node.data.topic    || '',
+      node.data.message  || '',
+      node.data.username || '',
+      node.data.password || ''
+    );
+    console.log('[Flow] MQTT publish:', node.data.topic);
+    return { action: 'mqtt_publish', topic: node.data.topic };
   }
 
   return null;
@@ -435,9 +646,59 @@ function checkAll(db) {
   });
 }
 
+// ── Webhook trigger ────────────────────────────────────────────────────────
+function triggerWebhook(token, db) {
+  db.all('SELECT * FROM flows WHERE enabled = 1', function(err, rows) {
+    if (err || !rows) return;
+    rows.forEach(function(flow) {
+      try {
+        var data  = JSON.parse(flow.data || '{}');
+        if (!data.drawflow) return;
+        var nodes = (data.drawflow.Home || {}).data || {};
+        Object.values(nodes).forEach(function(node) {
+          if (node.name === 'webhook_trigger' && (node.data.token || '') === token) {
+            console.log('[Flow] webhook_trigger token="' + token + '" — flow ' + flow.id + ' "' + flow.name + '"');
+            traverseOutputs(node, nodes, {});
+          }
+        });
+      } catch(e) {}
+    });
+  });
+}
+
+// ── MQTT trigger setup (called once at server start) ──────────────────────
+function startMqttTriggers(db) {
+  var mqttSvc = require('./mqtt');
+  db.all('SELECT * FROM flows WHERE enabled = 1', function(err, rows) {
+    if (err || !rows) return;
+    rows.forEach(function(flow) {
+      try {
+        var data  = JSON.parse(flow.data || '{}');
+        if (!data.drawflow) return;
+        var nodes = (data.drawflow.Home || {}).data || {};
+        Object.values(nodes).forEach(function(node) {
+          if (node.name !== 'mqtt_trigger') return;
+          var broker   = node.data.broker   || 'mqtt://localhost:1883';
+          var topic    = node.data.topic    || '#';
+          var username = node.data.username || '';
+          var password = node.data.password || '';
+          var capturedNode  = node;
+          var capturedNodes = nodes;
+          mqttSvc.subscribe(broker, topic, username, password, function(receivedTopic, message) {
+            console.log('[Flow] mqtt_trigger topic="' + receivedTopic + '" — flow ' + flow.id + ' "' + flow.name + '"');
+            traverseOutputs(capturedNode, capturedNodes, { mqttTopic: receivedTopic, mqttMessage: message.toString() });
+          });
+        });
+      } catch(e) {}
+    });
+  });
+}
+
 module.exports = {
   runFlow: runFlow,
+  triggerWebhook: triggerWebhook,
   start: function(db) {
+    startMqttTriggers(db);
     setInterval(function() { checkAll(db); }, 30000);
     checkAll(db);
   }

@@ -117,6 +117,16 @@
             <div><div class="palette-node-name">Wasmachine klaar</div><div class="palette-node-desc">Wascyclus voltooid</div></div>
           </div>
 
+          <div class="palette-group-label">Triggers — Integraties</div>
+          <div class="palette-node" draggable="true" data-node="webhook_trigger" ondragstart="drag(event)">
+            <i class="fa-solid fa-globe" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Webhook trigger</div><div class="palette-node-desc">Starten via HTTP POST</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="mqtt_trigger" ondragstart="drag(event)">
+            <i class="fa-solid fa-tower-broadcast" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">MQTT trigger</div><div class="palette-node-desc">Starten via MQTT bericht</div></div>
+          </div>
+
           <div class="palette-group-label">Logica</div>
           <div class="palette-node" draggable="true" data-node="delay" ondragstart="drag(event)">
             <i class="fa-solid fa-hourglass-half" style="color:var(--muted)"></i>
@@ -144,6 +154,30 @@
             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--pl)"></i>
             <div><div class="palette-node-name">LED effect</div><div class="palette-node-desc">Animatie instellen</div></div>
           </div>
+          <div class="palette-node" draggable="true" data-node="dim_to" ondragstart="drag(event)">
+            <i class="fa-solid fa-sliders" style="color:var(--yellow)"></i>
+            <div><div class="palette-node-name">Dim naar</div><div class="palette-node-desc">Fade naar helderheid in X sec</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="dim_relative" ondragstart="drag(event)">
+            <i class="fa-solid fa-sliders" style="color:var(--muted)"></i>
+            <div><div class="palette-node-name">Dim relatief</div><div class="palette-node-desc">Pas helderheid +/- % aan</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="color_temp" ondragstart="drag(event)">
+            <i class="fa-solid fa-temperature-half" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Kleurtemperatuur</div><div class="palette-node-desc">Stel Kelvin-waarde in</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="adaptive_light" ondragstart="drag(event)">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Adaptief licht</div><div class="palette-node-desc">Automatisch op tijdstip</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="wake_light" ondragstart="drag(event)">
+            <i class="fa-solid fa-sun" style="color:var(--yellow)"></i>
+            <div><div class="palette-node-name">Wekker-licht</div><div class="palette-node-desc">Langzaam opfaden bij wakker worden</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="flash" ondragstart="drag(event)">
+            <i class="fa-solid fa-bolt" style="color:var(--yellow)"></i>
+            <div><div class="palette-node-name">Flits</div><div class="palette-node-desc">Knippert X keer</div></div>
+          </div>
 
           <div class="palette-group-label">Acties — Relais</div>
           <div class="palette-node" draggable="true" data-node="relay_on" ondragstart="drag(event)">
@@ -159,6 +193,20 @@
           <div class="palette-node" draggable="true" data-node="notify" ondragstart="drag(event)">
             <i class="fa-solid fa-bell" style="color:var(--purple)"></i>
             <div><div class="palette-node-name">Discord melding</div><div class="palette-node-desc">Stuur een bericht</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="telegram" ondragstart="drag(event)">
+            <i class="fa-solid fa-paper-plane" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Telegram</div><div class="palette-node-desc">Stuur een Telegram bericht</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="mqtt_publish" ondragstart="drag(event)">
+            <i class="fa-solid fa-tower-broadcast" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">MQTT publiceer</div><div class="palette-node-desc">Stuur bericht naar topic</div></div>
+          </div>
+
+          <div class="palette-group-label">Acties — Integraties</div>
+          <div class="palette-node" draggable="true" data-node="webhook" ondragstart="drag(event)">
+            <i class="fa-solid fa-globe" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Webhook</div><div class="palette-node-desc">HTTP POST naar externe URL</div></div>
           </div>
 
         </div>
@@ -285,7 +333,62 @@
         '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
     notify: t('df-node-title--notify','fa-bell','Discord melding') +
-      b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>'))
+      b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>')),
+
+    webhook_trigger: t('df-node-title--timer','fa-globe','Webhook trigger') +
+      b(f('Token','<input type="text" df-token placeholder="mijn-geheime-token">') +
+        hint('POST naar /api/webhook/{token} om deze flow te starten.')),
+
+    mqtt_trigger: t('df-node-title--timer','fa-tower-broadcast','MQTT trigger') +
+      b(f('Broker','<input type="text" df-broker placeholder="mqtt://localhost:1883">') +
+        f('Topic','<input type="text" df-topic placeholder="home/sensor/#">') +
+        f('Gebruiker','<input type="text" df-username>') +
+        f('Wachtwoord','<input type="password" df-password>')),
+
+    webhook: t('df-node-title--action','fa-globe','Webhook') +
+      b(f('URL','<input type="text" df-url placeholder="https://...">') +
+        f('Body','<textarea df-body rows="2"></textarea>')),
+
+    dim_to: t('df-node-title--action','fa-sliders','Dim naar') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
+        f('Seconden','<input type="number" df-seconds min="1" max="300" value="5">')),
+
+    dim_relative: t('df-node-title--action','fa-sliders','Dim relatief') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        f('Delta %','<input type="number" df-delta min="-100" max="100" step="5" value="20">') +
+        hint('Positief = feller, negatief = dimmer.')),
+
+    color_temp: t('df-node-title--action','fa-temperature-half','Kleurtemperatuur') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        f('Kelvin','<input type="number" df-kelvin min="2000" max="6500" step="100" value="3000">') +
+        hint('2000K = kaarslicht \u00b7 4000K = neutraal \u00b7 6500K = daglicht')),
+
+    adaptive_light: t('df-node-title--action','fa-wand-magic-sparkles','Adaptief licht') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        hint('Past helderheid en kleur automatisch aan op het tijdstip.')),
+
+    wake_light: t('df-node-title--action','fa-sun','Wekker-licht') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="200" oninput="updateBrightness(this)">') +
+        f('Minuten','<input type="number" df-minutes min="1" max="60" value="30">')),
+
+    flash: t('df-node-title--action','fa-bolt','Flits') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+        f('Aantal keer','<input type="number" df-times min="1" max="20" value="3">') +
+        f('Interval ms','<input type="number" df-interval_ms min="100" max="5000" step="100" value="500">')),
+
+    telegram: t('df-node-title--notify','fa-paper-plane','Telegram') +
+      b(f('Bot token','<input type="text" df-token>') +
+        f('Chat ID','<input type="text" df-chat_id>') +
+        f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>')),
+
+    mqtt_publish: t('df-node-title--notify','fa-tower-broadcast','MQTT publiceer') +
+      b(f('Broker','<input type="text" df-broker placeholder="mqtt://localhost:1883">') +
+        f('Topic','<input type="text" df-topic>') +
+        f('Bericht','<input type="text" df-message>') +
+        f('Gebruiker','<input type="text" df-username>') +
+        f('Wachtwoord','<input type="password" df-password>'))
   };
 
   // ── HTML builder helpers ───────────────────────────────────────────────
@@ -321,12 +424,23 @@
     led_on:          { device: 'default', brightness: '180', color: '#ffffff' },
     led_off:         { device: 'default' },
     led_effect:      { device: 'default', effect: '0', brightness: '180', color: '#ffffff' },
-    notify:          { message: 'Flow getriggerd!' }
+    notify:          { message: 'Flow getriggerd!' },
+    webhook_trigger: { token: '' },
+    mqtt_trigger:    { broker: 'mqtt://localhost:1883', topic: '', username: '', password: '' },
+    webhook:         { url: '', body: '' },
+    dim_to:          { device: 'default', brightness: '180', seconds: '5' },
+    dim_relative:    { device: 'default', delta: '20' },
+    color_temp:      { device: 'default', kelvin: '3000' },
+    adaptive_light:  { device: 'default' },
+    wake_light:      { device: 'default', brightness: '200', minutes: '30' },
+    flash:           { device: 'default', times: '3', interval_ms: '500' },
+    telegram:        { token: '', chat_id: '', message: 'Flow getriggerd!' },
+    mqtt_publish:    { broker: 'mqtt://localhost:1883', topic: '', message: '', username: '', password: '' }
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1 };
-  var NODE_OUTPUTS = { timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0 };
+  var NODE_INPUTS  = { timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1 };
+  var NODE_OUTPUTS = { timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));

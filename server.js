@@ -11,6 +11,7 @@ var routes = [
   require("./routes/led"),
   require("./routes/relay"),
   require("./routes/flows"),
+  require("./routes/webhook-trigger"),
   require("./routes/debug"),
   require("./routes/pages")
 ];
