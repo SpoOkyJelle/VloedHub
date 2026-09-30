@@ -6,7 +6,7 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "sqlite3": "^5.1.7",
-    "mqtt": "^5.10.1"
+    "mqtt": "^4.3.8",
+    "sqlite3": "^5.1.7"
   }
 }
