@@ -20,6 +20,8 @@
     <span class='updated-text' id='updated'>Wachten op data…</span>
     <a href='/flows' class='icon-link' title='Flows'><i class='fa-solid fa-diagram-project'></i></a>
     <a href='/debug' class='icon-link' title='Debug'><i class='fa-solid fa-gear'></i></a>
+    <button class='icon-link' title='PIN wijzigen' onclick='showPinModal()' style='background:none;border:none;cursor:pointer;padding:0'><i class='fa-solid fa-lock'></i></button>
+    <button class='icon-link' title='Uitloggen' onclick='logout()' style='background:none;border:none;cursor:pointer;padding:0'><i class='fa-solid fa-right-from-bracket'></i></button>
   </div>
 </header>
 <div class='screens-outer' id='screens-outer'>
@@ -876,6 +878,74 @@ function refreshRelayGangState() {
 function relayGangQuickToggle() { relayGangState.on = !relayGangState.on; relayGangSend(); }
 // Build effect grids now — LED_EFFECTS and all functions are defined above
 buildLedGrid(); buildLed2Grid(); buildLed3Grid();
+</script>
+
+<!-- PIN wijzigen modal -->
+<div id="pin-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:center;justify-content:center">
+  <div style="background:#141728;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.5rem;width:90%;max-width:320px;font-family:'Poppins',sans-serif;color:#F1F5F9">
+    <div style="font-size:0.95rem;font-weight:700;margin-bottom:1rem">🔒 PIN wijzigen</div>
+    <div id="pin-modal-body">
+      <div style="margin-bottom:0.75rem">
+        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Huidige PIN</label>
+        <input id="pin-current" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
+          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Nieuwe PIN (4 cijfers)</label>
+        <input id="pin-new" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
+          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Herhaal nieuwe PIN</label>
+        <input id="pin-confirm" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
+          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
+      </div>
+      <div id="pin-modal-error" style="font-size:0.72rem;color:#F87171;min-height:1.2em;margin-bottom:0.75rem"></div>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+        <button onclick="closePinModal()" style="background:transparent;border:1px solid rgba(255,255,255,0.07);color:#4A5880;border-radius:8px;padding:0.4rem 0.9rem;font-family:inherit;font-size:0.78rem;cursor:pointer">Annuleren</button>
+        <button onclick="savePinModal()" style="background:#A855F7;border:1px solid #A855F7;color:#fff;border-radius:8px;padding:0.4rem 0.9rem;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Opslaan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPinModal() {
+  var el = document.getElementById('pin-modal-overlay');
+  el.style.display = 'flex';
+  document.getElementById('pin-current').value = '';
+  document.getElementById('pin-new').value = '';
+  document.getElementById('pin-confirm').value = '';
+  document.getElementById('pin-modal-error').textContent = '';
+  document.getElementById('pin-current').focus();
+}
+function closePinModal() {
+  document.getElementById('pin-modal-overlay').style.display = 'none';
+}
+function savePinModal() {
+  var current = document.getElementById('pin-current').value;
+  var newPin  = document.getElementById('pin-new').value;
+  var confirm = document.getElementById('pin-confirm').value;
+  var errEl   = document.getElementById('pin-modal-error');
+  if (!/^\d{4}$/.test(newPin))   { errEl.textContent = 'PIN moet precies 4 cijfers zijn'; return; }
+  if (newPin !== confirm)         { errEl.textContent = 'PINs komen niet overeen'; return; }
+  fetch('/api/auth/set-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current: current, pin: newPin })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok) { closePinModal(); }
+    else { errEl.textContent = d.error || 'Fout'; }
+  });
+}
+function logout() {
+  fetch('/api/auth/logout', { method: 'POST' }).then(function() {
+    window.location.href = '/pin';
+  });
+}
+document.getElementById('pin-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closePinModal();
+});
 </script>
 </body>
 </html>

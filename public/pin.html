@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>VloedHub — Inloggen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0C0F1D;
+      --surface: #141728;
+      --surface2: #1A1E35;
+      --border: rgba(255,255,255,0.07);
+      --text: #F1F5F9;
+      --muted: #4A5880;
+      --dim: #3D4D6A;
+      --purple: #A855F7;
+      --pl: #C084FC;
+      --red: #F87171;
+      --green: #22C55E;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Poppins', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .pin-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 1.5rem;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    /* Logo */
+    .pin-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .pin-logo-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: rgba(168,85,247,0.15);
+      border: 1px solid rgba(168,85,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+    .pin-logo-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .pin-logo-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* Subtitle */
+    .pin-subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* Dots */
+    .pin-dots {
+      display: flex;
+      gap: 1rem;
+    }
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--dim);
+      background: transparent;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .pin-dot.filled {
+      background: var(--purple);
+      border-color: var(--purple);
+      transform: scale(1.15);
+    }
+    .pin-dot.error {
+      background: var(--red);
+      border-color: var(--red);
+    }
+    .pin-dot.success {
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    /* Shake animation */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* Numpad */
+    .pin-numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      width: 100%;
+    }
+    .pin-key {
+      aspect-ratio: 1;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.1rem;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pin-key:active {
+      background: rgba(168,85,247,0.15);
+      border-color: rgba(168,85,247,0.4);
+      transform: scale(0.94);
+    }
+    .pin-key.spacer { visibility: hidden; pointer-events: none; }
+    .pin-key.delete { font-size: 1.1rem; color: var(--muted); }
+    .pin-key-sub {
+      font-size: 0.42rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Error message */
+    .pin-error {
+      font-size: 0.72rem;
+      color: var(--red);
+      text-align: center;
+      min-height: 1.2em;
+      transition: opacity 0.2s;
+    }
+
+    /* First-time setup notice */
+    .pin-setup-notice {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(168,85,247,0.08);
+      border: 1px solid rgba(168,85,247,0.2);
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="pin-wrap">
+
+  <div class="pin-logo">
+    <div class="pin-logo-icon">⚡</div>
+    <div class="pin-logo-title">VloedHub</div>
+    <div class="pin-logo-sub">Slimme energie · thuis</div>
+  </div>
+
+  <div id="setup-notice" class="pin-setup-notice" style="display:none">
+    Geen pincode ingesteld.<br>Kies een nieuwe 4-cijferige code.
+  </div>
+
+  <div class="pin-subtitle" id="pin-subtitle">Voer je pincode in</div>
+
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+
+  <div class="pin-error" id="pin-error"></div>
+
+  <div class="pin-numpad">
+    <button class="pin-key" onclick="pressKey('1')">1</button>
+    <button class="pin-key" onclick="pressKey('2')">2<span class="pin-key-sub">ABC</span></button>
+    <button class="pin-key" onclick="pressKey('3')">3<span class="pin-key-sub">DEF</span></button>
+    <button class="pin-key" onclick="pressKey('4')">4<span class="pin-key-sub">GHI</span></button>
+    <button class="pin-key" onclick="pressKey('5')">5<span class="pin-key-sub">JKL</span></button>
+    <button class="pin-key" onclick="pressKey('6')">6<span class="pin-key-sub">MNO</span></button>
+    <button class="pin-key" onclick="pressKey('7')">7<span class="pin-key-sub">PQRS</span></button>
+    <button class="pin-key" onclick="pressKey('8')">8<span class="pin-key-sub">TUV</span></button>
+    <button class="pin-key" onclick="pressKey('9')">9<span class="pin-key-sub">WXYZ</span></button>
+    <div class="pin-key spacer"></div>
+    <button class="pin-key" onclick="pressKey('0')">0</button>
+    <button class="pin-key delete" onclick="pressDelete()">⌫</button>
+  </div>
+
+</div>
+<script>
+  var pin = '';
+  var mode = 'login'; // 'login' | 'setup'
+  var setupFirst = '';
+
+  // Check if PIN is set
+  fetch('/api/auth/status').then(function(r) { return r.json(); }).then(function(d) {
+    if (!d.pinSet) {
+      mode = 'setup';
+      document.getElementById('setup-notice').style.display = '';
+      document.getElementById('pin-subtitle').textContent = 'Kies een nieuwe pincode';
+    }
+  });
+
+  function pressKey(digit) {
+    if (pin.length >= 4) return;
+    pin += digit;
+    updateDots();
+    if (pin.length === 4) {
+      setTimeout(submit, 120);
+    }
+  }
+
+  function pressDelete() {
+    if (pin.length === 0) return;
+    pin = pin.slice(0, -1);
+    updateDots();
+    clearError();
+  }
+
+  function updateDots(state) {
+    for (var i = 0; i < 4; i++) {
+      var dot = document.getElementById('d' + i);
+      dot.className = 'pin-dot';
+      if (state) dot.classList.add(state);
+      else if (i < pin.length) dot.classList.add('filled');
+    }
+  }
+
+  function clearError() {
+    document.getElementById('pin-error').textContent = '';
+  }
+
+  function showError(msg) {
+    document.getElementById('pin-error').textContent = msg;
+    var dots = document.getElementById('pin-dots');
+    updateDots('error');
+    dots.classList.add('shake');
+    setTimeout(function() {
+      dots.classList.remove('shake');
+      pin = '';
+      updateDots();
+    }, 420);
+  }
+
+  function submit() {
+    if (mode === 'setup') {
+      if (!setupFirst) {
+        setupFirst = pin;
+        pin = '';
+        document.getElementById('pin-subtitle').textContent = 'Herhaal de pincode';
+        document.getElementById('setup-notice').style.display = 'none';
+        updateDots();
+        return;
+      }
+      if (pin !== setupFirst) {
+        setupFirst = '';
+        document.getElementById('pin-subtitle').textContent = 'Kies een nieuwe pincode';
+        document.getElementById('setup-notice').style.display = '';
+        showError('Pincodes komen niet overeen');
+        return;
+      }
+      // Set PIN then login
+      fetch('/api/auth/set-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) {
+          // Now login with the new PIN
+          return fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: pin })
+          }).then(function(r) { return r.json(); });
+        }
+        throw new Error(d.error);
+      }).then(function(d) {
+        if (d.ok) {
+          updateDots('success');
+          setTimeout(function() { window.location.href = '/'; }, 300);
+        }
+      }).catch(function(e) { showError(e.message || 'Fout'); });
+      return;
+    }
+
+    // Normal login
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: pin })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) {
+        updateDots('success');
+        var dest = new URLSearchParams(location.search).get('next') || '/';
+        setTimeout(function() { window.location.href = dest; }, 300);
+      } else {
+        showError(d.error || 'Verkeerde pincode');
+      }
+    }).catch(function() { showError('Verbindingsfout'); });
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', function(e) {
+    if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+    else if (e.key === 'Backspace') pressDelete();
+  });
+</script>
+</body>
+</html>
