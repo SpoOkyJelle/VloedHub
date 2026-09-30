@@ -4,6 +4,9 @@ var auth = require("./services/auth");
 // Routes that never require authentication
 var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status', '/api/auth/set-pin'];
 
+// API path prefixes that are device-facing (ESP32, P1 meter, sensors) — always public
+var PUBLIC_API_PREFIXES = ['/api/p1', '/api/led', '/api/relay', '/api/temperature', '/api/wasmachine', '/api/gas', '/api/webhook/'];
+
 // Static asset extensions that are always public (needed by /pin page)
 var PUBLIC_EXTS  = ['.css', '.js', '.png', '.ico', '.svg', '.woff', '.woff2'];
 
@@ -29,6 +32,9 @@ var path = require("path");
 function isPublic(url) {
   var urlPath = url.split("?")[0];
   if (PUBLIC_PATHS.indexOf(urlPath) !== -1) return true;
+  for (var i = 0; i < PUBLIC_API_PREFIXES.length; i++) {
+    if (urlPath.startsWith(PUBLIC_API_PREFIXES[i])) return true;
+  }
   var ext = path.extname(urlPath);
   return ext && PUBLIC_EXTS.indexOf(ext) !== -1;
 }
