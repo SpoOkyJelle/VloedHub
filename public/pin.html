@@ -39,9 +39,16 @@
       flex-direction: column;
       align-items: center;
       gap: 2rem;
-      padding: 2rem 1.5rem;
+      padding: 2rem 1.25rem;
       width: 100%;
-      max-width: 340px;
+      max-width: 380px;
+    }
+
+    @media (max-width: 480px) {
+      .pin-wrap { gap: 1.5rem; padding: 1.5rem 1rem; max-width: 100%; }
+      .pin-key  { min-height: 80px; font-size: 1.8rem; border-radius: 16px; }
+      .pin-numpad { gap: 0.75rem; }
+      .pin-dot  { width: 18px; height: 18px; }
     }
 
     /* Logo */
@@ -125,11 +132,12 @@
     }
     .pin-key {
       aspect-ratio: 1;
+      min-height: 72px;
       border-radius: 14px;
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
