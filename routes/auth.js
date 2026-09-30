@@ -58,24 +58,28 @@ module.exports = function(req, res) {
 
   // ── Set / change PIN ─────────────────────────────────────────────────────
   if (req.method === 'POST' && req.url === '/api/auth/set-pin') {
-    var sessionToken = auth.getSessionToken(req);
-    if (!auth.isValidSession(sessionToken)) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'Niet ingelogd' }));
-      return true;
-    }
     readBody(req, function(err, body) {
       if (err || !body.pin || !/^\d{4}$/.test(body.pin)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: 'Voer een geldige 4-cijferige pincode in' }));
         return;
       }
-      // Require current PIN when one is already set
-      if (auth.pinIsSet() && !auth.pinIsCorrect(body.current)) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: 'Huidige pincode onjuist' }));
-        return;
+      if (auth.pinIsSet()) {
+        // PIN already exists: require valid session OR correct current PIN
+        var sessionToken = auth.getSessionToken(req);
+        var hasSession = auth.isValidSession(sessionToken);
+        if (!hasSession) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Niet ingelogd' }));
+          return;
+        }
+        if (!auth.pinIsCorrect(body.current)) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Huidige pincode onjuist' }));
+          return;
+        }
       }
+      // First-time setup or authenticated change: allow
       auth.setPin(body.pin);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));

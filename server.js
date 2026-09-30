@@ -2,7 +2,7 @@ var http = require("http");
 var auth = require("./services/auth");
 
 // Routes that never require authentication
-var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status'];
+var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status', '/api/auth/set-pin'];
 
 // Static asset extensions that are always public (needed by /pin page)
 var PUBLIC_EXTS  = ['.css', '.js', '.png', '.ico', '.svg', '.woff', '.woff2'];
