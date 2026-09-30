@@ -235,6 +235,18 @@
   <button class='nav-item' data-screen='4' onclick='showScreen(4,this)'>
     <span class='nav-icon'><i class='fa-solid fa-couch'></i></span><span class='nav-label'>Thuis</span>
   </button>
+  <a href='/flows' class='nav-item nav-item--link nav-item--desktop-only'>
+    <span class='nav-icon'><i class='fa-solid fa-diagram-project'></i></span><span class='nav-label'>Flows</span>
+  </a>
+  <a href='/debug' class='nav-item nav-item--link nav-item--desktop-only'>
+    <span class='nav-icon'><i class='fa-solid fa-gear'></i></span><span class='nav-label'>Debug</span>
+  </a>
+  <button class='nav-item nav-item--desktop-only' onclick='showPinModal()'>
+    <span class='nav-icon'><i class='fa-solid fa-lock'></i></span><span class='nav-label'>PIN</span>
+  </button>
+  <button class='nav-item nav-item--desktop-only' onclick='logout()'>
+    <span class='nav-icon'><i class='fa-solid fa-right-from-bracket'></i></span><span class='nav-label'>Uitloggen</span>
+  </button>
 </nav>
 
 <script>

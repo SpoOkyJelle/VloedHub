@@ -124,6 +124,9 @@ body {
   padding:0}
 .nav-item.active {
   color:var(--pl)}
+.nav-item--link {
+  text-decoration:none;
+  flex:1}
 .nav-item::before {
   content:'';
   position:absolute;
@@ -704,7 +707,10 @@ to {
   font-size:0.52rem;
   color:var(--dim);
   font-family:monospace}
+/* Hide desktop-only nav items on mobile */
+.nav-item--desktop-only { display:none }
 @media(min-width:720px) {
+  .nav-item--desktop-only { display:flex }
   body {
   flex-direction:row;
   height:100vh}
