@@ -124,6 +124,8 @@ html, body {
   border-color: var(--border);
 }
 .btn-ghost:hover { color: var(--red); border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+.btn-ghost-neutral { color: var(--muted); }
+.btn-ghost-neutral:hover { color: var(--text) !important; background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.15) !important; }
 
 .btn-icon {
   width: 26px;
@@ -238,8 +240,9 @@ html, body {
 
 .flow-list-item {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
   padding: 0.4rem 0.85rem;
   font-size: 0.75rem;
   cursor: pointer;
@@ -248,6 +251,8 @@ html, body {
 }
 .flow-list-item:hover { background: rgba(255,255,255,0.04); }
 .flow-list-item.active { background: rgba(168,85,247,0.1); color: var(--pl); }
+.flow-list-item-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+.flow-item-meta { font-size: 0.58rem; color: var(--dim); padding-left: 1.2rem; }
 
 .flow-item-dot {
   width: 7px;

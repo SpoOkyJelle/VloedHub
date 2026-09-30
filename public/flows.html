@@ -9,6 +9,226 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css">
   <link rel="stylesheet" href="/styles/flows.css">
+  <style>
+  /* ── New UI additions ─────────────────────────────────────────────────── */
+
+  /* Sidebar collapse */
+  .flows-sidebar { transition: width 0.25s ease; }
+  .flows-sidebar.collapsed { width: 48px !important; }
+  .flows-sidebar.collapsed .sidebar-section > *:not(.sidebar-heading) { display: none !important; }
+  .flows-sidebar.collapsed .sidebar-heading span { display: none; }
+  .flows-sidebar.collapsed .sidebar-heading { justify-content: center; padding: 0.6rem 0; }
+  .flows-sidebar.collapsed .sidebar-nodes .sidebar-heading { display: flex; }
+  #btn-sidebar-toggle { margin-left: auto; }
+  .flows-sidebar.collapsed #btn-sidebar-toggle i { transform: rotate(180deg); }
+  @media (max-width: 767px) {
+    .flows-sidebar { position: absolute; top: 0; left: 0; height: 100%; z-index: 15; }
+    .flows-sidebar:not(.collapsed) { box-shadow: 4px 0 24px rgba(0,0,0,0.6); }
+  }
+
+  /* Flow search */
+  .flow-search-wrap { padding: 0 0.6rem 0.4rem; }
+  .flow-search-input, .palette-search-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-size: 0.7rem;
+    font-family: inherit;
+    padding: 0.28rem 0.55rem 0.28rem 1.7rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .flow-search-input:focus, .palette-search-input:focus { border-color: rgba(168,85,247,0.45); }
+  .search-wrap { position: relative; }
+  .search-wrap i { position: absolute; left: 0.55rem; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 0.65rem; pointer-events: none; }
+
+  /* Flow sort */
+  .sidebar-heading-tools { display: flex; gap: 0.3rem; align-items: center; }
+
+  /* Flow last-run */
+  .flow-item-meta { font-size: 0.58rem; color: var(--dim); margin-top: 0.05rem; }
+  .flow-list-item { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+  .flow-list-item-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+
+  /* Canvas toolbar */
+  .canvas-toolbar {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(20,23,40,0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35rem 0.6rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+    z-index: 10;
+  }
+  .canvas-toolbar .btn-icon { width: 28px; height: 28px; border: none; background: transparent; }
+  .canvas-toolbar .toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 0.1rem; }
+
+  /* Header extra buttons */
+  .btn-ghost-blue { color: var(--blue); border-color: rgba(56,189,248,0.25); }
+  .btn-ghost-blue:hover { color: var(--blue); background: rgba(56,189,248,0.1); border-color: rgba(56,189,248,0.4); }
+  .btn-ghost-neutral:hover { color: var(--text); background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); }
+
+  /* Palette group collapsing */
+  .palette-group-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.25rem 0.3rem;
+    transition: color 0.15s;
+  }
+  .palette-group-label:hover { color: var(--muted); }
+  .palette-group-label .chevron { transition: transform 0.2s; font-size: 0.6rem; color: var(--dim); }
+  .palette-group-label.collapsed .chevron { transform: rotate(-90deg); }
+  .palette-group-label.collapsed + .palette-node,
+  .palette-group-label.collapsed ~ .palette-node { display: none !important; }
+
+  /* Palette search no-results */
+  .palette-no-results { display: none; font-size: 0.68rem; color: var(--dim); padding: 0.4rem 0.25rem; }
+  .palette-no-results.visible { display: block; }
+
+  /* Palette tooltips */
+  .palette-node { position: relative; }
+  .palette-node::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(12,15,29,0.97);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.65rem;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    max-width: 220px;
+    white-space: normal;
+    line-height: 1.45;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .palette-node:hover::after { opacity: 1; }
+
+  /* Undo/redo buttons */
+  #btn-undo, #btn-redo { opacity: 0.4; pointer-events: none; transition: opacity 0.15s; }
+  #btn-undo.available, #btn-redo.available { opacity: 1; pointer-events: auto; }
+
+  /* Validation indicator on nodes */
+  .drawflow-node.node-invalid { border-color: var(--red) !important; }
+  .drawflow-node.node-invalid::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red);
+    z-index: 5;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    min-width: 320px;
+    max-width: 480px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    transform: translateY(12px) scale(0.97);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal-card { transform: translateY(0) scale(1); }
+  .modal-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .modal-body { font-size: 0.78rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.2rem; }
+  .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn-danger:hover { background: #ef4444; border-color: #ef4444; }
+
+  /* Shortcuts modal */
+  .shortcuts-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  .shortcuts-table td { padding: 0.35rem 0; font-size: 0.75rem; border-bottom: 1px solid var(--border); }
+  .shortcuts-table td:first-child { color: var(--dim); font-family: monospace; font-size: 0.7rem; white-space: nowrap; padding-right: 1rem; }
+  .shortcuts-table tr:last-child td { border-bottom: none; }
+  kbd {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.65rem;
+    font-family: monospace;
+    color: var(--text);
+  }
+
+  /* Run log panel */
+  .log-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+  }
+  .log-panel.open { transform: translateX(0); }
+  .log-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .log-panel-body { flex: 1; overflow-y: auto; padding: 0.75rem; }
+  .log-entry {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+  .log-entry-time { font-size: 0.65rem; color: var(--dim); margin-bottom: 0.3rem; }
+  .log-entry-actions { font-size: 0.7rem; color: var(--muted); }
+  .log-empty { font-size: 0.72rem; color: var(--dim); text-align: center; padding: 2rem 0; }
+  </style>
 </head>
 <body>
 
@@ -27,184 +247,211 @@
         <span class="toggle-track"><span class="toggle-knob"></span></span>
         <span class="toggle-label" id="enabled-label">Inactief</span>
       </label>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-undo" title="Ongedaan maken (Ctrl+Z)" style="display:none"><i class="fa-solid fa-rotate-left"></i></button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-redo" title="Opnieuw (Ctrl+Shift+Z)" style="display:none"><i class="fa-solid fa-rotate-right"></i></button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-log" style="display:none" title="Run log"><i class="fa-solid fa-list"></i> Log</button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-duplicate" style="display:none" title="Flow dupliceren"><i class="fa-solid fa-copy"></i></button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-export" style="display:none" title="Flow exporteren"><i class="fa-solid fa-download"></i></button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-import" title="Flow importeren"><i class="fa-solid fa-upload"></i></button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
       <button class="btn btn-ghost" id="btn-run" style="display:none" title="Nu uitvoeren"><i class="fa-solid fa-play"></i></button>
       <button class="btn btn-ghost" id="btn-delete" style="display:none" title="Verwijderen"><i class="fa-solid fa-trash"></i></button>
       <button class="btn btn-primary" id="btn-save" disabled><i class="fa-solid fa-floppy-disk"></i> Opslaan</button>
+      <button class="btn btn-ghost btn-ghost-neutral" id="btn-shortcuts" title="Sneltoetsen (?)"><i class="fa-solid fa-question"></i></button>
     </div>
   </header>
 
   <div class="flows-layout">
-    <aside class="flows-sidebar">
+    <aside class="flows-sidebar" id="flows-sidebar">
 
       <div class="sidebar-section" style="flex-shrink:0">
         <div class="sidebar-heading">
           <span>Mijn flows</span>
-          <button class="btn-icon" id="btn-new-flow" title="Nieuwe flow"><i class="fa-solid fa-plus"></i></button>
+          <div class="sidebar-heading-tools">
+            <button class="btn-icon" id="btn-sort-flows" title="Sorteren"><i class="fa-solid fa-arrow-up-wide-short"></i></button>
+            <button class="btn-icon" id="btn-new-flow" title="Nieuwe flow"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="flow-search-wrap">
+          <div class="search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" class="flow-search-input" id="flow-search" placeholder="Zoek flow…">
+          </div>
         </div>
         <ul class="flow-list" id="flow-list"><li class="flow-list-empty">Geen flows</li></ul>
       </div>
 
       <div class="sidebar-section sidebar-nodes">
-        <div class="sidebar-heading"><span>Nodes</span></div>
+        <div class="sidebar-heading">
+          <span>Nodes</span>
+          <button class="btn-icon" id="btn-sidebar-toggle" title="Zijbalk inklappen"><i class="fa-solid fa-chevron-left"></i></button>
+        </div>
         <p class="sidebar-hint">Sleep naar het canvas</p>
+        <div style="padding: 0 0.6rem 0.35rem;">
+          <div class="search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" class="palette-search-input" id="palette-search" placeholder="Zoek node…">
+          </div>
+        </div>
         <div class="node-palette">
+          <div class="palette-no-results" id="palette-no-results">Geen resultaten</div>
 
-          <div class="palette-group-label">Triggers — Tijd</div>
-          <div class="palette-node" draggable="true" data-node="timer" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="triggers-tijd">Triggers — Tijd<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="timer" data-tooltip="Triggert de flow op een vast tijdstip elke dag of op werkdagen/weekend." ondragstart="drag(event)">
             <i class="fa-solid fa-clock" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Timer</div><div class="palette-node-desc">Op een vast tijdstip</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="sunrise" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="sunrise" data-tooltip="Triggert bij zonsopkomst, met optionele offset in minuten (+ of -)." ondragstart="drag(event)">
             <i class="fa-solid fa-sun" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Zonsopgang</div><div class="palette-node-desc">Bij zonsopkomst (± offset)</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="sunset" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="sunset" data-tooltip="Triggert bij zonsondergang, met optionele offset in minuten (+ of -)." ondragstart="drag(event)">
             <i class="fa-solid fa-moon" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">Zonsondergang</div><div class="palette-node-desc">Bij zonsondergang (± offset)</div></div>
           </div>
 
-          <div class="palette-group-label">Triggers — Stroom</div>
-          <div class="palette-node" draggable="true" data-node="power_above" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="triggers-stroom">Triggers — Stroom<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="power_above" data-tooltip="Triggert één keer als het totale verbruik boven de ingestelde wattdrempel stijgt." ondragstart="drag(event)">
             <i class="fa-solid fa-bolt" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">Verbruik boven</div><div class="palette-node-desc">Wattage overschrijdt drempel</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="power_below" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="power_below" data-tooltip="Triggert één keer als het totale verbruik onder de ingestelde wattdrempel zakt." ondragstart="drag(event)">
             <i class="fa-solid fa-bolt-lightning" style="color:var(--dim)"></i>
             <div><div class="palette-node-name">Verbruik onder</div><div class="palette-node-desc">Wattage daalt onder drempel</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="solar_above" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="solar_above" data-tooltip="Triggert als de zonnepanelen meer dan X watt terugleveren aan het net." ondragstart="drag(event)">
             <i class="fa-solid fa-solar-panel" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Teruglevering boven</div><div class="palette-node-desc">Zonnepanelen leveren &gt; X watt</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="solar_below" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="solar_below" data-tooltip="Triggert als de teruglevering van zonnepanelen onder X watt zakt." ondragstart="drag(event)">
             <i class="fa-solid fa-solar-panel" style="color:var(--dim)"></i>
             <div><div class="palette-node-name">Teruglevering onder</div><div class="palette-node-desc">Teruglevering daalt onder X watt</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="voltage_dip" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="voltage_dip" data-tooltip="Triggert als een van de fasen onder de ingestelde spanning in volt zakt." ondragstart="drag(event)">
             <i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i>
             <div><div class="palette-node-name">Spanningsdip</div><div class="palette-node-desc">Fase zakt onder X volt</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="phase_imbalance" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="phase_imbalance" data-tooltip="Triggert als de drie fasen meer dan X% van elkaar afwijken." ondragstart="drag(event)">
             <i class="fa-solid fa-scale-unbalanced" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">Fase-onbalans</div><div class="palette-node-desc">Fases wijken &gt; X% af</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="gas_above" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="gas_above" data-tooltip="Triggert als het gasverbruik de ingestelde drempel in m³/uur overschrijdt." ondragstart="drag(event)">
             <i class="fa-solid fa-fire" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">Gas verbruik</div><div class="palette-node-desc">Gasverbruik &gt; X m³/uur</div></div>
           </div>
 
-          <div class="palette-group-label">Triggers — Klimaat &amp; Weer</div>
-          <div class="palette-node" draggable="true" data-node="temp_above" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="triggers-klimaat">Triggers — Klimaat &amp; Weer<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="temp_above" data-tooltip="Triggert als de temperatuur in de opgegeven kamer boven X graden Celsius stijgt." ondragstart="drag(event)">
             <i class="fa-solid fa-temperature-arrow-up" style="color:var(--red)"></i>
             <div><div class="palette-node-name">Temperatuur boven</div><div class="palette-node-desc">Kamer warmer dan X°C</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="temp_below" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="temp_below" data-tooltip="Triggert als de temperatuur in de opgegeven kamer onder X graden Celsius zakt." ondragstart="drag(event)">
             <i class="fa-solid fa-temperature-arrow-down" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Temperatuur onder</div><div class="palette-node-desc">Kamer kouder dan X°C</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="weather_rain" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="weather_rain" data-tooltip="Triggert als de neerslagkans van het weerbericht boven X procent uitkomt." ondragstart="drag(event)">
             <i class="fa-solid fa-cloud-rain" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Regenkanis</div><div class="palette-node-desc">Neerslagkans &gt; X%</div></div>
           </div>
 
-          <div class="palette-group-label">Triggers — Apparaten</div>
-          <div class="palette-node" draggable="true" data-node="wash_started" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="triggers-apparaten">Triggers — Apparaten<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="wash_started" data-tooltip="Triggert zodra de wasmachine een nieuwe wascyclus begint." ondragstart="drag(event)">
             <i class="fa-solid fa-rotate" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Wasmachine start</div><div class="palette-node-desc">Wascyclus begint</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="wash_done" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="wash_done" data-tooltip="Triggert zodra een wascyclus volledig is afgerond." ondragstart="drag(event)">
             <i class="fa-solid fa-shirt" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Wasmachine klaar</div><div class="palette-node-desc">Wascyclus voltooid</div></div>
           </div>
 
-          <div class="palette-group-label">Triggers — Integraties</div>
-          <div class="palette-node" draggable="true" data-node="webhook_trigger" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="triggers-integraties">Triggers — Integraties<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="webhook_trigger" data-tooltip="Start de flow via een HTTP POST naar /api/webhook/{token}." ondragstart="drag(event)">
             <i class="fa-solid fa-globe" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Webhook trigger</div><div class="palette-node-desc">Starten via HTTP POST</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="mqtt_trigger" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="mqtt_trigger" data-tooltip="Start de flow wanneer een bericht op het ingestelde MQTT topic binnenkomt." ondragstart="drag(event)">
             <i class="fa-solid fa-tower-broadcast" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">MQTT trigger</div><div class="palette-node-desc">Starten via MQTT bericht</div></div>
           </div>
 
-          <div class="palette-group-label">Logica</div>
-          <div class="palette-node" draggable="true" data-node="delay" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="logica">Logica<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="delay" data-tooltip="Pauzeer de flow een opgegeven aantal seconden (max. 1 uur = 3600 s)." ondragstart="drag(event)">
             <i class="fa-solid fa-hourglass-half" style="color:var(--muted)"></i>
             <div><div class="palette-node-name">Wacht</div><div class="palette-node-desc">Pauzeer X seconden</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="time_window" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="time_window" data-tooltip="Laat de flow alleen doorgaan als het huidige tijdstip binnen het ingestelde tijdsvenster valt. Ondersteunt nacht-vensters." ondragstart="drag(event)">
             <i class="fa-solid fa-calendar-check" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Tijdsvenster</div><div class="palette-node-desc">Ga door alleen tussen X en Y</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="condition" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="condition" data-tooltip="Splitst de flow op basis van een conditie. Uitgang 1 = waar, uitgang 2 = niet waar." ondragstart="drag(event)">
             <i class="fa-solid fa-code-branch" style="color:var(--purple)"></i>
             <div><div class="palette-node-name">Conditie</div><div class="palette-node-desc">Als/dan-splitsing</div></div>
           </div>
 
-          <div class="palette-group-label">Acties — Lampen</div>
-          <div class="palette-node" draggable="true" data-node="led_on" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="acties-lampen">Acties — Lampen<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="led_on" data-tooltip="Zet een LED-strip aan met instelbare helderheid en kleur." ondragstart="drag(event)">
             <i class="fa-solid fa-lightbulb" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Lamp aan</div><div class="palette-node-desc">Zet LED-strip aan</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="led_off" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="led_off" data-tooltip="Zet een LED-strip uit." ondragstart="drag(event)">
             <i class="fa-regular fa-lightbulb" style="color:var(--muted)"></i>
             <div><div class="palette-node-name">Lamp uit</div><div class="palette-node-desc">Zet LED-strip uit</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="led_effect" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="led_effect" data-tooltip="Stel een animatie-effect in op een LED-strip: regenboog, ademen, kleurwisseling, twinkelen." ondragstart="drag(event)">
             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--pl)"></i>
             <div><div class="palette-node-name">LED effect</div><div class="palette-node-desc">Animatie instellen</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="dim_to" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="dim_to" data-tooltip="Fade een LED-strip soepel naar een bepaalde helderheid in X seconden." ondragstart="drag(event)">
             <i class="fa-solid fa-sliders" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Dim naar</div><div class="palette-node-desc">Fade naar helderheid in X sec</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="dim_relative" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="dim_relative" data-tooltip="Pas de helderheid relatief aan met een positief of negatief percentage." ondragstart="drag(event)">
             <i class="fa-solid fa-sliders" style="color:var(--muted)"></i>
             <div><div class="palette-node-name">Dim relatief</div><div class="palette-node-desc">Pas helderheid +/- % aan</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="color_temp" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="color_temp" data-tooltip="Stel de kleurtemperatuur in Kelvin in. 2000K = kaarslicht, 6500K = daglicht." ondragstart="drag(event)">
             <i class="fa-solid fa-temperature-half" style="color:var(--orange)"></i>
             <div><div class="palette-node-name">Kleurtemperatuur</div><div class="palette-node-desc">Stel Kelvin-waarde in</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="adaptive_light" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="adaptive_light" data-tooltip="Past helderheid en kleurtemperatuur automatisch aan op het tijdstip van de dag." ondragstart="drag(event)">
             <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Adaptief licht</div><div class="palette-node-desc">Automatisch op tijdstip</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="wake_light" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="wake_light" data-tooltip="Faded langzaam op van nul naar de ingestelde helderheid over X minuten (wekker-simulatie)." ondragstart="drag(event)">
             <i class="fa-solid fa-sun" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Wekker-licht</div><div class="palette-node-desc">Langzaam opfaden bij wakker worden</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="flash" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="flash" data-tooltip="Laat een LED-strip X keer knipperen met instelbaar interval in milliseconden." ondragstart="drag(event)">
             <i class="fa-solid fa-bolt" style="color:var(--yellow)"></i>
             <div><div class="palette-node-name">Flits</div><div class="palette-node-desc">Knippert X keer</div></div>
           </div>
 
-          <div class="palette-group-label">Acties — Relais</div>
-          <div class="palette-node" draggable="true" data-node="relay_on" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="acties-relais">Acties — Relais<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="relay_on" data-tooltip="Zet een relaisuitgang aan (schakelaar voor lamp of apparaat)." ondragstart="drag(event)">
             <i class="fa-solid fa-toggle-on" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Relais aan</div><div class="palette-node-desc">Zet een lamp/apparaat aan</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="relay_off" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="relay_off" data-tooltip="Zet een relaisuitgang uit." ondragstart="drag(event)">
             <i class="fa-solid fa-toggle-off" style="color:var(--dim)"></i>
             <div><div class="palette-node-name">Relais uit</div><div class="palette-node-desc">Zet een lamp/apparaat uit</div></div>
           </div>
 
-          <div class="palette-group-label">Acties — Meldingen</div>
-          <div class="palette-node" draggable="true" data-node="notify" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="acties-meldingen">Acties — Meldingen<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="notify" data-tooltip="Stuur een bericht naar een Discord webhook." ondragstart="drag(event)">
             <i class="fa-solid fa-bell" style="color:var(--purple)"></i>
             <div><div class="palette-node-name">Discord melding</div><div class="palette-node-desc">Stuur een bericht</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="telegram" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="telegram" data-tooltip="Stuur een bericht via de Telegram Bot API naar een opgegeven chat." ondragstart="drag(event)">
             <i class="fa-solid fa-paper-plane" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Telegram</div><div class="palette-node-desc">Stuur een Telegram bericht</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="mqtt_publish" ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="mqtt_publish" data-tooltip="Publiceer een bericht op een MQTT topic via de opgegeven broker." ondragstart="drag(event)">
             <i class="fa-solid fa-tower-broadcast" style="color:var(--green)"></i>
             <div><div class="palette-node-name">MQTT publiceer</div><div class="palette-node-desc">Stuur bericht naar topic</div></div>
           </div>
 
-          <div class="palette-group-label">Acties — Integraties</div>
-          <div class="palette-node" draggable="true" data-node="webhook" ondragstart="drag(event)">
+          <div class="palette-group-label" data-group="acties-integraties">Acties — Integraties<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="webhook" data-tooltip="Stuur een HTTP POST naar een externe URL met optionele body." ondragstart="drag(event)">
             <i class="fa-solid fa-globe" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Webhook</div><div class="palette-node-desc">HTTP POST naar externe URL</div></div>
           </div>
@@ -213,13 +460,65 @@
       </div>
     </aside>
 
-    <main class="flows-canvas-wrap">
+    <main class="flows-canvas-wrap" id="flows-canvas-wrap">
       <div id="drawflow" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
       <div class="canvas-empty" id="canvas-empty">
         <i class="fa-solid fa-diagram-project"></i>
         <p>Selecteer een flow of maak een nieuwe</p>
       </div>
+
+      <!-- Canvas toolbar (zoom controls) -->
+      <div class="canvas-toolbar" id="canvas-toolbar">
+        <button class="btn-icon" id="btn-zoom-in" title="Inzoomen (+)"><i class="fa-solid fa-plus"></i></button>
+        <button class="btn-icon" id="btn-zoom-out" title="Uitzoomen (-)"><i class="fa-solid fa-minus"></i></button>
+        <div class="toolbar-sep"></div>
+        <button class="btn-icon" id="btn-zoom-reset" title="Zoom resetten"><i class="fa-solid fa-maximize"></i></button>
+        <button class="btn-icon" id="btn-fit" title="Fit to screen"><i class="fa-solid fa-expand"></i></button>
+      </div>
+
+      <!-- Run log slide-in panel -->
+      <div class="log-panel" id="log-panel">
+        <div class="log-panel-header">
+          <span><i class="fa-solid fa-list" style="color:var(--purple);margin-right:0.4rem"></i>Run log</span>
+          <button class="btn-icon" id="btn-log-close" title="Sluiten"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="log-panel-body" id="log-panel-body">
+          <div class="log-empty">Nog geen runs</div>
+        </div>
+      </div>
     </main>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div class="modal-overlay" id="modal-delete">
+    <div class="modal-card">
+      <div class="modal-title">Flow verwijderen?</div>
+      <div class="modal-body" id="modal-delete-body">Weet je zeker dat je deze flow wilt verwijderen? Dit kan niet ongedaan worden gemaakt.</div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modal-delete-cancel">Annuleren</button>
+        <button class="btn btn-danger" id="modal-delete-confirm">Verwijderen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard shortcuts modal -->
+  <div class="modal-overlay" id="modal-shortcuts">
+    <div class="modal-card">
+      <div class="modal-title"><i class="fa-solid fa-keyboard" style="color:var(--purple);margin-right:0.5rem"></i>Sneltoetsen</div>
+      <table class="shortcuts-table">
+        <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Opslaan</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Ongedaan maken</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Opnieuw</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Geselecteerde nodes kopiëren</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>V</kbd></td><td>Nodes plakken</td></tr>
+        <tr><td><kbd>Del</kbd> / <kbd>Backspace</kbd></td><td>Geselecteerde node verwijderen</td></tr>
+        <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>Inzoomen / Uitzoomen</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Dit scherm tonen</td></tr>
+      </table>
+      <div class="modal-footer" style="margin-top:1rem">
+        <button class="btn btn-ghost" id="modal-shortcuts-close">Sluiten</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.js"></script>
@@ -453,6 +752,7 @@
   var currentFlowId = null;
   var flows = [];
   var saveTimeout = null;
+  var flowSortOrder = localStorage.getItem('flowSortOrder') || 'newest';
 
   // ── Drag & Drop ────────────────────────────────────────────────────────
   function drag(ev) { ev.dataTransfer.setData('node', ev.target.closest('[data-node]').getAttribute('data-node')); }
@@ -463,12 +763,14 @@
     var name = ev.dataTransfer.getData('node');
     if (!NODE_HTML[name]) return;
     var pc = editor.precanvas, z = editor.zoom, r = pc.getBoundingClientRect();
-    editor.addNode(
+    var id = editor.addNode(
       name, NODE_INPUTS[name], NODE_OUTPUTS[name],
       (ev.clientX - r.left) * (pc.clientWidth  / (pc.clientWidth  * z)),
       (ev.clientY - r.top)  * (pc.clientHeight / (pc.clientHeight * z)),
       name, JSON.parse(JSON.stringify(NODE_DEFAULTS[name] || {})), NODE_HTML[name]
     );
+    pushHistory();
+    return id;
   }
 
   function updateBrightness(el) {
@@ -479,29 +781,199 @@
   // ── API helpers ────────────────────────────────────────────────────────
   function api(url, opts) { return fetch(url, opts).then(function(r) { return r.json(); }); }
 
+  // ── Undo/Redo ──────────────────────────────────────────────────────────
+  var historyStack = [];
+  var historyIndex = -1;
+  var historyLock = false;
+  var MAX_HISTORY = 50;
+
+  function pushHistory() {
+    if (historyLock || !currentFlowId) return;
+    var snapshot = editor.export();
+    // Drop any future states
+    historyStack = historyStack.slice(0, historyIndex + 1);
+    historyStack.push(JSON.stringify(snapshot));
+    if (historyStack.length > MAX_HISTORY) historyStack.shift();
+    historyIndex = historyStack.length - 1;
+    updateUndoRedoButtons();
+  }
+
+  function updateUndoRedoButtons() {
+    var btnUndo = document.getElementById('btn-undo');
+    var btnRedo = document.getElementById('btn-redo');
+    if (historyIndex > 0) { btnUndo.classList.add('available'); } else { btnUndo.classList.remove('available'); }
+    if (historyIndex < historyStack.length - 1) { btnRedo.classList.add('available'); } else { btnRedo.classList.remove('available'); }
+  }
+
+  function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    restoreSnapshot(historyStack[historyIndex]);
+    updateUndoRedoButtons();
+  }
+
+  function redo() {
+    if (historyIndex >= historyStack.length - 1) return;
+    historyIndex++;
+    restoreSnapshot(historyStack[historyIndex]);
+    updateUndoRedoButtons();
+  }
+
+  function restoreSnapshot(snapshotStr) {
+    historyLock = true;
+    try {
+      var data = JSON.parse(snapshotStr);
+      editor.import(data);
+      setTimeout(function() {
+        document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+        refreshSunEsts();
+        historyLock = false;
+      }, 60);
+    } catch(e) { historyLock = false; }
+  }
+
+  document.getElementById('btn-undo').addEventListener('click', undo);
+  document.getElementById('btn-redo').addEventListener('click', redo);
+
+  // ── Copy/Paste ─────────────────────────────────────────────────────────
+  var clipboard = [];
+
+  function copySelectedNodes() {
+    var selected = document.querySelectorAll('.drawflow-node.selected');
+    clipboard = [];
+    selected.forEach(function(el) {
+      var id = el.id.replace('node-', '');
+      try {
+        var node = editor.getNodeFromId(id);
+        if (node) clipboard.push(JSON.parse(JSON.stringify(node)));
+      } catch(e) {}
+    });
+    if (clipboard.length) showToast(clipboard.length + ' node(s) gekopieerd');
+  }
+
+  function pasteNodes() {
+    if (!clipboard.length || !currentFlowId) return;
+    clipboard.forEach(function(node) {
+      editor.addNode(
+        node.name,
+        NODE_INPUTS[node.name] || 0,
+        NODE_OUTPUTS[node.name] || 0,
+        (node.pos_x || 100) + 50,
+        (node.pos_y || 100) + 50,
+        node.name,
+        JSON.parse(JSON.stringify(node.data || {})),
+        NODE_HTML[node.name] || ''
+      );
+    });
+    pushHistory();
+    showToast(clipboard.length + ' node(s) geplakt');
+  }
+
+  // ── Validation ─────────────────────────────────────────────────────────
+  var REQUIRED_FIELDS = {
+    webhook_trigger: [{ key: 'token',  label: 'Token' }],
+    webhook:         [{ key: 'url',    label: 'URL' }],
+    mqtt_trigger:    [{ key: 'broker', label: 'Broker' }, { key: 'topic', label: 'Topic' }],
+    mqtt_publish:    [{ key: 'broker', label: 'Broker' }, { key: 'topic', label: 'Topic' }],
+    timer:           [{ key: 'time',   label: 'Tijd' }],
+    telegram:        [{ key: 'token',  label: 'Bot token' }, { key: 'chat_id', label: 'Chat ID' }]
+  };
+
+  function validateNodes() {
+    // Remove previous indicators
+    document.querySelectorAll('.drawflow-node.node-invalid').forEach(function(el) {
+      el.classList.remove('node-invalid');
+    });
+
+    var exported = editor.export();
+    var nodes = ((exported.drawflow || {}).Home || {}).data || {};
+    var issues = [];
+
+    Object.values(nodes).forEach(function(node) {
+      var rules = REQUIRED_FIELDS[node.name];
+      if (!rules) return;
+      var missing = rules.filter(function(r) { return !(node.data[r.key] || '').trim(); });
+      if (missing.length) {
+        var el = document.getElementById('node-' + node.id);
+        if (el) el.classList.add('node-invalid');
+        issues.push(node.name + ' (ontbreekt: ' + missing.map(function(r) { return r.label; }).join(', ') + ')');
+      }
+    });
+
+    return issues;
+  }
+
   // ── Flow list ──────────────────────────────────────────────────────────
   function loadFlowList() {
     api('/api/flows').then(function(data) { flows = data; renderFlowList(); });
   }
 
+  function sortFlows(arr) {
+    var copy = arr.slice();
+    if (flowSortOrder === 'az') {
+      copy.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    } else if (flowSortOrder === 'za') {
+      copy.sort(function(a, b) { return b.name.localeCompare(a.name); });
+    } else {
+      // newest first (default: by id desc)
+      copy.sort(function(a, b) { return b.id - a.id; });
+    }
+    return copy;
+  }
+
+  function formatRelativeTime(ts) {
+    if (!ts) return 'Nooit';
+    try {
+      var d = new Date(ts.replace('T', ' '));
+      if (isNaN(d)) return 'Nooit';
+      var now = new Date();
+      var diff = now - d;
+      var mins = Math.floor(diff / 60000);
+      var hours = Math.floor(diff / 3600000);
+      var days = Math.floor(diff / 86400000);
+      if (mins < 1) return 'Zojuist';
+      if (mins < 60) return mins + ' min geleden';
+      if (hours < 24) return hours + ' uur geleden';
+      if (days === 1) return 'Gisteren ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    } catch(e) { return 'Nooit'; }
+  }
+
   function renderFlowList() {
     var el = document.getElementById('flow-list');
-    if (!flows.length) { el.innerHTML = '<li class="flow-list-empty">Geen flows</li>'; return; }
-    el.innerHTML = flows.map(function(f) {
+    var query = (document.getElementById('flow-search').value || '').toLowerCase().trim();
+    var sorted = sortFlows(flows);
+    var filtered = query ? sorted.filter(function(f) { return f.name.toLowerCase().indexOf(query) !== -1; }) : sorted;
+    if (!filtered.length) {
+      el.innerHTML = '<li class="flow-list-empty">' + (query ? 'Geen resultaten' : 'Geen flows') + '</li>';
+      return;
+    }
+    el.innerHTML = filtered.map(function(f) {
       return '<li class="flow-list-item' + (f.id === currentFlowId ? ' active' : '') + '" onclick="selectFlow(' + f.id + ')">' +
+        '<div class="flow-list-item-row">' +
         '<span class="flow-item-dot ' + (f.enabled ? 'dot-on' : 'dot-off') + '"></span>' +
-        '<span class="flow-item-name">' + esc(f.name) + '</span></li>';
+        '<span class="flow-item-name">' + esc(f.name) + '</span>' +
+        '</div>' +
+        '<div class="flow-item-meta">' + formatRelativeTime(f.last_run) + '</div>' +
+        '</li>';
     }).join('');
   }
 
   function selectFlow(id) {
     currentFlowId = id;
+    // Reset history for new flow
+    historyStack = [];
+    historyIndex = -1;
+    updateUndoRedoButtons();
+
     api('/api/flows/' + id).then(function(full) {
       document.getElementById('flow-name').value    = full.name;
       document.getElementById('flow-name').disabled = false;
       document.getElementById('flow-enabled').checked = !!full.enabled;
       document.getElementById('enabled-label').textContent = full.enabled ? 'Actief' : 'Inactief';
-      ['enabled-wrap','btn-delete','btn-run'].forEach(function(id) { document.getElementById(id).style.display = ''; });
+      ['enabled-wrap','btn-delete','btn-run','btn-undo','btn-redo','btn-log','btn-duplicate','btn-export'].forEach(function(bid) {
+        document.getElementById(bid).style.display = '';
+      });
       document.getElementById('btn-save').disabled = false;
       document.getElementById('canvas-empty').style.display = 'none';
       editor.clear();
@@ -510,9 +982,34 @@
       setTimeout(function() {
         document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
         refreshSunEsts();
+        pushHistory(); // initial snapshot
       }, 60);
     });
   }
+
+  // Flow search
+  document.getElementById('flow-search').addEventListener('input', renderFlowList);
+
+  // Sort
+  document.getElementById('btn-sort-flows').addEventListener('click', function() {
+    var orders = ['newest', 'az', 'za'];
+    var icons  = ['fa-arrow-up-wide-short', 'fa-arrow-down-a-z', 'fa-arrow-up-z-a'];
+    var labels = ['Nieuwste eerst', 'A → Z', 'Z → A'];
+    var idx = orders.indexOf(flowSortOrder);
+    flowSortOrder = orders[(idx + 1) % 3];
+    localStorage.setItem('flowSortOrder', flowSortOrder);
+    this.querySelector('i').className = 'fa-solid ' + icons[(idx + 1) % 3];
+    this.title = labels[(idx + 1) % 3];
+    renderFlowList();
+  });
+  // Set initial sort icon
+  (function() {
+    var orders = ['newest', 'az', 'za'];
+    var icons  = ['fa-arrow-up-wide-short', 'fa-arrow-down-a-z', 'fa-arrow-up-z-a'];
+    var idx = orders.indexOf(flowSortOrder);
+    var btn = document.getElementById('btn-sort-flows');
+    if (btn) btn.querySelector('i').className = 'fa-solid ' + icons[idx];
+  })();
 
   // ── New flow ───────────────────────────────────────────────────────────
   document.getElementById('btn-new-flow').addEventListener('click', function() {
@@ -524,6 +1021,13 @@
   function save() {
     if (!currentFlowId) return;
     clearTimeout(saveTimeout);
+
+    // Validate
+    var issues = validateNodes();
+    if (issues.length) {
+      showToast('\u26a0\ufe0f Ongeldige nodes: ' + issues.join(' \u00b7 '));
+    }
+
     var name = document.getElementById('flow-name').value.trim() || 'Naamloos';
     var enabled = document.getElementById('flow-enabled').checked;
     api('/api/flows/' + currentFlowId, {
@@ -533,7 +1037,7 @@
       var f = flows.find(function(x) { return x.id === currentFlowId; });
       if (f) { f.name = name; f.enabled = enabled; }
       renderFlowList();
-      showToast('Opgeslagen \u2713');
+      if (!issues.length) showToast('Opgeslagen \u2713');
     });
   }
 
@@ -565,28 +1069,307 @@
     }, 350);
   });
 
-  // ── Delete ─────────────────────────────────────────────────────────────
+  // ── Delete (custom modal) ──────────────────────────────────────────────
+  var deleteResolve = null;
   document.getElementById('btn-delete').addEventListener('click', function() {
     if (!currentFlowId) return;
     var f = flows.find(function(x) { return x.id === currentFlowId; });
-    if (!confirm('Flow "' + (f ? f.name : '') + '" verwijderen?')) return;
+    document.getElementById('modal-delete-body').textContent =
+      'Weet je zeker dat je "' + (f ? f.name : 'deze flow') + '" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.';
+    openModal('modal-delete');
+  });
+
+  document.getElementById('modal-delete-cancel').addEventListener('click', function() { closeModal('modal-delete'); });
+  document.getElementById('modal-delete-confirm').addEventListener('click', function() {
+    closeModal('modal-delete');
     api('/api/flows/' + currentFlowId, { method: 'DELETE' }).then(function() {
       flows = flows.filter(function(x) { return x.id !== currentFlowId; });
       currentFlowId = null;
       editor.clear();
+      historyStack = [];
+      historyIndex = -1;
+      updateUndoRedoButtons();
       document.getElementById('flow-name').value    = '';
       document.getElementById('flow-name').disabled = true;
-      ['enabled-wrap','btn-delete','btn-run'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+      ['enabled-wrap','btn-delete','btn-run','btn-undo','btn-redo','btn-log','btn-duplicate','btn-export'].forEach(function(bid) {
+        document.getElementById(bid).style.display = 'none';
+      });
       document.getElementById('btn-save').disabled = true;
       document.getElementById('canvas-empty').style.display = '';
+      // Close log panel if open
+      document.getElementById('log-panel').classList.remove('open');
       renderFlowList();
+    });
+  });
+
+  // ── Export ─────────────────────────────────────────────────────────────
+  document.getElementById('btn-export').addEventListener('click', function() {
+    if (!currentFlowId) return;
+    var name = document.getElementById('flow-name').value.trim() || 'flow';
+    var data = editor.export();
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name.replace(/[^a-z0-9_\-]/gi, '_') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Flow geëxporteerd \u2193');
+  });
+
+  // ── Import ─────────────────────────────────────────────────────────────
+  document.getElementById('btn-import').addEventListener('click', function() {
+    document.getElementById('import-file').value = '';
+    document.getElementById('import-file').click();
+  });
+
+  document.getElementById('import-file').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var json = JSON.parse(e.target.result);
+        if (!json.drawflow) { showToast('\u26a0\ufe0f Ongeldig flow-bestand'); return; }
+        var flowName = file.name.replace(/\.json$/i, '').replace(/_/g, ' ');
+        api('/api/flows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: flowName })
+        }).then(function(newFlow) {
+          return api('/api/flows/' + newFlow.id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: JSON.stringify(json) })
+          }).then(function() {
+            flows.push(newFlow);
+            selectFlow(newFlow.id);
+            showToast('Flow geïmporteerd \u2713');
+          });
+        });
+      } catch(ex) {
+        showToast('\u26a0\ufe0f Kon bestand niet inlezen');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ── Duplicate ──────────────────────────────────────────────────────────
+  document.getElementById('btn-duplicate').addEventListener('click', function() {
+    if (!currentFlowId) return;
+    var origName = document.getElementById('flow-name').value.trim() || 'Flow';
+    var copyName = origName + ' (kopie)';
+    var currentData = JSON.stringify(editor.export());
+    api('/api/flows', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: copyName })
+    }).then(function(newFlow) {
+      return api('/api/flows/' + newFlow.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: currentData })
+      }).then(function() {
+        flows.push(newFlow);
+        selectFlow(newFlow.id);
+        showToast('Flow gedupliceerd \u2713');
+      });
+    });
+  });
+
+  // ── Run Log panel ──────────────────────────────────────────────────────
+  document.getElementById('btn-log').addEventListener('click', function() {
+    var panel = document.getElementById('log-panel');
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    } else {
+      loadRunLog();
+      panel.classList.add('open');
+    }
+  });
+
+  document.getElementById('btn-log-close').addEventListener('click', function() {
+    document.getElementById('log-panel').classList.remove('open');
+  });
+
+  function loadRunLog() {
+    if (!currentFlowId) return;
+    api('/api/flows/' + currentFlowId + '/log').then(function(runs) {
+      var body = document.getElementById('log-panel-body');
+      if (!runs || !runs.length) {
+        body.innerHTML = '<div class="log-empty">Nog geen runs</div>';
+        return;
+      }
+      body.innerHTML = runs.map(function(r) {
+        var actions = [];
+        try { actions = JSON.parse(r.actions || '[]'); } catch(e) {}
+        var ts = r.triggered_at ? r.triggered_at.replace('T', ' ').slice(0, 16) : '—';
+        return '<div class="log-entry">' +
+          '<div class="log-entry-time"><i class="fa-solid fa-clock" style="margin-right:0.35rem;color:var(--purple)"></i>' + esc(ts) + '</div>' +
+          '<div class="log-entry-actions">' + (actions.length ? actions.length + ' actie(s): ' + actions.map(function(a) { return a.action || '?'; }).join(', ') : 'Geen acties') + '</div>' +
+          '</div>';
+      }).join('');
+    });
+  }
+
+  // ── Canvas: Zoom toolbar ───────────────────────────────────────────────
+  document.getElementById('btn-zoom-in').addEventListener('click', function() { editor.zoom_in(); });
+  document.getElementById('btn-zoom-out').addEventListener('click', function() { editor.zoom_out(); });
+  document.getElementById('btn-zoom-reset').addEventListener('click', function() { editor.zoom_reset(); });
+  document.getElementById('btn-fit').addEventListener('click', function() {
+    editor.zoom_reset();
+    // Center canvas
+    if (editor.precanvas) {
+      editor.precanvas.style.transform = 'translate(0px, 0px) scale(1)';
+      editor.canvas_x = 0;
+      editor.canvas_y = 0;
+      editor.zoom = 1;
+    }
+  });
+
+  // ── Sidebar collapse ────────────────────────────────────────────────────
+  var sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  var sidebar = document.getElementById('flows-sidebar');
+  if (sidebarCollapsed) sidebar.classList.add('collapsed');
+
+  document.getElementById('btn-sidebar-toggle').addEventListener('click', function() {
+    sidebarCollapsed = !sidebarCollapsed;
+    sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  });
+
+  // ── Palette group collapse ─────────────────────────────────────────────
+  var collapsedGroups = JSON.parse(localStorage.getItem('collapsedGroups') || '{}');
+
+  document.querySelectorAll('.palette-group-label').forEach(function(label) {
+    var group = label.getAttribute('data-group');
+    if (collapsedGroups[group]) label.classList.add('collapsed');
+
+    label.addEventListener('click', function() {
+      var isCollapsed = label.classList.toggle('collapsed');
+      collapsedGroups[group] = isCollapsed;
+      localStorage.setItem('collapsedGroups', JSON.stringify(collapsedGroups));
+      updatePaletteNoResults();
+    });
+  });
+
+  // ── Palette search ─────────────────────────────────────────────────────
+  document.getElementById('palette-search').addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    var labels = document.querySelectorAll('.palette-group-label');
+    var nodes  = document.querySelectorAll('.palette-node');
+
+    if (!q) {
+      // Restore collapsed/visible state
+      nodes.forEach(function(n) { n.style.display = ''; });
+      labels.forEach(function(l) {
+        l.style.display = '';
+        // Re-apply collapsed if it was collapsed before search
+        var group = l.getAttribute('data-group');
+        if (collapsedGroups[group]) l.classList.add('collapsed'); else l.classList.remove('collapsed');
+      });
+      updatePaletteNoResults();
+      return;
+    }
+
+    // During search: expand all groups visually and filter by name/desc
+    labels.forEach(function(l) { l.style.display = ''; l.classList.remove('collapsed'); });
+
+    var anyVisible = false;
+    nodes.forEach(function(n) {
+      var name = (n.querySelector('.palette-node-name') || {}).textContent || '';
+      var desc = (n.querySelector('.palette-node-desc') || {}).textContent || '';
+      var tip  = n.getAttribute('data-tooltip') || '';
+      if (name.toLowerCase().indexOf(q) !== -1 || desc.toLowerCase().indexOf(q) !== -1 || tip.toLowerCase().indexOf(q) !== -1) {
+        n.style.display = '';
+        anyVisible = true;
+      } else {
+        n.style.display = 'none';
+      }
+    });
+
+    // Hide group labels that have no visible children
+    labels.forEach(function(label) {
+      var sib = label.nextElementSibling;
+      var hasVisible = false;
+      while (sib && !sib.classList.contains('palette-group-label')) {
+        if (sib.classList.contains('palette-node') && sib.style.display !== 'none') { hasVisible = true; break; }
+        sib = sib.nextElementSibling;
+      }
+      label.style.display = hasVisible ? '' : 'none';
+    });
+
+    document.getElementById('palette-no-results').classList.toggle('visible', !anyVisible);
+  });
+
+  function updatePaletteNoResults() {
+    var anyVisible = false;
+    document.querySelectorAll('.palette-node').forEach(function(n) {
+      if (n.style.display !== 'none') anyVisible = true;
+    });
+    document.getElementById('palette-no-results').classList.toggle('visible', !anyVisible);
+  }
+
+  // ── Keyboard shortcuts modal ────────────────────────────────────────────
+  document.getElementById('btn-shortcuts').addEventListener('click', function() { openModal('modal-shortcuts'); });
+  document.getElementById('modal-shortcuts-close').addEventListener('click', function() { closeModal('modal-shortcuts'); });
+
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) { el.classList.add('open'); }
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) { el.classList.remove('open'); }
+  }
+  // Close on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeModal(overlay.id);
     });
   });
 
   // ── Canvas events ──────────────────────────────────────────────────────
   ['nodeCreated','nodeRemoved','connectionCreated','connectionRemoved','nodeMoved','nodeDataChanged']
-    .forEach(function(ev) { editor.on(ev, autoSave); });
+    .forEach(function(ev) { editor.on(ev, function() { autoSave(); pushHistory(); }); });
   editor.on('nodeCreated', function() { setTimeout(refreshSunEsts, 30); });
+
+  // ── Global keyboard shortcuts ──────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    var tag = (document.activeElement || {}).tagName;
+    var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+    if (e.key === '?' && !inInput) {
+      e.preventDefault();
+      openModal('modal-shortcuts');
+      return;
+    }
+
+    // Ctrl shortcuts
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 's') { e.preventDefault(); save(); return; }
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); if (!inInput) undo(); return; }
+      if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); if (!inInput) redo(); return; }
+      if (e.key === 'c' && !inInput) { e.preventDefault(); copySelectedNodes(); return; }
+      if (e.key === 'v' && !inInput) { e.preventDefault(); pasteNodes(); return; }
+    }
+
+    // Delete selected node
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !inInput) {
+      var selected = document.querySelector('.drawflow-node.selected');
+      if (selected) {
+        var nodeId = selected.id.replace('node-', '');
+        editor.removeNodeId('node-' + nodeId);
+        pushHistory();
+      }
+    }
+
+    // Zoom
+    if (!inInput && !e.ctrlKey && !e.metaKey) {
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); editor.zoom_in(); }
+      if (e.key === '-') { e.preventDefault(); editor.zoom_out(); }
+    }
+  });
 
   // ── Utilities ──────────────────────────────────────────────────────────
   function esc(s) {

@@ -1,4 +1,5 @@
 var state   = require('../utils/state');
+var dbModule = require('../db/setup');
 var discord = require('./discord');
 var weather = require('./weather');
 var sun     = require('./sun');
@@ -372,7 +373,7 @@ function traverseFrom(allNodes, nodeId, ctx, visited, results) {
   followAll();
 }
 
-function traverseOutputs(startNode, allNodes, ctx) {
+function traverseOutputs(startNode, allNodes, ctx, flowId) {
   var results = [];
   var visited = {};
   Object.values(startNode.outputs || {}).forEach(function(out) {
@@ -380,6 +381,29 @@ function traverseOutputs(startNode, allNodes, ctx) {
       traverseFrom(allNodes, conn.node, ctx || {}, visited, results);
     });
   });
+
+  // Record run in flow_runs and update last_run on flows
+  if (flowId != null) {
+    var nowTs = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+    var actionsJson = JSON.stringify(results);
+    dbModule.run(
+      'INSERT INTO flow_runs (flow_id, triggered_at, actions) VALUES (?,?,?)',
+      [flowId, nowTs, actionsJson],
+      function() {}
+    );
+    dbModule.run(
+      'UPDATE flows SET last_run = ? WHERE id = ?',
+      [nowTs, flowId],
+      function() {}
+    );
+    // Keep only last 100 runs per flow
+    dbModule.run(
+      'DELETE FROM flow_runs WHERE flow_id = ? AND id NOT IN (SELECT id FROM flow_runs WHERE flow_id = ? ORDER BY id DESC LIMIT 100)',
+      [flowId, flowId],
+      function() {}
+    );
+  }
+
   return results;
 }
 
@@ -452,7 +476,7 @@ function runFlow(flow, db, callback) {
       var nodes = (data.drawflow.Home || {}).data || {};
       Object.values(nodes).forEach(function(node) {
         if (TRIGGERS[node.name]) {
-          allResults = allResults.concat(traverseOutputs(node, nodes, ctx));
+          allResults = allResults.concat(traverseOutputs(node, nodes, ctx, flow.id));
         }
       });
     } catch(e) {
@@ -540,10 +564,10 @@ function checkSensorTriggers(rows, ctx) {
         // Fire on rising edge only (false → true transition)
         if (isOn && !wasOn && node.name !== 'wash_started' && node.name !== 'wash_done') {
           console.log('[Flow] Trigger "' + node.name + '" — flow ' + flow.id + ' "' + flow.name + '"');
-          traverseOutputs(node, nodes, ctx);
+          traverseOutputs(node, nodes, ctx, flow.id);
         } else if (isOn && (node.name === 'wash_started' || node.name === 'wash_done')) {
           console.log('[Flow] Trigger "' + node.name + '" — flow ' + flow.id + ' "' + flow.name + '"');
-          traverseOutputs(node, nodes, ctx);
+          traverseOutputs(node, nodes, ctx, flow.id);
         }
       });
     } catch(e) {}
@@ -583,7 +607,7 @@ function checkSunTriggers(rows, dateStr, timeStr, sunTimes) {
         lastFired[key] = true;
 
         console.log('[Flow] ' + node.name + ' (offset ' + offset + 'min, ' + target + ') — flow ' + flow.id + ' "' + flow.name + '"');
-        traverseOutputs(node, nodes, {});
+        traverseOutputs(node, nodes, {}, flow.id);
       });
     } catch(e) {}
   });
@@ -612,7 +636,7 @@ function checkTimerTriggers(rows, dateStr, timeStr, isWeekday) {
         lastFired[key] = true;
 
         console.log('[Flow] Timer — flow ' + flow.id + ' "' + flow.name + '" om ' + timeStr);
-        traverseOutputs(node, nodes, {});
+        traverseOutputs(node, nodes, {}, flow.id);
       });
     } catch(e) {}
   });
@@ -658,7 +682,7 @@ function triggerWebhook(token, db) {
         Object.values(nodes).forEach(function(node) {
           if (node.name === 'webhook_trigger' && (node.data.token || '') === token) {
             console.log('[Flow] webhook_trigger token="' + token + '" — flow ' + flow.id + ' "' + flow.name + '"');
-            traverseOutputs(node, nodes, {});
+            traverseOutputs(node, nodes, {}, flow.id);
           }
         });
       } catch(e) {}
@@ -684,9 +708,10 @@ function startMqttTriggers(db) {
           var password = node.data.password || '';
           var capturedNode  = node;
           var capturedNodes = nodes;
+          var capturedFlowId = flow.id;
           mqttSvc.subscribe(broker, topic, username, password, function(receivedTopic, message) {
-            console.log('[Flow] mqtt_trigger topic="' + receivedTopic + '" — flow ' + flow.id + ' "' + flow.name + '"');
-            traverseOutputs(capturedNode, capturedNodes, { mqttTopic: receivedTopic, mqttMessage: message.toString() });
+            console.log('[Flow] mqtt_trigger topic="' + receivedTopic + '" — flow ' + capturedFlowId + ' "' + flow.name + '"');
+            traverseOutputs(capturedNode, capturedNodes, { mqttTopic: receivedTopic, mqttMessage: message.toString() }, capturedFlowId);
           });
         });
       } catch(e) {}

@@ -27,7 +27,7 @@ module.exports = function(req, res) {
 
   // ── List ────────────────────────────────────────────────────────────────
   if (req.method === 'GET' && req.url === '/api/flows') {
-    db.all('SELECT id, name, enabled, created_at FROM flows ORDER BY id ASC', function(err, rows) {
+    db.all('SELECT id, name, enabled, created_at, last_run FROM flows ORDER BY id ASC', function(err, rows) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(rows || []));
     });
@@ -92,6 +92,21 @@ module.exports = function(req, res) {
       });
       return true;
     }
+  }
+
+  // ── Flow run log ─────────────────────────────────────────────────────────
+  var logMatch = req.url.match(/^\/api\/flows\/(\d+)\/log$/);
+  if (logMatch && req.method === 'GET') {
+    var logFlowId = logMatch[1];
+    db.all(
+      'SELECT id, triggered_at, actions FROM flow_runs WHERE flow_id = ? ORDER BY id DESC LIMIT 20',
+      [logFlowId],
+      function(err, rows) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(rows || []));
+      }
+    );
+    return true;
   }
 
   // ── Manual run ──────────────────────────────────────────────────────────

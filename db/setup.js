@@ -69,7 +69,20 @@ db.serialize(function() {
     "  name TEXT NOT NULL DEFAULT 'Naamloos'," +
     "  enabled INTEGER NOT NULL DEFAULT 1," +
     "  data TEXT NOT NULL DEFAULT '{}'," +
-    "  created_at TEXT NOT NULL" +
+    "  created_at TEXT NOT NULL," +
+    "  last_run TEXT" +
+    ")"
+  );
+
+  // Migrate: add last_run column to existing flows table if missing
+  db.run("ALTER TABLE flows ADD COLUMN last_run TEXT", function() {});
+
+  db.run(
+    "CREATE TABLE IF NOT EXISTS flow_runs (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  flow_id INTEGER NOT NULL," +
+    "  triggered_at TEXT NOT NULL," +
+    "  actions TEXT NOT NULL DEFAULT '[]'" +
     ")"
   );
 });
