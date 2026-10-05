@@ -15,6 +15,12 @@ module.exports = function(req, res) {
   var device = qs !== -1 ? decodeURIComponent(req.url.slice(qs + 8).split('&')[0]) : 'gang';
 
   if (req.method === 'GET') {
+    var ua = req.headers['user-agent'] || '';
+    if (!ua.includes('Mozilla')) {
+      var ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace('::ffff:', '');
+      var rs2 = state.getRelayState(device);
+      if (ip) { rs2.ip = ip; state.saveState(); }
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(state.getRelayState(device)));
     return true;

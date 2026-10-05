@@ -51,7 +51,7 @@ module.exports = function(req, res) {
   if (req.method === "GET" && req.url === "/api/esphome/latest") {
     var names = loadNames();
     db.all(
-      "SELECT device, sensor_name, value, value_text, unit, received_at FROM esphome_readings" +
+      "SELECT device, sensor_name, value, value_text, unit, host, received_at FROM esphome_readings" +
       " WHERE id IN (SELECT MAX(id) FROM esphome_readings GROUP BY device, sensor_name)" +
       " ORDER BY device, sensor_name",
       function(err, rows) {

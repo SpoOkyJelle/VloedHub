@@ -18,10 +18,7 @@
   <div class='app-title'><span class='dot'></span>VloedHub</div>
   <div class='header-right'>
     <span class='updated-text' id='updated'>Wachten op data…</span>
-    <a href='/flows' class='icon-link' title='Flows'><i class='fa-solid fa-diagram-project'></i></a>
-    <a href='/debug' class='icon-link' title='Debug'><i class='fa-solid fa-gear'></i></a>
-    <button class='icon-link' title='PIN wijzigen' onclick='showPinModal()' style='background:none;border:none;cursor:pointer;padding:0'><i class='fa-solid fa-lock'></i></button>
-    <button class='icon-link' title='Uitloggen' onclick='logout()' style='background:none;border:none;cursor:pointer;padding:0'><i class='fa-solid fa-right-from-bracket'></i></button>
+    <button class='icon-link' title='Instellingen' onclick='showScreen(5,null)' style='background:none;border:none;cursor:pointer;padding:0'><i class='fa-solid fa-sliders'></i></button>
   </div>
 </header>
 <div class='screens-outer' id='screens-outer'>
@@ -273,12 +270,9 @@
   <button class='nav-item' data-screen='4' onclick='showScreen(4,this)'>
     <span class='nav-icon'><i class='fa-solid fa-couch'></i></span><span class='nav-label'>Thuis</span>
   </button>
-  <button class='nav-item' data-screen='5' onclick='showScreen(5,this)'>
+  <button class='nav-item nav-item--desktop-only' data-screen='5' onclick='showScreen(5,this)'>
     <span class='nav-icon'><i class='fa-solid fa-sliders'></i></span><span class='nav-label'>Instellingen</span>
   </button>
-  <a href='/flows' class='nav-item nav-item--link nav-item--desktop-only'>
-    <span class='nav-icon'><i class='fa-solid fa-diagram-project'></i></span><span class='nav-label'>Flows</span>
-  </a>
 </nav>
 
 <script>
@@ -642,7 +636,16 @@ function loadDeviceNames() { fetch('/api/device-names').then(function(r){return 
 function refreshSettingsNames() {
   var deviceDefaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' };
   var deviceIcons = { 'led::default':'fa-lightbulb','led::keuken':'fa-lightbulb','led::gang':'fa-lightbulb','relay::gang':'fa-toggle-on' };
-  fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){
+  var ledKeys = ['default','keuken','gang'];
+  Promise.all([
+    fetch('/api/device-names').then(function(r){return r.json();}),
+    Promise.all(ledKeys.map(function(k){ return fetch('/api/led/state?device='+k).then(function(r){return r.json();}).then(function(s){return {key:'led::'+k,ip:s.ip||null};}); })),
+    fetch('/api/relay/state?device=gang').then(function(r){return r.json();}).then(function(s){return s.ip||null;})
+  ]).then(function(results){
+    var names = results[0];
+    var ipMap = {};
+    results[1].forEach(function(x){ipMap[x.key]=x.ip;});
+    ipMap['relay::gang'] = results[2];
     var el = document.getElementById('settings-device-names');
     if (!el) return;
     el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
@@ -650,10 +653,13 @@ function refreshSettingsNames() {
         var name = names[key] || deviceDefaults[key];
         var icon = deviceIcons[key];
         var kEnc = encodeURIComponent(key);
+        var ip = ipMap[key];
         var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
         return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
           '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid ' + icon + '" style="color:var(--pl);width:1rem;text-align:center"></i>' +
-          '<span id="sn-' + kEnc + '" style="font-size:0.9rem;font-weight:600">' + name + '</span></div>' +
+          '<div><span id="sn-' + kEnc + '" style="font-size:0.9rem;font-weight:600">' + name + '</span>' +
+          (ip ? '<div style="font-size:0.65rem;color:var(--dim);font-family:monospace">' + ip + '</div>' : '') +
+          '</div></div>' +
           '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="settingsDeviceRename(\'' + kEnc + '\',\'' + encodeURIComponent(deviceDefaults[key]) + '\')"></i></div>';
       }).join('') + '</div></div>';
   }).catch(function(){});
@@ -668,7 +674,7 @@ function refreshSettingsNames() {
         return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
           '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid fa-microchip" style="color:var(--blue);width:1rem;text-align:center"></i>' +
           '<div><span id="sne-' + dEnc + '-' + sEnc + '" style="font-size:0.9rem;font-weight:600">' + r.display_name + '</span>' +
-          '<div style="font-size:0.65rem;color:var(--dim)">' + r.sensor_name + '</div></div></div>' +
+          '<div style="font-size:0.65rem;color:var(--dim)">' + r.sensor_name + (r.host ? ' · <span style="font-family:monospace">' + r.host + '</span>' : '') + '</div></div></div>' +
           '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="esphomeRenameSettings(\'' + dEnc + '\',\'' + sEnc + '\')"></i></div>';
       }).join('') + '</div></div>';
   }).catch(function(){});

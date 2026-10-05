@@ -49,6 +49,7 @@ async def main():
             continue
         payload = json.dumps({
             "device": device_name,
+            "host": ESPHOME_HOST,
             "sensors": list(latest.values()),
         }).encode("utf-8")
         req = urllib.request.Request(

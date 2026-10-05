@@ -75,6 +75,7 @@ db.serialize(function() {
     ")"
   );
   db.run("ALTER TABLE esphome_readings ADD COLUMN value_text TEXT", function() {});
+  db.run("ALTER TABLE esphome_readings ADD COLUMN host TEXT", function() {});
 
   db.run(
     "CREATE TABLE IF NOT EXISTS flows (" +

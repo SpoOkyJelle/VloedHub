@@ -4,6 +4,12 @@ module.exports = function(req, res) {
   if (req.method === "GET" && req.url.indexOf("/api/led/state") === 0) {
     var ledQs = req.url.indexOf("?device=");
     var ledDevice = ledQs !== -1 ? decodeURIComponent(req.url.slice(ledQs + 8).split("&")[0]) : "default";
+    var ua = req.headers["user-agent"] || "";
+    if (!ua.includes("Mozilla")) {
+      var ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").replace("::ffff:", "");
+      var ls = state.getLedState(ledDevice);
+      if (ip) { ls.ip = ip; state.saveState(); }
+    }
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(state.getLedState(ledDevice)));
     return true;
