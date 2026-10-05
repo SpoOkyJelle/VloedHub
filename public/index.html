@@ -30,12 +30,17 @@
     <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
     <span class='ip-badge' id='wan-ip-badge'><i class='fa-solid fa-globe'></i> …</span>
   </div>
+  <div class='layout-block' data-block='weather'>
   <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-temperature-half'></i></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-droplet'></i></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-water'></i></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-wind'></i></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div></div>
+  </div>
+  <div class='layout-block' data-block='power_live'>
   <div class='power-hero'>
     <div class='power-label'>Huidig verbruik</div>
     <div class='power-value delivered' id='del-total'>—<span class='unit'>kW</span></div>
     <div class='power-sub' id='price-elec'>— €/kWh</div>
   </div>
+  </div>
+  <div class='layout-block' data-block='info_stats'>
   <div class='info-strip'>
     <div class='info-card'>
       <div class='info-label'>Kosten vandaag</div>
@@ -53,7 +58,11 @@
     </div>
     <div class='info-card'><div class='info-label'>Huistemp</div><div class='info-value' id='home-temp'>—<span class='card-unit'>°C</span></div></div>
   </div>
+  </div>
+  <div class='layout-block' data-block='device_controls'>
   <div class='info-strip' style='grid-template-columns:repeat(5,1fr)'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledQuickToggle()'><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledGangQuickToggle()'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(34,197,94,0.3)' onclick='relayGangQuickToggle()'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><div class='info-value' id='home-relay-gang-status' style='color:var(--green)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card'><div class='info-label'>Wasbeurten</div><div class='info-value' style='color:var(--blue)' id='home-wash-total'>—</div><div class='info-sub'>totaal</div></div></div>
+  </div>
+  <div class='layout-block' data-block='phases'>
   <div class='phase-row'>
     <div class='phase-card'>
       <div class='phase-name'>L1</div>
@@ -77,6 +86,8 @@
       <div class='phase-bar-track'><div class='phase-bar-fill' id='bar-l3' style='width:0%'></div></div>
     </div>
   </div>
+  </div>
+  <div class='layout-block' data-block='recent_readings'>
   <div class='log-card'>
     <div class='log-header'><span class='section-title'>Recente metingen</span></div>
     <div class='log-table-wrap'>
@@ -84,6 +95,14 @@
         <thead><tr><th>Tijd</th><th>Verbruik (kW)</th><th>Gas (m³)</th></tr></thead>
         <tbody id='rows'></tbody>
       </table>
+    </div>
+  </div>
+  </div>
+  <button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(168,85,247,0.85);border:none;color:#fff;font-size:0.9rem;cursor:pointer;z-index:50;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(168,85,247,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
+  <div id='block-picker' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:flex-end;justify-content:center'>
+    <div style='background:#141728;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto'>
+      <div style='font-size:0.85rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between'>Blok toevoegen<button onclick='closeBlockPicker()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem'>✕</button></div>
+      <div id='block-picker-list' style='display:flex;flex-direction:column;gap:0.5rem'></div>
     </div>
   </div>
 </div>
@@ -300,6 +319,7 @@ function showScreen(n, btn, fromSwipe) {
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
   if (n === 4) { buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
+  if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(168,85,247,0.85)'; } }
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); refreshCosts(); refreshComparison(); loadCostsDaily(); refreshCheapHours(); }
@@ -631,6 +651,185 @@ var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmac
 
 function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste: ' + (s.last_finished_at ? new Date(s.last_finished_at).toLocaleString('nl-NL', {hour12:false}) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + new Date(r.finished_at).toLocaleString('nl-NL', {hour12:false}) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
 function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; var valStr = r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'); var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room" style="display:flex;align-items:center;gap:0.35rem">' + r.display_name + '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + dEnc + '\',\'' + sEnc + '\',this)"></i></div><div class="temp-value">' + valStr + '</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
+// ── Layout system ──
+var layoutConfig = {};
+var layoutEditMode = false;
+
+var BLOCKS = {
+  'weather':          {label:'Weer',              icon:'fa-cloud-sun',       dynamic:false},
+  'power_live':       {label:'Live verbruik',      icon:'fa-bolt',            dynamic:false},
+  'info_stats':       {label:'Statistieken',        icon:'fa-chart-pie',       dynamic:false},
+  'device_controls':  {label:'Apparaten',           icon:'fa-sliders',         dynamic:false},
+  'phases':           {label:'Fases L1/L2/L3',     icon:'fa-plug-circle-bolt',dynamic:false},
+  'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
+  'temperature_grid': {label:'Temperatuur',         icon:'fa-temperature-half',dynamic:true,
+    render: function(el) { el.innerHTML = '<div class="section-title">Temperatuur</div><div class="temp-grid" id="dyn-temp-grid"></div>'; },
+    refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?Number(r.temp_c).toFixed(1):'—')+'°C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
+  },
+  'esphome_grid': {label:'ESPHome Sensoren', icon:'fa-microchip', dynamic:true,
+    render: function(el) { el.innerHTML = '<div class="section-title">ESPHome Sensoren</div><div class="temp-grid" id="dyn-esphome-grid"></div>'; },
+    refresh: function() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-esphome-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var valStr=r.value!=null?Number(r.value).toFixed(1)+(r.unit?' '+r.unit:''):(r.value_text||'—'); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room">'+r.display_name+'</div><div class="temp-value">'+valStr+'</div></div>';}).join('');}).catch(function(){}); }
+  }
+};
+
+function loadLayout() {
+  fetch('/api/layout').then(function(r){return r.json();}).then(function(cfg){
+    layoutConfig = cfg;
+    applyLayout(0);
+  }).catch(function(){ applyLayout(0); });
+}
+
+function applyLayout(screenIdx) {
+  var screen = document.getElementById('screen-' + screenIdx);
+  if (!screen) return;
+  var cfg = layoutConfig[String(screenIdx)];
+  if (!cfg) return;
+
+  // Hide all blocks first
+  screen.querySelectorAll('.layout-block').forEach(function(b){ b.style.display='none'; });
+
+  // Show/reorder/size blocks per config
+  cfg.forEach(function(item) {
+    var block = screen.querySelector('[data-block="' + item.type + '"]');
+    if (!block) {
+      // Dynamic block — create it
+      block = document.createElement('div');
+      block.className = 'layout-block';
+      block.dataset.block = item.type;
+      var def = BLOCKS[item.type];
+      if (def && def.render) def.render(block);
+      screen.appendChild(block);
+    }
+    block.dataset.size = item.size || 'full';
+    block.style.display = '';
+    screen.appendChild(block); // move to correct order
+  });
+
+  // Refresh dynamic blocks
+  cfg.forEach(function(item) {
+    var def = BLOCKS[item.type];
+    if (def && def.dynamic && def.refresh) def.refresh();
+  });
+}
+
+function saveLayout() {
+  fetch('/api/layout', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(layoutConfig)}).then(function(){applyLayout(0);});
+}
+
+function toggleLayoutEdit() {
+  layoutEditMode = !layoutEditMode;
+  var btn = document.getElementById('layout-edit-btn');
+  if (layoutEditMode) {
+    btn.style.background = 'rgba(34,197,94,0.85)';
+    renderEditBars(0);
+  } else {
+    btn.style.background = 'rgba(168,85,247,0.85)';
+    removeEditBars(0);
+    saveLayout();
+  }
+}
+
+function renderEditBars(screenIdx) {
+  var screen = document.getElementById('screen-' + screenIdx);
+  screen.querySelectorAll('.layout-block').forEach(function(block) {
+    if (block.style.display === 'none') return;
+    var type = block.dataset.block;
+    var def = BLOCKS[type] || {label: type, icon: 'fa-cube'};
+    var size = block.dataset.size || 'full';
+    var bar = document.createElement('div');
+    bar.className = 'layout-block-edit-bar';
+    bar.dataset.editBar = type;
+    bar.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span class="lbl">' + def.label + '</span>' +
+      '<button onclick="moveBlock(0,\'' + type + '\',-1)" title="Omhoog">↑</button>' +
+      '<button onclick="moveBlock(0,\'' + type + '\',1)" title="Omlaag">↓</button>' +
+      '<button class="block-size-toggle' + (size==='half'?' active':'') + '" onclick="toggleBlockSize(0,\'' + type + '\',this)" title="Halve breedte">½</button>' +
+      '<button onclick="removeBlock(0,\'' + type + '\')" title="Verwijderen" style="color:#F87171">✕</button>';
+    block.insertBefore(bar, block.firstChild);
+  });
+  // Add "add block" button
+  var existing = screen.querySelector('[data-edit-add]');
+  if (existing) existing.parentNode.removeChild(existing);
+  var addBtn = document.createElement('button');
+  addBtn.dataset.editAdd = '1';
+  addBtn.onclick = showBlockPicker;
+  addBtn.style.cssText = 'width:100%;padding:0.65rem;border-radius:10px;border:1px dashed rgba(168,85,247,0.4);background:rgba(168,85,247,0.08);color:var(--pl);font-family:inherit;font-weight:600;cursor:pointer;font-size:0.85rem';
+  addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Blok toevoegen';
+  screen.appendChild(addBtn);
+}
+
+function removeEditBars(screenIdx) {
+  var screen = document.getElementById('screen-' + screenIdx);
+  screen.querySelectorAll('.layout-block-edit-bar').forEach(function(b){ b.parentNode.removeChild(b); });
+  var addBtn = screen.querySelector('[data-edit-add]');
+  if (addBtn) addBtn.parentNode.removeChild(addBtn);
+}
+
+function moveBlock(screenIdx, type, dir) {
+  var cfg = layoutConfig[String(screenIdx)];
+  if (!cfg) return;
+  var idx = cfg.findIndex(function(b){ return b.type === type; });
+  if (idx < 0) return;
+  var newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= cfg.length) return;
+  var tmp = cfg[idx]; cfg[idx] = cfg[newIdx]; cfg[newIdx] = tmp;
+  removeEditBars(screenIdx);
+  applyLayout(screenIdx);
+  renderEditBars(screenIdx);
+}
+
+function toggleBlockSize(screenIdx, type, btn) {
+  var cfg = layoutConfig[String(screenIdx)];
+  if (!cfg) return;
+  var item = cfg.find(function(b){ return b.type === type; });
+  if (!item) return;
+  item.size = item.size === 'half' ? 'full' : 'half';
+  btn.classList.toggle('active');
+  var block = document.getElementById('screen-' + screenIdx).querySelector('[data-block="' + type + '"]');
+  if (block) block.dataset.size = item.size;
+}
+
+function removeBlock(screenIdx, type) {
+  var cfg = layoutConfig[String(screenIdx)];
+  if (!cfg) return;
+  layoutConfig[String(screenIdx)] = cfg.filter(function(b){ return b.type !== type; });
+  removeEditBars(screenIdx);
+  applyLayout(screenIdx);
+  renderEditBars(screenIdx);
+}
+
+function showBlockPicker() {
+  var screenIdx = 0;
+  var cfg = layoutConfig[String(screenIdx)] || [];
+  var used = cfg.map(function(b){ return b.type; });
+  var available = Object.keys(BLOCKS).filter(function(k){ return used.indexOf(k) === -1; });
+  var list = document.getElementById('block-picker-list');
+  if (!available.length) {
+    list.innerHTML = '<div style="color:var(--dim);font-size:0.8rem">Alle blokken zijn al zichtbaar.</div>';
+  } else {
+    list.innerHTML = available.map(function(type) {
+      var def = BLOCKS[type];
+      return '<button onclick="addBlock(0,\'' + type + '\')" style="display:flex;align-items:center;gap:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:0.75rem;cursor:pointer;color:inherit;font-family:inherit;font-size:0.85rem;width:100%"><i class="fa-solid ' + def.icon + '" style="color:var(--pl);width:1.2rem;text-align:center"></i><span style="font-weight:600">' + def.label + '</span></button>';
+    }).join('');
+  }
+  var picker = document.getElementById('block-picker');
+  picker.style.display = 'flex';
+}
+
+function closeBlockPicker() {
+  document.getElementById('block-picker').style.display = 'none';
+}
+
+function addBlock(screenIdx, type) {
+  var cfg = layoutConfig[String(screenIdx)];
+  if (!cfg) cfg = layoutConfig[String(screenIdx)] = [];
+  if (cfg.find(function(b){ return b.type === type; })) return;
+  cfg.push({type: type, size: 'full'});
+  closeBlockPicker();
+  removeEditBars(screenIdx);
+  applyLayout(screenIdx);
+  renderEditBars(screenIdx);
+}
+
 var deviceNamesCache = {};
 function loadDeviceNames() { fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){ deviceNamesCache = names; var map = { 'led::default':['sname-led-default','rename-led-default','homelabel-led-default'], 'led::keuken':['sname-led-keuken','rename-led-keuken','homelabel-led-keuken'], 'led::gang':['sname-led-gang','rename-led-gang','homelabel-led-gang'], 'relay::gang':['sname-relay-gang','rename-relay-gang','homelabel-relay-gang'] }; var defaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' }; Object.keys(map).forEach(function(key){ var name = names[key] || defaults[key]; map[key].forEach(function(id){ var el = document.getElementById(id); if (el) el.textContent = name; }); }); }).catch(function(){}); }
 function refreshSettingsNames() {
@@ -707,6 +906,7 @@ function esphomeRenameSettings(dEnc, sEnc) {
 function toggleLedPanel(id, btn) { var panel = document.getElementById('led-panel-' + id); var open = panel.style.display !== 'none'; panel.style.display = open ? 'none' : 'block'; btn.textContent = open ? '▾' : '▴'; }
 function deviceRename(key, defaultName, iconEl) { var spanEl = iconEl.previousElementSibling; var current = deviceNamesCache[key] || defaultName; var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.85rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:700'; spanEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/device-names', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:key, name:val}) }).then(function(){ loadDeviceNames(); }); } input.addEventListener('keydown', function(e){ if (e.key==='Enter') { input.blur(); } if (e.key==='Escape') loadDeviceNames(); }); input.addEventListener('blur', commit); }
 loadDeviceNames();
+loadLayout();
 function esphomeRename(deviceEnc, sensorEnc, iconEl) { var device = decodeURIComponent(deviceEnc); var sensor = decodeURIComponent(sensorEnc); var nameEl = iconEl.parentElement; var current = nameEl.childNodes[0].textContent.trim(); var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.75rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.3rem;width:8rem;font-family:inherit'; nameEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/esphome/rename', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device:device, sensor_name:sensor, display_name:val}) }).then(function(){ refreshEsphome(); }); } input.addEventListener('keydown', function(e) { if (e.key === 'Enter') commit(); if (e.key === 'Escape') refreshEsphome(); }); input.addEventListener('blur', commit); }
 function refreshTemperature() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('temp-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">' + r.room + '</div><div class="temp-value">' + (r.temp_c != null ? Number(r.temp_c).toFixed(1) : '—') + '°C</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
 var chartTemp = null;
