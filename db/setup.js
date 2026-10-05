@@ -64,6 +64,17 @@ db.serialize(function() {
   );
 
   db.run(
+    "CREATE TABLE IF NOT EXISTS esphome_readings (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  received_at TEXT NOT NULL," +
+    "  device TEXT NOT NULL," +
+    "  sensor_name TEXT NOT NULL," +
+    "  value REAL," +
+    "  unit TEXT" +
+    ")"
+  );
+
+  db.run(
     "CREATE TABLE IF NOT EXISTS flows (" +
     "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
     "  name TEXT NOT NULL DEFAULT 'Naamloos'," +

@@ -18,7 +18,8 @@
       "Bash(cp -r /c/Users/thepu/Desktop/VloedHub/.claude/worktrees/agent-a1e65b94/public /c/Users/thepu/Desktop/VloedHub/)",
       "Bash(curl -s \"https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css\")",
       "Bash(grep -E \"^\\\\.|^d|\\\\.js$|\\\\.json$\")",
-      "Bash(sqlite3 *)"
+      "Bash(sqlite3 *)",
+      "Bash(grep -v \"function\\\\|addEventListener\\\\|var \\\\|= doc\\\\|if \\(\\\\|\\\\.style\\\\|\\\\\\\\.class\")"
     ]
   }
 }

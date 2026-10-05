@@ -83,4 +83,23 @@ function logWashCycle(data, callback) {
   );
 }
 
-module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle };
+function logEsphomeReadings(data, callback) {
+  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var sensors = Array.isArray(data.sensors) ? data.sensors : [];
+  var valid = sensors.filter(function(s) {
+    return s && typeof s.name === "string" && s.name.length > 0 && s.value != null;
+  });
+  if (valid.length === 0) return callback(new Error("no valid sensors"));
+
+  var stmt = db.prepare("INSERT INTO esphome_readings (received_at, device, sensor_name, value, unit) VALUES (?,?,?,?,?)");
+  valid.forEach(function(s) {
+    stmt.run([received_at, data.device || "esphome", s.name, typeof s.value === "number" ? s.value : null, s.unit || null]);
+  });
+  stmt.finalize(function(err) {
+    if (err) return callback(err);
+    console.log("[" + received_at + "] ESPHome (" + (data.device || "esphome") + "): " + valid.map(function(s) { return s.name + "=" + s.value + (s.unit || ""); }).join(", "));
+    callback(null, received_at);
+  });
+}
+
+module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle, logEsphomeReadings: logEsphomeReadings };
