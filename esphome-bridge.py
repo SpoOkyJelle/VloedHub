@@ -8,7 +8,7 @@ ESPHOME_HOST = "192.168.178.136"
 ESPHOME_PORT = 6053
 ESPHOME_PASSWORD = ""
 SERVER_URL = "http://192.168.178.10:5000/api/esphome"
-POST_INTERVAL = 5  # seconds between pushes
+POST_INTERVAL = 30  # seconds between pushes
 
 latest = {}  # key: entity_key, value: {name, value, unit}
 
