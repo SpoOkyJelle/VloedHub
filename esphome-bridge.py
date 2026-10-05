@@ -39,7 +39,7 @@ async def main():
         }
         print(f"[ESPHome] {entity.name} = {value}{unit}")
 
-    cli.subscribe_states(on_state)
+    await cli.subscribe_states(on_state)
     print(f"[ESPHome] Subscribed to states. Posting every {POST_INTERVAL}s to {SERVER_URL}")
 
     while True:
