@@ -91,9 +91,10 @@ function logEsphomeReadings(data, callback) {
   });
   if (valid.length === 0) return callback(new Error("no valid sensors"));
 
-  var stmt = db.prepare("INSERT INTO esphome_readings (received_at, device, sensor_name, value, unit) VALUES (?,?,?,?,?)");
+  var stmt = db.prepare("INSERT INTO esphome_readings (received_at, device, sensor_name, value, value_text, unit) VALUES (?,?,?,?,?,?)");
   valid.forEach(function(s) {
-    stmt.run([received_at, data.device || "esphome", s.name, typeof s.value === "number" ? s.value : null, s.unit || null]);
+    var isNum = typeof s.value === "number";
+    stmt.run([received_at, data.device || "esphome", s.name, isNum ? s.value : null, isNum ? null : String(s.value), s.unit || null]);
   });
   stmt.finalize(function(err) {
     if (err) return callback(err);

@@ -70,9 +70,11 @@ db.serialize(function() {
     "  device TEXT NOT NULL," +
     "  sensor_name TEXT NOT NULL," +
     "  value REAL," +
+    "  value_text TEXT," +
     "  unit TEXT" +
     ")"
   );
+  db.run("ALTER TABLE esphome_readings ADD COLUMN value_text TEXT", function() {});
 
   db.run(
     "CREATE TABLE IF NOT EXISTS flows (" +
