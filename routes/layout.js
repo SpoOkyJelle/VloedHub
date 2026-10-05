@@ -8,7 +8,10 @@ var DEFAULT_LAYOUT = {
     {type:"weather",size:"full"},
     {type:"power_live",size:"full"},
     {type:"info_stats",size:"full"},
-    {type:"device_controls",size:"full"},
+    {type:"led_default",size:"half"},
+    {type:"led_keuken",size:"half"},
+    {type:"led_gang",size:"half"},
+    {type:"relay_gang",size:"half"},
     {type:"phases",size:"full"},
     {type:"recent_readings",size:"full"}
   ]

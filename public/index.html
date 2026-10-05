@@ -59,8 +59,17 @@
     <div class='info-card'><div class='info-label'>Huistemp</div><div class='info-value' id='home-temp'>—<span class='card-unit'>°C</span></div></div>
   </div>
   </div>
-  <div class='layout-block' data-block='device_controls'>
-  <div class='info-strip' style='grid-template-columns:repeat(5,1fr)'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledQuickToggle()'><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledGangQuickToggle()'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card' style='cursor:pointer;border-color:rgba(34,197,94,0.3)' onclick='relayGangQuickToggle()'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><div class='info-value' id='home-relay-gang-status' style='color:var(--green)'>—</div><div class='info-sub'>Tik om te wisselen</div></div><div class='info-card'><div class='info-label'>Wasbeurten</div><div class='info-value' style='color:var(--blue)' id='home-wash-total'>—</div><div class='info-sub'>totaal</div></div></div>
+  <div class='layout-block' data-block='led_default'>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledQuickToggle()'><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  </div>
+  <div class='layout-block' data-block='led_keuken'>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  </div>
+  <div class='layout-block' data-block='led_gang'>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledGangQuickToggle()'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  </div>
+  <div class='layout-block' data-block='relay_gang'>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(34,197,94,0.3)' onclick='relayGangQuickToggle()'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><div class='info-value' id='home-relay-gang-status' style='color:var(--green)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
   </div>
   <div class='layout-block' data-block='phases'>
   <div class='phase-row'>
@@ -652,7 +661,10 @@ var BLOCKS = {
   'weather':          {label:'Weer',              icon:'fa-cloud-sun',       dynamic:false},
   'power_live':       {label:'Live verbruik',      icon:'fa-bolt',            dynamic:false},
   'info_stats':       {label:'Statistieken',        icon:'fa-chart-pie',       dynamic:false},
-  'device_controls':  {label:'Apparaten',           icon:'fa-sliders',         dynamic:false},
+  'led_default':      {label:'LED Strip',             icon:'fa-lightbulb',       dynamic:false},
+  'led_keuken':       {label:'Ledstrip Keuken',       icon:'fa-lightbulb',       dynamic:false},
+  'led_gang':         {label:'Ledstrip Gang',          icon:'fa-lightbulb',       dynamic:false},
+  'relay_gang':       {label:'Lamp Gang',              icon:'fa-toggle-on',       dynamic:false},
   'phases':           {label:'Fases L1/L2/L3',     icon:'fa-plug-circle-bolt',dynamic:false},
   'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
   'temperature_grid': {label:'Temperatuur',         icon:'fa-temperature-half',dynamic:true,
