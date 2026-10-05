@@ -218,6 +218,42 @@
 <div class='section-title'><span id='sname-relay-gang'>Lamp Gang</span></div>
 <div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-relay-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-relay-gang'>Lamp Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("relay::gang","Lamp Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700' id='relay-gang-status-text' style='color:var(--green)'>UIT</div></div><button id='relay-gang-onoff' onclick='relayGangToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ADE80;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>UIT</button></div></div>
 </div>
+<!-- SCREEN 5: INSTELLINGEN -->
+<div class='screen' id='screen-5'>
+<div class='section-title'>Beveiliging</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div style='display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>PIN wijzigen</div><div style='font-size:0.72rem;color:var(--dim)'>Verander je 4-cijferige PIN-code</div></div>
+      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
+    </div>
+    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Uitloggen</div><div style='font-size:0.72rem;color:var(--dim)'>Sessie beëindigen</div></div>
+      <button onclick='logout()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.1);color:#F87171;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
+    </div>
+  </div>
+</div>
+
+<div class='section-title'>Navigatie</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div style='display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Automatisering</div><div style='font-size:0.72rem;color:var(--dim)'>Flows aanmaken en beheren</div></div>
+      <a href='/flows' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.1);color:#818CF8;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-diagram-project'></i> Flows</a>
+    </div>
+    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Debug</div><div style='font-size:0.72rem;color:var(--dim)'>Serverinfo, logs en diagnostiek</div></div>
+      <a href='/debug' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--muted);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-bug'></i> Debug</a>
+    </div>
+  </div>
+</div>
+
+<div class='section-title'>Apparaatnamen</div>
+<div id='settings-device-names'></div>
+
+<div class='section-title'>ESPHome sensornamen</div>
+<div id='settings-esphome-names'></div>
+</div>
 </div><!-- /screens-track -->
 </div><!-- /screens-outer -->
 
@@ -237,32 +273,26 @@
   <button class='nav-item' data-screen='4' onclick='showScreen(4,this)'>
     <span class='nav-icon'><i class='fa-solid fa-couch'></i></span><span class='nav-label'>Thuis</span>
   </button>
+  <button class='nav-item' data-screen='5' onclick='showScreen(5,this)'>
+    <span class='nav-icon'><i class='fa-solid fa-sliders'></i></span><span class='nav-label'>Instellingen</span>
+  </button>
   <a href='/flows' class='nav-item nav-item--link nav-item--desktop-only'>
     <span class='nav-icon'><i class='fa-solid fa-diagram-project'></i></span><span class='nav-label'>Flows</span>
   </a>
-  <a href='/debug' class='nav-item nav-item--link nav-item--desktop-only'>
-    <span class='nav-icon'><i class='fa-solid fa-gear'></i></span><span class='nav-label'>Debug</span>
-  </a>
-  <button class='nav-item nav-item--desktop-only' onclick='showPinModal()'>
-    <span class='nav-icon'><i class='fa-solid fa-lock'></i></span><span class='nav-label'>PIN</span>
-  </button>
-  <button class='nav-item nav-item--desktop-only' onclick='logout()'>
-    <span class='nav-icon'><i class='fa-solid fa-right-from-bracket'></i></span><span class='nav-label'>Uitloggen</span>
-  </button>
 </nav>
 
 <script>
 // ── Screen navigation ──
 var currentScreen = 0;
 var screenTrack = document.getElementById('screens-track');
-var screenLoaded = [true, false, false, false, false];
+var screenLoaded = [true, false, false, false, false, false];
 
 function showScreen(n, btn, fromSwipe) {
   currentScreen = n;
   screenTrack.style.transition = fromSwipe
     ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
     : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
-  screenTrack.style.transform = 'translateX(calc(-' + (100/5) + '% * ' + n + '))';
+  screenTrack.style.transform = 'translateX(calc(-' + (100/6) + '% * ' + n + '))';
   document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
   if (btn) {
     btn.classList.add('active');
@@ -282,6 +312,7 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 2) { loadPhaseChart(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+    if (n === 5) { refreshSettingsNames(); }
   }
 }
 
@@ -298,8 +329,8 @@ outerEl.addEventListener('touchmove', function(e) {
   var dy = e.touches[0].clientY - touchY0;
   if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }
   if (isSwiping) {
-    var pct = (currentScreen * (100/5)) - (dx / window.innerWidth * (100/5));
-    pct = Math.max(0, Math.min(400/5, pct));
+    var pct = (currentScreen * (100/6)) - (dx / window.innerWidth * (100/6));
+    pct = Math.max(0, Math.min(500/6, pct));
     screenTrack.style.transition = 'none';
     screenTrack.style.transform = 'translateX(-' + pct + '%)';
   }
@@ -307,7 +338,7 @@ outerEl.addEventListener('touchmove', function(e) {
 outerEl.addEventListener('touchend', function(e) {
   var dx = e.changedTouches[0].clientX - touchX0;
   if (isSwiping) {
-    if (dx < -50 && currentScreen < 4) showScreen(currentScreen + 1, null, true);
+    if (dx < -50 && currentScreen < 5) showScreen(currentScreen + 1, null, true);
     else if (dx > 50 && currentScreen > 0) showScreen(currentScreen - 1, null, true);
     else showScreen(currentScreen, null, true);
   }
@@ -608,6 +639,65 @@ function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){r
 function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; var valStr = r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'); var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room" style="display:flex;align-items:center;gap:0.35rem">' + r.display_name + '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + dEnc + '\',\'' + sEnc + '\',this)"></i></div><div class="temp-value">' + valStr + '</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
 var deviceNamesCache = {};
 function loadDeviceNames() { fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){ deviceNamesCache = names; var map = { 'led::default':['sname-led-default','rename-led-default','homelabel-led-default'], 'led::keuken':['sname-led-keuken','rename-led-keuken','homelabel-led-keuken'], 'led::gang':['sname-led-gang','rename-led-gang','homelabel-led-gang'], 'relay::gang':['sname-relay-gang','rename-relay-gang','homelabel-relay-gang'] }; var defaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' }; Object.keys(map).forEach(function(key){ var name = names[key] || defaults[key]; map[key].forEach(function(id){ var el = document.getElementById(id); if (el) el.textContent = name; }); }); }).catch(function(){}); }
+function refreshSettingsNames() {
+  var deviceDefaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' };
+  var deviceIcons = { 'led::default':'fa-lightbulb','led::keuken':'fa-lightbulb','led::gang':'fa-lightbulb','relay::gang':'fa-toggle-on' };
+  fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){
+    var el = document.getElementById('settings-device-names');
+    if (!el) return;
+    el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
+      Object.keys(deviceDefaults).map(function(key, i) {
+        var name = names[key] || deviceDefaults[key];
+        var icon = deviceIcons[key];
+        var kEnc = encodeURIComponent(key);
+        var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
+          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid ' + icon + '" style="color:var(--pl);width:1rem;text-align:center"></i>' +
+          '<span id="sn-' + kEnc + '" style="font-size:0.9rem;font-weight:600">' + name + '</span></div>' +
+          '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="settingsDeviceRename(\'' + kEnc + '\',\'' + encodeURIComponent(deviceDefaults[key]) + '\')"></i></div>';
+      }).join('') + '</div></div>';
+  }).catch(function(){});
+  fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){
+    var el2 = document.getElementById('settings-esphome-names');
+    if (!el2) return;
+    if (!rows.length) { el2.innerHTML = '<div class="power-hero" style="color:var(--dim);font-size:0.8rem">Geen ESPHome data ontvangen</div>'; return; }
+    el2.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
+      rows.map(function(r, i) {
+        var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
+        var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
+          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid fa-microchip" style="color:var(--blue);width:1rem;text-align:center"></i>' +
+          '<div><span id="sne-' + dEnc + '-' + sEnc + '" style="font-size:0.9rem;font-weight:600">' + r.display_name + '</span>' +
+          '<div style="font-size:0.65rem;color:var(--dim)">' + r.sensor_name + '</div></div></div>' +
+          '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="esphomeRenameSettings(\'' + dEnc + '\',\'' + sEnc + '\')"></i></div>';
+      }).join('') + '</div></div>';
+  }).catch(function(){});
+}
+function settingsDeviceRename(keyEnc, defaultEnc) {
+  var key = decodeURIComponent(keyEnc); var def = decodeURIComponent(defaultEnc);
+  var spanEl = document.getElementById('sn-' + keyEnc);
+  if (!spanEl) return;
+  var current = deviceNamesCache[key] || def;
+  var input = document.createElement('input');
+  input.value = current;
+  input.style.cssText = 'font-size:0.9rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:600';
+  spanEl.replaceWith(input); input.focus(); input.select();
+  function commit() { fetch('/api/device-names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:key,name:input.value.trim()})}).then(function(){loadDeviceNames();refreshSettingsNames();}); }
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')input.blur();if(e.key==='Escape')refreshSettingsNames();});
+  input.addEventListener('blur',commit);
+}
+function esphomeRenameSettings(dEnc, sEnc) {
+  var device = decodeURIComponent(dEnc); var sensor = decodeURIComponent(sEnc);
+  var spanEl = document.getElementById('sne-' + dEnc + '-' + sEnc);
+  if (!spanEl) return;
+  var input = document.createElement('input');
+  input.value = spanEl.textContent;
+  input.style.cssText = 'font-size:0.9rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:600';
+  spanEl.replaceWith(input); input.focus(); input.select();
+  function commit() { fetch('/api/esphome/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:device,sensor_name:sensor,display_name:input.value.trim()})}).then(function(){refreshSettingsNames();refreshEsphome();}); }
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')input.blur();if(e.key==='Escape')refreshSettingsNames();});
+  input.addEventListener('blur',commit);
+}
 function toggleLedPanel(id, btn) { var panel = document.getElementById('led-panel-' + id); var open = panel.style.display !== 'none'; panel.style.display = open ? 'none' : 'block'; btn.textContent = open ? '▾' : '▴'; }
 function deviceRename(key, defaultName, iconEl) { var spanEl = iconEl.previousElementSibling; var current = deviceNamesCache[key] || defaultName; var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.85rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:700'; spanEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/device-names', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:key, name:val}) }).then(function(){ loadDeviceNames(); }); } input.addEventListener('keydown', function(e){ if (e.key==='Enter') { input.blur(); } if (e.key==='Escape') loadDeviceNames(); }); input.addEventListener('blur', commit); }
 loadDeviceNames();
@@ -724,6 +814,7 @@ setInterval(function() {
   if (currentScreen === 2) { loadPhaseChart(); loadGasDaily(); }
   if (currentScreen === 3) { refreshStats(); refreshSafety(); }
   if (currentScreen === 4) { refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+  if (currentScreen === 5) { refreshSettingsNames(); }
 }, 60000);
 setInterval(function() {
   if (currentScreen === 1) { loadPeaks(); loadWeekdayChart(); loadCostsDaily(); }
