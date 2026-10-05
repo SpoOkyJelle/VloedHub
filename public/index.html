@@ -674,6 +674,42 @@ var BLOCKS = {
   'esphome_grid': {label:'ESPHome Sensoren', icon:'fa-microchip', dynamic:true,
     render: function(el) { el.innerHTML = '<div class="section-title">ESPHome Sensoren</div><div class="temp-grid" id="dyn-esphome-grid"></div>'; },
     refresh: function() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-esphome-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var valStr=r.value!=null?Number(r.value).toFixed(1)+(r.unit?' '+r.unit:''):(r.value_text||'—'); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room">'+r.display_name+'</div><div class="temp-value">'+valStr+'</div></div>';}).join('');}).catch(function(){}); }
+  },
+  'sun_times': {label:'Zon',icon:'fa-sun',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-sun" class="info-strip" style="grid-template-columns:1fr 1fr"></div>';},
+    refresh:function(){fetch('/api/sun').then(function(r){return r.json();}).then(function(s){var el=document.getElementById('blk-sun');if(!el||!s)return;function fmt(t){if(!t)return'—';var d=new Date(t);return d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}var ms=(s.sunset||0)-(s.sunrise||0);var h=Math.floor(ms/3600000);var m=Math.floor((ms%3600000)/60000);el.innerHTML='<div class="info-card"><div class="info-label">Zonsopgang</div><div class="info-value" style="color:#FBBF24">'+fmt(s.sunrise)+'</div></div><div class="info-card"><div class="info-label">Zonsondergang</div><div class="info-value" style="color:#F97316">'+fmt(s.sunset)+'</div><div class="info-sub">Daglicht '+h+'u'+m+'m</div></div>';}).catch(function(){});}
+  },
+  'power_price': {label:'Stroomprijs',icon:'fa-tag',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-price" class="power-hero"></div>';},
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-price');if(!el)return;var price=p.electricity_eur_kwh;var gas=p.gas_eur_m3;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div style="color:var(--dim);font-size:0.8rem">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';el.innerHTML='<div class="power-label">Stroomprijs</div><div class="power-value" style="color:'+color+';font-size:1.6rem">€'+price.toFixed(4)+'<span class="unit">/kWh</span></div>'+(gas!=null?'<div class="power-sub">Gas: €'+gas.toFixed(4)+'/m³</div>':'');}).catch(function(){});}
+  },
+  'wasmachine_quick': {label:'Wasmachine',icon:'fa-shirt',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-wash-quick" class="power-hero"></div>';},
+    refresh:function(){Promise.all([fetch('/api/wasmachine/status').then(function(r){return r.json();}),fetch('/api/wasmachine/stats').then(function(r){return r.json();})]).then(function(res){var s=res[0];var st=res[1];var el=document.getElementById('blk-wash-quick');if(!el)return;var state=s.state||'idle';var color=state==='running'?'#FBBF24':state==='done'?'#4ADE80':'var(--dim)';var icon=state==='running'?'fa-rotate':state==='done'?'fa-circle-check':'fa-moon';var label=state==='running'?'In gebruik':state==='done'?'Klaar!':'Inactief';el.innerHTML='<div class="power-label">Wasmachine</div><div class="power-value" style="color:'+color+';font-size:1.4rem"><i class="fa-solid '+icon+'"></i> '+label+'</div><div class="power-sub">Vandaag: '+(st.today||0)+' · Week: '+(st.week||0)+'</div>';}).catch(function(){});}
+  },
+  'day_summary': {label:'Dag samenvatting',icon:'fa-chart-pie',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-daysummary" class="info-strip" style="grid-template-columns:1fr 1fr"></div>';},
+    refresh:function(){fetch('/api/day-comparison').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-daysummary');if(!el)return;function arrow(v){return v>0?'↑':'↓';}function col(v){return v>0?'#F87171':'#4ADE80';}var todayKwh=d.today_kwh!=null?d.today_kwh.toFixed(1):'—';var diff=d.diff_kwh!=null?d.diff_kwh:null;el.innerHTML='<div class="info-card"><div class="info-label">Vandaag</div><div class="info-value" style="color:var(--yellow)">'+todayKwh+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(d.today_eur!=null?'€'+d.today_eur.toFixed(2):'')+'</div></div><div class="info-card"><div class="info-label">vs Gisteren</div><div class="info-value" style="color:'+(diff!=null?col(diff):'var(--muted)')+';">'+(diff!=null?arrow(diff)+Math.abs(diff).toFixed(1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(d.yesterday_kwh!=null?'Gist: '+d.yesterday_kwh.toFixed(1)+' kWh':'')+'</div></div>';}).catch(function(){});}
+  },
+  'cheap_hours': {label:'Goedkope uren',icon:'fa-clock',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-cheap" class="power-hero"></div>';},
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-cheap');if(!el)return;var price=p.electricity_eur_kwh;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div style="color:var(--dim);font-size:0.8rem">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';var tip=price<0.15?'Goedkoop uur, goed moment!':price<0.25?'Gemiddeld tarief':'Duur uur, wacht indien mogelijk';el.innerHTML='<div class="power-label">Huidig tarief</div><div class="power-value" style="color:'+color+';font-size:1.5rem">€'+price.toFixed(4)+'<span class="unit">/kWh</span></div><div class="power-sub">'+tip+'</div>';}).catch(function(){});}
+  },
+  'solar_return': {label:'Teruglevering',icon:'fa-solar-panel',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-solar" class="power-hero"></div>';},
+    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-solar');if(!el)return;var latest=d.readings&&d.readings[0];var ret=latest?latest.power_returned_total_kw:null;var color=ret>0?'#4ADE80':'var(--dim)';el.innerHTML='<div class="power-label">Teruglevering</div><div class="power-value" style="color:'+color+';font-size:1.6rem">'+(ret!=null?ret.toFixed(3):'—')+'<span class="unit">kW</span></div><div class="power-sub">'+(ret>0?'Zonnepanelen actief':'Geen teruglevering')+'</div>';}).catch(function(){});}
+  },
+  'gas_today': {label:'Gas vandaag',icon:'fa-fire',dynamic:true,
+    render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
+    refresh:function(){fetch('/api/gas-daily').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-gastoday');if(!el)return;var today=d&&d[0];if(!today){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+(today.m3!=null?today.m3.toFixed(3):'—')+'<span class="unit">m³</span></div>'+(today.eur!=null?'<div class="power-sub">€'+today.eur.toFixed(2)+'</div>':'');}).catch(function(){});}
+  },
+  'chart_power_mini': {label:'Stroomgrafiek',icon:'fa-chart-line',dynamic:true,
+    render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Stroomverbruik vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-power"></canvas></div></div>';},
+    refresh:function(){fetch('/api/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-power');if(!ctx)return;if(window._blkChartPower)window._blkChartPower.destroy();window._blkChartPower=new Chart(ctx,{type:'line',data:{labels:rows.map(function(r){return r.period.slice(11,16);}),datasets:[{data:rows.map(function(r){return r.del!=null?r.del:null;}),borderColor:'#A855F7',backgroundColor:'rgba(168,85,247,0.1)',borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
+  },
+  'chart_temp_mini': {label:'Temperatuurgrafiek',icon:'fa-temperature-half',dynamic:true,
+    render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-temp"></canvas></div></div>';},
+    refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#A855F7'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   }
 };
 
@@ -747,7 +783,7 @@ function renderEditBars(screenIdx) {
     bar.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span class="lbl">' + def.label + '</span>' +
       '<button onclick="moveBlock(0,\'' + type + '\',-1)" title="Omhoog">↑</button>' +
       '<button onclick="moveBlock(0,\'' + type + '\',1)" title="Omlaag">↓</button>' +
-      '<button class="block-size-toggle' + (size==='half'?' active':'') + '" onclick="toggleBlockSize(0,\'' + type + '\',this)" title="Halve breedte">½</button>' +
+      '<button class="block-size-btn" onclick="toggleBlockSize(' + screenIdx + ',\'' + type + '\',this)" title="Grootte">' + (size === 'half' ? '2' : size === 'full' ? '4' : size) + '</button>' +
       '<button onclick="removeBlock(0,\'' + type + '\')" title="Verwijderen" style="color:#F87171">✕</button>';
     block.insertBefore(bar, block.firstChild);
   });
@@ -787,10 +823,12 @@ function toggleBlockSize(screenIdx, type, btn) {
   if (!cfg) return;
   var item = cfg.find(function(b){ return b.type === type; });
   if (!item) return;
-  item.size = item.size === 'half' ? 'full' : 'half';
-  btn.classList.toggle('active');
+  var sizes = ['1','2','3','4'];
+  var cur = sizes.indexOf(String(item.size));
+  item.size = sizes[(cur + 1) % sizes.length];
   var block = document.getElementById('screen-' + screenIdx).querySelector('[data-block="' + type + '"]');
   if (block) block.dataset.size = item.size;
+  btn.textContent = item.size;
 }
 
 function removeBlock(screenIdx, type) {
