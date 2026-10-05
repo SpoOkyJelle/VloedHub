@@ -5,7 +5,7 @@ var auth = require("./services/auth");
 var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status', '/api/auth/set-pin'];
 
 // API path prefixes that are device-facing (ESP32, P1 meter, sensors) — always public
-var PUBLIC_API_PREFIXES = ['/api/p1', '/api/led', '/api/relay', '/api/temperature', '/api/wasmachine', '/api/gas', '/api/webhook/', '/api/esphome'];
+var PUBLIC_API_PREFIXES = ['/api/p1', '/api/led', '/api/relay', '/api/temperature', '/api/wasmachine', '/api/gas', '/api/webhook/', '/api/esphome', '/api/device-names'];
 
 // Static asset extensions that are always public (needed by /pin page)
 var PUBLIC_EXTS  = ['.css', '.js', '.png', '.ico', '.svg', '.woff', '.woff2'];
@@ -24,6 +24,7 @@ var routes = [
   require("./routes/flows"),
   require("./routes/webhook-trigger"),
   require("./routes/esphome"),
+  require("./routes/device-names"),
   require("./routes/debug"),
   require("./routes/pages")
 ];
