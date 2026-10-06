@@ -970,3 +970,104 @@ to {
 .lamp-panel.home-open {
   width:100%;
   min-width:0}
+/* Weerkaart: kleur en beweging per weertype (data-weather komt uit het weer-icoon) */
+.weather-card {
+  position:relative;
+  overflow:hidden;
+  --wx:#F1F5F9;
+  --wx-rgb:241,245,249;
+  transition:border-color 0.6s}
+.weather-card > * {
+  position:relative;
+  z-index:1}
+.weather-card::before,.weather-card::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.6s}
+.weather-card[data-weather] {
+  border-color:rgba(var(--wx-rgb),0.22)}
+.weather-card[data-weather]::before {
+  opacity:1;
+  background:radial-gradient(circle at 12% 0%,rgba(var(--wx-rgb),0.24) 0%,transparent 60%);
+  animation:wx-glow 9s ease-in-out infinite alternate}
+.weather-card[data-weather] .weather-icon {
+  color:var(--wx);
+  filter:drop-shadow(0 0 10px rgba(var(--wx-rgb),0.45))}
+.weather-card[data-weather='sun'] { --wx:#FBBF24; --wx-rgb:251,191,36 }
+.weather-card[data-weather='cloud-sun'] { --wx:#FCD34D; --wx-rgb:252,211,77 }
+.weather-card[data-weather='cloud'],.weather-card[data-weather='smog'] { --wx:#94A3B8; --wx-rgb:148,163,184 }
+.weather-card[data-weather='cloud-rain'] { --wx:#38BDF8; --wx-rgb:56,189,248 }
+.weather-card[data-weather='cloud-showers-heavy'] { --wx:#0EA5E9; --wx-rgb:14,165,233 }
+.weather-card[data-weather='snowflake'],.weather-card[data-weather='icicles'] { --wx:#BAE6FD; --wx-rgb:186,230,253 }
+.weather-card[data-weather='cloud-bolt'] { --wx:#FDE047; --wx-rgb:253,224,71 }
+.weather-card[data-weather='sun'] .weather-icon {
+  animation:wx-spin 40s linear infinite}
+.weather-card[data-weather^='cloud'] .weather-icon,.weather-card[data-weather='smog'] .weather-icon {
+  animation:wx-drift 6s ease-in-out infinite alternate}
+.weather-card[data-weather='snowflake'] .weather-icon {
+  animation:wx-spin 24s linear infinite}
+.weather-card[data-weather='cloud-bolt'] .weather-icon {
+  animation:wx-flicker 5s linear infinite}
+.weather-card[data-weather='cloud-rain']::after,.weather-card[data-weather='cloud-showers-heavy']::after {
+  opacity:1;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M8 4l-2 9M30 22l-2 9M50 8l-2 9M18 40l-2 9M42 44l-2 9' stroke='%237DD3FC' stroke-opacity='.45' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  animation:wx-fall-rain 0.9s linear infinite}
+.weather-card[data-weather='cloud-showers-heavy']::after {
+  background-size:40px 40px;
+  animation:wx-fall-rain-heavy 0.45s linear infinite}
+.weather-card[data-weather='snowflake']::after,.weather-card[data-weather='icicles']::after {
+  opacity:1;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23fff' fill-opacity='.5'%3E%3Ccircle cx='10' cy='12' r='1.6'/%3E%3Ccircle cx='44' cy='6' r='1.1'/%3E%3Ccircle cx='66' cy='30' r='1.8'/%3E%3Ccircle cx='26' cy='46' r='1.2'/%3E%3Ccircle cx='54' cy='62' r='1.5'/%3E%3Ccircle cx='8' cy='70' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  animation:wx-fall-snow 7s linear infinite}
+.weather-card[data-weather='smog']::after {
+  opacity:1;
+  background:repeating-linear-gradient(180deg,transparent 0 18px,rgba(148,163,184,0.08) 18px 30px);
+  background-size:100% 60px;
+  animation:wx-fog 10s linear infinite}
+.weather-card[data-weather='cloud-bolt']::after {
+  background:#fff;
+  animation:wx-flash 7s linear infinite}
+.weather-stat:nth-child(1) .weather-stat-icon { color:#FDBA74 }
+.weather-stat:nth-child(2) .weather-stat-icon { color:#38BDF8 }
+.weather-stat:nth-child(3) .weather-stat-icon { color:#7DD3FC }
+.weather-stat:nth-child(4) .weather-stat-icon { color:#CBD5E1 }
+.weather-temp {
+  transition:color 0.6s}
+@keyframes wx-glow {
+  from { transform:translate(0,0) scale(1) }
+  to { transform:translate(6%,4%) scale(1.15) }
+}
+@keyframes wx-spin {
+  to { transform:rotate(360deg) }
+}
+@keyframes wx-drift {
+  from { transform:translateX(-3px) }
+  to { transform:translateX(3px) }
+}
+@keyframes wx-flicker {
+  0%,86%,90%,100% { opacity:1 }
+  88%,92% { opacity:0.35 }
+}
+@keyframes wx-fall-rain {
+  to { background-position:0 60px }
+}
+@keyframes wx-fall-rain-heavy {
+  to { background-position:0 40px }
+}
+@keyframes wx-fall-snow {
+  to { background-position:80px 160px }
+}
+@keyframes wx-fog {
+  to { background-position:0 60px }
+}
+@keyframes wx-flash {
+  0%,86%,89%,93%,100% { opacity:0 }
+  87%,91% { opacity:0.14 }
+}
+@media (prefers-reduced-motion:reduce) {
+  .weather-card::before,.weather-card::after,.weather-card .weather-icon {
+  animation:none !important}
+}
