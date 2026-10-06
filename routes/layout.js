@@ -5,17 +5,15 @@ var LAYOUT_FILE = path.join(__dirname, "../data/layout.json");
 
 var DEFAULT_LAYOUT = {
   "0": [
-    {type:"weather",size:"4"},
-    {type:"power_live",size:"4"},
-    {type:"info_stats",size:"4"},
-    {type:"chart_power",size:"4"},
-    {type:"afval",size:"4"},
-    {type:"led_default",size:"2"},
-    {type:"led_keuken",size:"2"},
-    {type:"led_gang",size:"2"},
-    {type:"relay_gang",size:"2"},
-    {type:"phases",size:"4"},
-    {type:"recent_readings",size:"4"}
+    {type:"weather",size:"2"},
+    {type:"power_live",size:"1"},
+    {type:"afval",size:"1"},
+    {type:"led_default",size:"1"},
+    {type:"led_keuken",size:"1"},
+    {type:"led_gang",size:"1"},
+    {type:"relay_gang",size:"1"},
+    {type:"chart_power",size:"2"},
+    {type:"phases",size:"2"}
   ]
 };
 
