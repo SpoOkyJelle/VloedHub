@@ -1192,9 +1192,9 @@ to {
   .afval-card { padding-left:0.7rem; padding-right:0.7rem; }
   .info-card .info-value { font-size:1rem; }
 }
-/* Verbruik en andere grote getallen: verticaal in het midden als het blok hoger is dan de inhoud */
+/* Verbruik en andere grote getallen: label bovenaan, getal in het midden, toelichting onderaan */
 .layout-block > .power-hero {
-  justify-content:center}
+  justify-content:space-between}
 /* Verbruik vergeleken */
 .compare-table td.num {
   color:var(--text);
