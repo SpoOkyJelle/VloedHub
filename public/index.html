@@ -960,6 +960,7 @@ var BLOCKS = {
   'relay_gang':       {label:'Lamp Gang',              icon:'fa-toggle-on',       dynamic:false},
   'phases':           {label:'Fases L1/L2/L3',     icon:'fa-plug-circle-bolt',dynamic:false},
   'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
+  'palm_tree':        {label:'Energieboom',         icon:'fa-tree',            dynamic:false},
   'temperature_grid': {label:'Temperatuur',         icon:'fa-temperature-half',dynamic:true,
     render: function(el) { el.innerHTML = '<div class="section-title">Temperatuur</div><div class="temp-grid" id="dyn-temp-grid"></div>'; },
     refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?Number(r.temp_c).toFixed(1):'—')+'°C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
