@@ -1345,3 +1345,44 @@ to {
   display:none}
 #screen-4 .fridge-card .chart-header {
   justify-content:flex-end}
+/* Modules: wat bij een uitgezette module hoort, verdwijnt */
+.mod-off-gas [data-module~='gas'],
+.mod-off-weather [data-module~='weather'],
+.mod-off-afval [data-module~='afval'],
+.mod-off-lights [data-module~='lights'],
+.mod-off-fridge [data-module~='fridge'],
+.mod-off-temperature [data-module~='temperature'],
+.mod-off-esphome [data-module~='esphome'],
+.mod-off-wasmachine [data-module~='wasmachine'],
+.mod-off-thuis [data-module~='thuis'] {
+  display:none !important}
+.mod-switch {
+  position:relative;
+  flex-shrink:0;
+  width:2.6rem;
+  height:1.5rem;
+  border-radius:1rem;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06);
+  cursor:pointer;
+  transition:background 0.2s,border-color 0.2s;
+  -webkit-tap-highlight-color:transparent}
+.mod-switch::after {
+  content:'';
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:calc(1.5rem - 6px);
+  height:calc(1.5rem - 6px);
+  border-radius:50%;
+  background:#94A3B8;
+  transition:transform 0.2s,background 0.2s}
+.mod-switch.on {
+  background:rgba(141,178,85,0.3);
+  border-color:rgba(141,178,85,0.6)}
+.mod-switch.on::after {
+  transform:translateX(1.1rem);
+  background:var(--accent-l)}
+.mod-switch.locked {
+  opacity:0.45;
+  cursor:default}

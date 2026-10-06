@@ -4,6 +4,7 @@ var db = require("../db/setup");
 var state = require("../utils/state");
 var discord = require("./discord");
 var fridge = require("./fridge");
+var modules = require("./modules");
 
 // Bewaakt of apparaten nog berichten sturen en meldt via Discord als er één wegvalt of terugkomt.
 var CHECK_INTERVAL = 60 * 1000;
@@ -48,7 +49,8 @@ function getStatus(cb) {
   var list = [];
   var names = deviceNames();
 
-  function add(key, name, lastSeen, limit) {
+  function add(key, name, lastSeen, limit, module) {
+    if (module && !modules.isOn(module)) return;
     var age = lastSeen ? ageMs(lastSeen) : null;
     if (age != null && age > FORGET_AFTER) return;
     list.push({ key: key, name: name, last_seen: lastSeen, limit_min: limit / 60000, online: age != null && age <= limit });
@@ -59,17 +61,17 @@ function getStatus(cb) {
     Object.keys(group[1]).forEach(function(device) {
       var key = group[0] + device;
       if (!group[1][device].ip && !polled[key]) return;
-      add(key, names[key] || DEFAULT_NAMES[key] || key, polled[key] ? localString(polled[key]) : null, LIMITS.polling);
+      add(key, names[key] || DEFAULT_NAMES[key] || key, polled[key] ? localString(polled[key]) : null, LIMITS.polling, "lights");
     });
   });
 
   db.get("SELECT MAX(received_at) as last FROM readings", function(err, row) {
     if (row && row.last) add("p1", "P1-meter", row.last, LIMITS.p1);
     db.all("SELECT room, MAX(received_at) as last FROM temperature_readings GROUP BY room", function(err2, rooms) {
-      (rooms || []).forEach(function(r) { add("temp::" + r.room, "Temperatuursensor " + r.room, r.last, LIMITS.temperature); });
+      (rooms || []).forEach(function(r) { add("temp::" + r.room, "Temperatuursensor " + r.room, r.last, LIMITS.temperature, "temperature"); });
       db.all("SELECT device, MAX(received_at) as last FROM esphome_readings GROUP BY device", function(err3, devices) {
-        (devices || []).forEach(function(d) { add("esphome::" + d.device, "ESPHome " + d.device, d.last, LIMITS.esphome); });
-        if (!fridge.getConfig()) return cb(list);
+        (devices || []).forEach(function(d) { add("esphome::" + d.device, "ESPHome " + d.device, d.last, LIMITS.esphome, "esphome"); });
+        if (!fridge.getConfig() || !modules.isOn("fridge")) return cb(list);
         fridge.fetchStatus(function(err4, f) {
           if (f && f.ok && f.updated) add("fridge", "Koelkast", localString(Date.parse(f.updated)), LIMITS.fridge);
           cb(list);

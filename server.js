@@ -23,6 +23,7 @@ var routes = [
   require("./routes/scenes"),
   require("./routes/monitor"),
   require("./routes/fridge"),
+  require("./routes/modules"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

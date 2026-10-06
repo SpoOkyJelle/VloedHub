@@ -1,5 +1,6 @@
 var https = require("https");
 var os = require("os");
+var modules = require("./modules");
 
 function getLocalIP() {
   var ifaces = os.networkInterfaces();
@@ -17,6 +18,8 @@ var WAN_IP = "ophalen\u2026";
 var DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1542267218073616445/Q5m05IVLBKR5Au5CGnY54Rp-9NeHW5qyBZ6-QWLzYK6bEr8EA1aYDai14L363aljodxR";
 
 function sendDiscord(message) {
+  // uit te zetten bij Instellingen > Modules
+  if (!modules.isOn("discord")) return;
   var body = JSON.stringify({ content: message });
   var url = new URL(DISCORD_WEBHOOK);
   var options = {

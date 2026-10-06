@@ -29,7 +29,7 @@ module.exports = function(req, res) {
           return;
         }
         logging.setWashStatus("done", dataW.device);
-        discord.sendDiscord("\ud83e\uddf8 **Was is klaar!** (" + (dataW.device || "wasmachine") + ")");
+        if (require("../services/modules").isOn("wasmachine")) discord.sendDiscord("\ud83e\uddf8 **Was is klaar!** (" + (dataW.device || "wasmachine") + ")");
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ status: "ok" }));
       });

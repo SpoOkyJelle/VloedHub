@@ -1,6 +1,7 @@
 var https = require("https");
 var auth  = require("./auth");
 var discord = require("./discord");
+var modules = require("./modules");
 
 // Gemeente Breda gebruikt het Burgerportaal (21South) voor de afvalkalender.
 // Er is geen officiële API; dit zijn dezelfde aanroepen als de Afvalservice-app doet.
@@ -154,6 +155,7 @@ function fetchCalendar(cb) {
 var REMINDER_HOUR = 21;
 
 function checkReminder() {
+  if (!modules.isOn("afval")) return;
   var addr = getAddress();
   if (!addr || !addr.addressId) return;
   var hour = parseInt(new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam" }).slice(11, 13), 10);

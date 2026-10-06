@@ -6,5 +6,16 @@
     "toevoeging": "",
     "addressId": "238127830354281808",
     "straat": "Vloed 63, Breda"
+  },
+  "modules": {
+    "discord": true,
+    "gas": true,
+    "weather": true,
+    "afval": true,
+    "lights": true,
+    "fridge": true,
+    "temperature": true,
+    "esphome": true,
+    "wasmachine": true
   }
 }
