@@ -22,7 +22,8 @@ module.exports = function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/gas-monthly") {
     db.all(
-      "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used" +
+      "SELECT strftime('%Y-%m', received_at) as month, MAX(gas_m3)-MIN(gas_m3) as gas_used," +
+      " MIN(date(received_at)) as first_day" +
       " FROM readings" +
       " WHERE gas_m3 IS NOT NULL AND received_at >= ?" +
       " GROUP BY month ORDER BY month ASC",

@@ -124,12 +124,24 @@ module.exports = function(req, res) {
       " AVG(power_delivered_l1_kw) as avg_l1," +
       " AVG(power_delivered_l2_kw) as avg_l2," +
       " AVG(power_delivered_l3_kw) as avg_l3," +
-      " MIN(voltage_l1) as min_v1, MAX(voltage_l1) as max_v1" +
+      " MIN(voltage_l1) as min_v1, MAX(voltage_l1) as max_v1," +
+      " MIN(voltage_l2) as min_v2, MAX(voltage_l2) as max_v2," +
+      " MIN(voltage_l3) as min_v3, MAX(voltage_l3) as max_v3," +
+      " AVG(voltage_l1) as avg_v1, AVG(voltage_l2) as avg_v2, AVG(voltage_l3) as avg_v3" +
       " FROM readings" +
       " WHERE date(received_at) = ?" +
       " AND power_delivered_total_kw IS NOT NULL",
       [time.todayAms()],
       function(err, row) {
+        if (row) {
+          // fasen zonder spanning (enkelfase-aansluiting) tellen niet mee
+          var live = [1, 2, 3].filter(function(i) { return row["avg_v" + i] != null && row["avg_v" + i] > 50; });
+          if (live.length) {
+            row.avg_v = live.reduce(function(t, i) { return t + row["avg_v" + i]; }, 0) / live.length;
+            row.min_v = Math.min.apply(null, live.map(function(i) { return row["min_v" + i]; }));
+            row.max_v = Math.max.apply(null, live.map(function(i) { return row["max_v" + i]; }));
+          }
+        }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(row || {}));
       }
@@ -161,16 +173,29 @@ module.exports = function(req, res) {
   }
 
   if (req.method === "GET" && req.url === "/api/voltage-dips") {
+    var vdSince = time.effectiveCutoff(604800000);
     db.get(
-      "SELECT COUNT(*) as dips, MIN(voltage_l1) as min_v, MAX(voltage_l1) as max_v," +
-      " MAX(current_l1) as max_a1, MAX(current_l2) as max_a2, MAX(current_l3) as max_a3" +
-      " FROM readings" +
-      " WHERE received_at >= ?" +
-      " AND (voltage_l1 < 207 OR voltage_l1 > 253 OR voltage_l2 < 207 OR voltage_l2 > 253 OR voltage_l3 < 207 OR voltage_l3 > 253)",
-      [time.effectiveCutoff(604800000)],
-      function(err, row) {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(row || {}));
+      "SELECT" +
+      " SUM(CASE WHEN low = 1 AND COALESCE(plow, 0) = 0 THEN 1 ELSE 0 END) as dips," +
+      " SUM(CASE WHEN high = 1 AND COALESCE(phigh, 0) = 0 THEN 1 ELSE 0 END) as peaks" +
+      " FROM (SELECT low, high, LAG(low) OVER (ORDER BY id) as plow, LAG(high) OVER (ORDER BY id) as phigh" +
+      "  FROM (SELECT id," +
+      "   ((voltage_l1 > 50 AND voltage_l1 < 207) OR (voltage_l2 > 50 AND voltage_l2 < 207) OR (voltage_l3 > 50 AND voltage_l3 < 207)) as low," +
+      "   (voltage_l1 > 253 OR voltage_l2 > 253 OR voltage_l3 > 253) as high" +
+      "   FROM readings WHERE received_at >= ?))",
+      [vdSince],
+      function(err, events) {
+        db.get(
+          "SELECT MAX(current_l1) as max_a1, MAX(current_l2) as max_a2, MAX(current_l3) as max_a3 FROM readings WHERE received_at >= ?",
+          [vdSince],
+          function(err2, row) {
+            row = row || {};
+            row.dips = events && events.dips != null ? events.dips : 0;
+            row.peaks = events && events.peaks != null ? events.peaks : 0;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(row));
+          }
+        );
       }
     );
     return true;

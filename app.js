@@ -16,6 +16,7 @@ var server     = require("./server");
 var discord    = require("./services/discord");
 var flowrunner = require("./services/flowrunner");
 var afval      = require("./services/afval");
+var prices     = require("./services/prices");
 var db         = require("./db/setup");
 
 var PORT = 5000;
@@ -23,6 +24,7 @@ var PORT = 5000;
 discord.init();
 flowrunner.start(db);
 afval.startReminder();
+prices.backfill();
 
 server.listen(PORT, "0.0.0.0", function() {
   console.log("Server listening on http://0.0.0.0:" + PORT);
