@@ -1253,3 +1253,20 @@ to {
   font-weight:700;
   font-variant-numeric:tabular-nums;
   white-space:nowrap}
+/* Logo */
+.app-logo {
+  width:1.6rem;
+  height:1.6rem;
+  border-radius:0.45rem;
+  display:block}
+.nav-logo {
+  display:none}
+@media(min-width:720px) {
+  .nav-logo {
+  display:block;
+  width:40px;
+  height:40px;
+  border-radius:11px;
+  margin:0 auto 0.75rem;
+  flex-shrink:0}
+}

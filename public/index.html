@@ -8,7 +8,7 @@
 <title>VloedHub</title>
 <link rel='manifest' href='/manifest.webmanifest'>
 <meta name='theme-color' content='#0C0F1D'>
-<link rel='icon' href='/icons/icon.svg' type='image/svg+xml'>
+<link rel='icon' href='/icons/icon-192.png' type='image/png'>
 <link rel='apple-touch-icon' href='/icons/icon-180.png'>
 <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'>
 <link rel='preconnect' href='https://fonts.googleapis.com'>
@@ -19,7 +19,7 @@
 </head>
 <body>
 <header class='app-header'>
-  <div class='app-title'><span class='dot'></span>VloedHub</div>
+  <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot'></span></div>
   <div class='header-right'>
     <span class='updated-text' id='updated'>Wachten op data…</span>
     <button class='icon-link' title='Instellingen' onclick='showScreen(5,null)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
@@ -297,6 +297,7 @@
 </div><!-- /screens-outer -->
 
 <nav class='bottom-nav'>
+  <img class='nav-logo' src='/icons/icon-192.png' alt='VloedHub'>
   <button class='nav-item active' data-screen='0' onclick='showScreen(0,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'/></svg></span><span class='nav-label'>Home</span>
   </button>
