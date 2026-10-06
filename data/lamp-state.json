@@ -1,0 +1,39 @@
+{
+  "ledStates": {
+    "default": {
+      "on": false,
+      "effect": 0,
+      "brightness": 180,
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      }
+    },
+    "keuken": {
+      "on": false,
+      "effect": 0,
+      "brightness": 180,
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      }
+    },
+    "gang": {
+      "on": false,
+      "effect": 0,
+      "brightness": 180,
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      }
+    }
+  },
+  "relayStates": {
+    "gang": {
+      "on": false
+    }
+  }
+}

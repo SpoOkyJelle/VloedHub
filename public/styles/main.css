@@ -913,3 +913,60 @@ to {
 .field:focus {
   outline:none;
   border-color:rgba(141,178,85,0.5)}
+/* Lampen op Thuis: kwartblokken; het uitklappaneel is een eigen rij eronder */
+.lamp-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-flow:row dense;
+  gap:0.6rem}
+.lamp-block {
+  min-width:0;
+  container-type:inline-size;
+  display:flex;
+  flex-direction:column}
+.lamp-block > .power-hero {
+  flex:1 1 auto;
+  transition:border-color 0.2s}
+.lamp-block.open > .power-hero {
+  border-color:rgba(141,178,85,0.55)}
+.lamp-block .power-hero > div {
+  flex-wrap:wrap;
+  gap:0.6rem}
+.lamp-block [id$='effect-name'],.lamp-block #relay-gang-status-text {
+  font-size:clamp(1rem,9cqi,1.4rem) !important}
+.lamp-block input {
+  max-width:100%}
+.lamp-panel {
+  grid-column:1 / -1;
+  min-width:0}
+.lamp-panel > .power-hero:first-child {
+  margin-top:0 !important}
+@media(max-width:719px) {
+  .lamp-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* Lampkaarten op Home: pijltje en geleend uitklappaneel */
+.home-lamp {
+  position:relative}
+.home-lamp .info-label {
+  padding-right:2rem}
+.home-lamp-arrow {
+  position:absolute;
+  top:0.45rem;
+  right:0.45rem;
+  width:1.9rem;
+  height:1.9rem;
+  border-radius:50%;
+  border:1px solid rgba(141,178,85,0.3);
+  background:rgba(141,178,85,0.08);
+  color:var(--accent-l);
+  font-family:inherit;
+  font-size:0.9rem;
+  line-height:1;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.layout-block.open .home-lamp {
+  border-color:rgba(141,178,85,0.55) !important}
+.lamp-panel.home-open {
+  width:100%;
+  min-width:0}
