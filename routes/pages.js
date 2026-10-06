@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var discord = require("../services/discord");
+var layout = require("./layout");
 
 var PUBLIC_DIR = path.join(__dirname, "../public");
 var HTML_TEMPLATE = fs.readFileSync(path.join(PUBLIC_DIR, "index.html"), "utf8");
@@ -15,7 +16,8 @@ var MIME_TYPES = {
 
 module.exports = function(req, res) {
   if (req.method === "GET" && req.url === "/") {
-    var html = HTML_TEMPLATE.replace(/__LOCAL_IP__/g, discord.LOCAL_IP);
+    var layoutJson = JSON.stringify(layout.load()).replace(/</g, "\\u003c");
+    var html = HTML_TEMPLATE.replace(/__LOCAL_IP__/g, discord.LOCAL_IP).replace("__LAYOUT_JSON__", function() { return layoutJson; });
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(html);
     return true;

@@ -801,3 +801,40 @@ to {
   color:var(--accent-l)}
 .btn-ghost:hover {
   background:rgba(141,178,85,0.2)}
+/* Skeleton loading */
+.skel,.skel-line,.skel-block {
+  background:linear-gradient(90deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.05) 40%,rgba(255,255,255,0.12) 50%,rgba(255,255,255,0.05) 60%,rgba(255,255,255,0.05) 100%) 100% 0/300% 100% no-repeat;
+  animation:skel 1.3s linear infinite}
+@keyframes skel {
+  to {
+  background-position-x:0%}
+}
+.skel {
+  color:transparent !important;
+  border-radius:6px;
+  width:fit-content;
+  min-width:2.5rem;
+  clip-path:inset(2px 0 round 6px)}
+.power-value.skel {
+  min-width:9rem}
+.weather-icon.skel {
+  min-width:1em}
+.weather-temp.skel {
+  min-width:1.5em}
+.layout-block .power-hero:empty {
+  min-height:6.5rem}
+.skel * {
+  visibility:hidden}
+.skel-line {
+  display:block;
+  height:0.7rem;
+  margin:0.15rem 0;
+  border-radius:6px}
+.skel-block {
+  border-radius:10px}
+.skel-block canvas {
+  visibility:hidden}
+@media (prefers-reduced-motion:reduce) {
+  .skel,.skel-line,.skel-block {
+  animation:none}
+}

@@ -5,8 +5,8 @@ var LAYOUT_FILE = path.join(__dirname, "../data/layout.json");
 
 var DEFAULT_LAYOUT = {
   "0": [
-    {type:"power_live",size:"4"},
     {type:"weather",size:"4"},
+    {type:"power_live",size:"4"},
     {type:"info_stats",size:"4"},
     {type:"chart_power",size:"4"},
     {type:"led_default",size:"2"},
@@ -52,3 +52,5 @@ module.exports = function(req, res) {
   }
   return false;
 };
+
+module.exports.load = load;

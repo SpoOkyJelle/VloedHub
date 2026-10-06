@@ -298,7 +298,59 @@
   </button>
 </nav>
 
+<script id='layout-data' type='application/json'>__LAYOUT_JSON__</script>
 <script>
+// ── Skeleton loading ──
+// Alles wat nog op "—" staat krijgt een skeleton tot de eerste data binnenkomt.
+(function() {
+  var track = document.getElementById('screens-track');
+  function markCharts(root) {
+    root.querySelectorAll('.chart-wrap > canvas').forEach(function(c) {
+      if (!c.dataset.skelDone) c.parentNode.classList.add('skel-block');
+    });
+  }
+  function mark(root) {
+    root.querySelectorAll('div,span').forEach(function(el) {
+      var t = el.firstChild;
+      if (t && t.nodeType === 3 && /^(—|…|Laden…)/.test(t.nodeValue.trim()) && !el.closest('button,a')) el.classList.add('skel');
+    });
+    root.querySelectorAll('tbody').forEach(function(tb) {
+      if (tb.children.length) return;
+      var cols = tb.parentNode.querySelectorAll('thead th').length || 1;
+      var html = '';
+      for (var i = 0; i < 4; i++) html += '<tr class="skel-row"><td colspan="' + cols + '"><span class="skel-line"></span></td></tr>';
+      tb.innerHTML = html;
+    });
+    markCharts(root);
+  }
+  new MutationObserver(function(list) {
+    list.forEach(function(m) {
+      var t = m.target;
+      if (m.type === 'attributes') {
+        // Chart.js zet een style op het canvas zodra de grafiek getekend wordt
+        if (t.tagName === 'CANVAS') { t.dataset.skelDone = '1'; t.parentNode.classList.remove('skel-block'); }
+        return;
+      }
+      if (t.nodeType === 3) t = t.parentNode;
+      if (t && t.classList) t.classList.remove('skel');
+      m.addedNodes.forEach(function(n) { if (n.nodeType === 1 && !n.classList.contains('skel-row')) markCharts(n); });
+    });
+  }).observe(track, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+  // Blijft data uit (fout of geen sensor), dan na 10 s terug naar de gewone "—"
+  function clearAfter(n) {
+    setTimeout(function() {
+      var s = document.getElementById('screen-' + n);
+      if (!s) return;
+      s.querySelectorAll('.skel').forEach(function(e) { e.classList.remove('skel'); });
+      s.querySelectorAll('.skel-block').forEach(function(e) { e.classList.remove('skel-block'); });
+      s.querySelectorAll('.skel-row').forEach(function(r) { r.parentNode.removeChild(r); });
+    }, 10000);
+  }
+  mark(track);
+  clearAfter(0);
+  var origShowScreen = window.showScreen;
+  window.showScreen = function(n) { clearAfter(n); return origShowScreen.apply(this, arguments); };
+})();
 // ── Screen navigation ──
 var currentScreen = 0;
 var screenTrack = document.getElementById('screens-track');
@@ -753,6 +805,12 @@ var BLOCKS = {
 };
 
 function loadLayout() {
+  // Indeling staat al in de pagina, zodat de blokken niet verspringen na het laden
+  try {
+    layoutConfig = JSON.parse(document.getElementById('layout-data').textContent);
+    applyLayout(0);
+    return;
+  } catch(e) {}
   fetch('/api/layout').then(function(r){return r.json();}).then(function(cfg){
     layoutConfig = cfg;
     applyLayout(0);
