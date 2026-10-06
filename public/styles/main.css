@@ -626,9 +626,10 @@ to {
   letter-spacing:-0.03em;
   color:var(--text)}
 .weather-stats {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:0.4rem;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:0.4rem 0.75rem;
   border-top:1px solid var(--border);
   padding-top:0.65rem}
 .weather-stat {

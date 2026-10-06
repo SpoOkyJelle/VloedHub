@@ -43,21 +43,27 @@
       justify-content: center;
       overflow: hidden;
     }
+    /* html zelf is geen flex-container, anders krimpt body naar de breedte van zijn inhoud */
+    html { display: block; }
+    body { width: 100%; }
 
+    /* De kolom vult het hele scherm; het toetsenblok krijgt alle ruimte die overblijft */
     .pin-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2rem;
-      padding: 2rem 1.25rem;
+      justify-content: center;
+      gap: clamp(0.75rem, 2.5vh, 1.75rem);
+      padding: clamp(1rem, 3vh, 2rem) 1.25rem;
       width: 100%;
-      max-width: 380px;
+      max-width: 520px;
+      height: 100%;
     }
 
     @media (max-width: 480px) {
-      .pin-wrap { gap: 1.5rem; padding: 1.5rem 1rem; max-width: 100%; }
-      .pin-key  { min-height: 80px; font-size: 1.8rem; border-radius: 16px; }
-      .pin-numpad { gap: 0.75rem; }
+      .pin-wrap { padding-left: 0.75rem; padding-right: 0.75rem; max-width: 100%; }
+      .pin-logo-icon { width: 44px; height: 44px; font-size: 1.3rem; border-radius: 13px; }
+      .pin-logo-sub { display: none; }
       .pin-dot  { width: 18px; height: 18px; }
     }
 
@@ -137,17 +143,20 @@
     .pin-numpad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.65rem;
+      grid-template-rows: repeat(4, 1fr);
+      gap: clamp(0.5rem, 1.6vh, 0.9rem);
       width: 100%;
+      flex: 1 1 0;
+      min-height: 0;
+      max-height: 640px;
     }
     .pin-key {
-      aspect-ratio: 1;
-      min-height: 72px;
-      border-radius: 14px;
+      min-height: 44px;
+      border-radius: 18px;
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-size: 1.6rem;
+      font-size: clamp(1.6rem, 4.5vh, 2.6rem);
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
@@ -167,9 +176,9 @@
       transform: scale(0.94);
     }
     .pin-key.spacer { visibility: hidden; pointer-events: none; }
-    .pin-key.delete { font-size: 1.1rem; color: var(--muted); }
+    .pin-key.delete { font-size: clamp(1.2rem, 3.2vh, 1.9rem); color: var(--muted); }
     .pin-key-sub {
-      font-size: 0.42rem;
+      font-size: 0.55rem;
       font-weight: 500;
       letter-spacing: 0.1em;
       color: var(--muted);
