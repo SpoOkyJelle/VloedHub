@@ -19,8 +19,8 @@ const int   SERVER_PORT = 5000;
 // Kalibratie: open de Serial Monitor (115200 baud) en kijk naar de "LDR raw"
 // waarden met de lampjes uit vs aan. Zet de THRESHOLDs er tussenin.
 // Let op omgevingslicht (dag/avond) — eventueel een kokertje om de LDR's helpt.
-int THRESHOLD_RUNNING = 2000;
-int THRESHOLD_DONE    = 2000;
+int THRESHOLD_RUNNING = 3600;
+int THRESHOLD_DONE    = 3600;
 
 const unsigned long CONFIRM_TIME       = 5000;   // ms aanhoudend licht = echte statuswissel (voorkomt flukes)
 const unsigned long SAMPLE_INTERVAL    = 500;    // ms tussen metingen
