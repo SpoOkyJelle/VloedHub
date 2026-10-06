@@ -21,6 +21,7 @@ var routes = [
   require("./routes/afval"),
   require("./routes/insights"),
   require("./routes/scenes"),
+  require("./routes/monitor"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

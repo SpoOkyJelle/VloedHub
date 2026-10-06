@@ -278,6 +278,9 @@
 <div class='section-title'>ESPHome sensornamen</div>
 <div id='settings-esphome-names'></div>
 
+<div class='section-title'>Apparaatstatus</div>
+<div id='settings-device-status'></div>
+
 <div class='section-title'>Afvalkalender</div>
 <div class='power-hero'>
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
@@ -397,6 +400,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
+  if (n === 5) loadDeviceStatus();
   if (n === 4) { closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {
@@ -918,6 +922,25 @@ function runScene(btn) {
       refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState();
       setTimeout(function() { updateHomeLedStatus(); updateHomeLed2Status(); updateHomeLed3Status(); updateRelayGangUI(); }, 400);
     }).catch(function() { btn.disabled = false; });
+}
+
+// ── Apparaatstatus ──
+function loadDeviceStatus() {
+  fetch('/api/monitor').then(function(r){return r.json();}).then(function(list) {
+    var el = document.getElementById('settings-device-status');
+    if (!el) return;
+    if (!list.length) { el.innerHTML = '<div class="power-hero"><div style="font-size:0.75rem;color:var(--muted)">Nog geen apparaten gezien</div></div>'; return; }
+    el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' + list.map(function(d, i) {
+      var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
+      var color = d.online ? 'var(--green)' : 'var(--red)';
+      var when = d.last_seen ? d.last_seen.slice(8, 10) + '-' + d.last_seen.slice(5, 7) + ' ' + d.last_seen.slice(11, 16) : 'nog niet gezien';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;' + border + '">' +
+        '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + color + '"></span>' +
+        '<div style="min-width:0"><div style="font-size:0.85rem;font-weight:600">' + d.name + '</div>' +
+        '<div style="font-size:0.65rem;color:var(--dim)">Laatste bericht: ' + when + ' · melding na ' + d.limit_min + ' min stilte</div></div></div>' +
+        '<span style="font-size:0.72rem;font-weight:600;color:' + color + '">' + (d.online ? 'Online' : 'Offline') + '</span></div>';
+    }).join('') + '</div></div>';
+  }).catch(function(){});
 }
 
 // ── Afvalkalender ──

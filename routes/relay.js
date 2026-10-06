@@ -1,4 +1,5 @@
 var state = require('../utils/state');
+var monitor = require('../services/monitor');
 
 function readBody(req, cb) {
   var body = '';
@@ -17,6 +18,7 @@ module.exports = function(req, res) {
   if (req.method === 'GET') {
     var ua = req.headers['user-agent'] || '';
     if (!ua.includes('Mozilla')) {
+      monitor.seen('relay::' + device);
       var ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace('::ffff:', '');
       var rs2 = state.getRelayState(device);
       if (ip) { rs2.ip = ip; state.saveState(); }
