@@ -62,7 +62,7 @@
 
     @media (max-width: 480px) {
       .pin-wrap { padding-left: 0.75rem; padding-right: 0.75rem; max-width: 100%; }
-      .pin-logo-icon { width: 44px; height: 44px; font-size: 1.3rem; border-radius: 13px; }
+      .pin-logo-icon { width: 76px; height: 76px; font-size: 2.3rem; border-radius: 22px; }
       .pin-logo-sub { display: none; }
       .pin-dot  { width: 18px; height: 18px; }
     }
@@ -72,21 +72,21 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.6rem;
     }
     .pin-logo-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
+      width: 88px;
+      height: 88px;
+      border-radius: 24px;
       background: rgba(141,178,85,0.15);
       border: 1px solid rgba(141,178,85,0.3);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
+      font-size: 2.6rem;
     }
     .pin-logo-title {
-      font-size: 1.25rem;
+      font-size: 1.6rem;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
@@ -140,15 +140,26 @@
     .shake { animation: shake 0.4s ease; }
 
     /* Numpad */
+    /* Het vak krijgt alle overgebleven ruimte; het toetsenblok wordt daarin zo groot mogelijk
+       met vierkante toetsen (begrensd door de breedte of de hoogte, wat het eerst op is). */
+    .pin-numpad-fit {
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      container-type: size;
+    }
     .pin-numpad {
+      --g: 0.75rem;
+      --w: min(100cqw, calc((100cqh - var(--g) / 3) * 0.75), 460px);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(4, 1fr);
-      gap: clamp(0.5rem, 1.6vh, 0.9rem);
-      width: 100%;
-      flex: 1 1 0;
-      min-height: 0;
-      max-height: 640px;
+      gap: var(--g);
+      width: var(--w);
+      height: calc(var(--w) * 4 / 3 + var(--g) / 3);
     }
     .pin-key {
       min-height: 44px;
@@ -156,7 +167,7 @@
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-size: clamp(1.6rem, 4.5vh, 2.6rem);
+      font-size: clamp(1.6rem, 9cqw, 2.6rem);
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
@@ -176,7 +187,7 @@
       transform: scale(0.94);
     }
     .pin-key.spacer { visibility: hidden; pointer-events: none; }
-    .pin-key.delete { font-size: clamp(1.2rem, 3.2vh, 1.9rem); color: var(--muted); }
+    .pin-key.delete { font-size: clamp(1.2rem, 6.5cqw, 1.9rem); color: var(--muted); }
     .pin-key-sub {
       font-size: 0.55rem;
       font-weight: 500;
@@ -228,6 +239,7 @@
 
   <div class="pin-error" id="pin-error"></div>
 
+  <div class="pin-numpad-fit">
   <div class="pin-numpad">
     <button class="pin-key" data-key="1">1</button>
     <button class="pin-key" data-key="2">2<span class="pin-key-sub">ABC</span></button>
@@ -241,6 +253,7 @@
     <div class="pin-key spacer"></div>
     <button class="pin-key" data-key="0">0</button>
     <button class="pin-key delete" data-key="del">⌫</button>
+  </div>
   </div>
 
 </div>
