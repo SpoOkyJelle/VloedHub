@@ -6,8 +6,8 @@
   --text: #F1F5F9;
   --muted: #4A5880;
   --dim: #3D4D6A;
-  --purple: #A855F7;
-  --pl: #C084FC;
+  --accent: #8DB255;
+  --accent-l: #BBDD8C;
   --green: #22C55E;
   --orange: #F97316;
   --blue: #38BDF8;
@@ -64,7 +64,7 @@ html, body {
   border: 1px solid var(--border);
   transition: color 0.15s, background 0.15s;
 }
-.back-link:hover { color: var(--text); background: rgba(168,85,247,0.15); }
+.back-link:hover { color: var(--text); background: rgba(141,178,85,0.15); }
 
 .header-center {
   flex: 1;
@@ -85,7 +85,7 @@ html, body {
   transition: border-color 0.15s, background 0.15s;
 }
 .flow-name-input:not(:disabled):hover { border-color: var(--border); background: rgba(255,255,255,0.04); }
-.flow-name-input:focus { border-color: rgba(168,85,247,0.5); background: rgba(255,255,255,0.04); }
+.flow-name-input:focus { border-color: rgba(141,178,85,0.5); background: rgba(255,255,255,0.04); }
 .flow-name-input:disabled { color: var(--dim); cursor: default; }
 
 .header-actions {
@@ -111,11 +111,11 @@ html, body {
 }
 
 .btn-primary {
-  background: var(--purple);
-  color: #fff;
-  border-color: var(--purple);
+  background: var(--accent);
+  color: #16210A;
+  border-color: var(--accent);
 }
-.btn-primary:hover:not(:disabled) { background: var(--pl); border-color: var(--pl); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-l); border-color: var(--accent-l); }
 .btn-primary:disabled { opacity: 0.4; cursor: default; }
 
 .btn-ghost {
@@ -141,7 +141,7 @@ html, body {
   font-size: 0.8rem;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
-.btn-icon:hover { color: var(--text); background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.3); }
+.btn-icon:hover { color: var(--text); background: rgba(141,178,85,0.15); border-color: rgba(141,178,85,0.3); }
 
 /* ── Toggle ──────────────────────────────────────────────────────────── */
 .toggle-wrap {
@@ -250,7 +250,7 @@ html, body {
   transition: background 0.12s;
 }
 .flow-list-item:hover { background: rgba(255,255,255,0.04); }
-.flow-list-item.active { background: rgba(168,85,247,0.1); color: var(--pl); }
+.flow-list-item.active { background: rgba(141,178,85,0.1); color: var(--accent-l); }
 .flow-list-item-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
 .flow-item-meta { font-size: 0.58rem; color: var(--dim); padding-left: 1.2rem; }
 
@@ -296,7 +296,7 @@ html, body {
   transition: border-color 0.15s, background 0.15s;
   user-select: none;
 }
-.palette-node:hover { border-color: rgba(168,85,247,0.35); background: rgba(168,85,247,0.07); }
+.palette-node:hover { border-color: rgba(141,178,85,0.35); background: rgba(141,178,85,0.07); }
 .palette-node:active { cursor: grabbing; }
 .palette-node > i { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; color: var(--blue); }
 
@@ -346,8 +346,8 @@ html, body {
 
 .drawflow .drawflow-node.selected {
   background: var(--surface);
-  border-color: var(--purple);
-  box-shadow: 0 0 0 2px rgba(168,85,247,0.25), 0 4px 20px rgba(0,0,0,0.45);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(141,178,85,0.25), 0 4px 20px rgba(0,0,0,0.45);
 }
 
 .drawflow .drawflow-node .input,
@@ -361,19 +361,19 @@ html, body {
 
 .drawflow .drawflow-node .input:hover,
 .drawflow .drawflow-node .output:hover {
-  border-color: var(--purple);
-  background: var(--purple);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .drawflow .connection .main-path {
-  stroke: var(--purple);
+  stroke: var(--accent);
   stroke-width: 2.5px;
   opacity: 0.75;
 }
 .drawflow .connection .main-path:hover { opacity: 1; stroke-width: 3px; }
 
 .drawflow .connection .point {
-  fill: var(--purple);
+  fill: var(--accent);
   r: 4;
 }
 
@@ -472,9 +472,9 @@ html, body {
   border-bottom: 1px solid rgba(74,88,128,0.2);
 }
 .df-node-title--condition {
-  background: rgba(168,85,247,0.1);
-  color: var(--pl);
-  border-bottom: 1px solid rgba(168,85,247,0.18);
+  background: rgba(141,178,85,0.1);
+  color: var(--accent-l);
+  border-bottom: 1px solid rgba(141,178,85,0.18);
 }
 .df-node-title--relay {
   background: rgba(34,197,94,0.12);
@@ -488,13 +488,13 @@ html, body {
 }
 .df-node-title--effect {
   background: rgba(192,132,252,0.12);
-  color: var(--pl);
+  color: var(--accent-l);
   border-bottom: 1px solid rgba(192,132,252,0.18);
 }
 .df-node-title--notify {
-  background: rgba(168,85,247,0.12);
-  color: var(--pl);
-  border-bottom: 1px solid rgba(168,85,247,0.18);
+  background: rgba(141,178,85,0.12);
+  color: var(--accent-l);
+  border-bottom: 1px solid rgba(141,178,85,0.18);
 }
 
 /* Condition node: label the two output ports */
@@ -561,7 +561,7 @@ html, body {
 .df-field input[type=number]:focus,
 .df-field input[type=text]:focus,
 .df-field textarea:focus,
-.df-field select:focus { border-color: rgba(168,85,247,0.5); }
+.df-field select:focus { border-color: rgba(141,178,85,0.5); }
 
 .df-field select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A5880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -591,7 +591,7 @@ html, body {
 
 .df-field input[type=range] {
   width: 100%;
-  accent-color: var(--purple);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -783,11 +783,11 @@ html, body {
   }
 
   .mobile-nav-tab.active {
-    color: var(--purple);
+    color: var(--accent);
   }
 
   .mobile-nav-tab:active {
-    background: rgba(168, 85, 247, 0.08);
+    background: rgba(141,178,85, 0.08);
   }
 
   /* ── Mobile Backdrop ─────────────────────────────────────────────────── */
@@ -896,8 +896,8 @@ html, body {
   }
 
   .mobile-palette-node:active {
-    background: rgba(168, 85, 247, 0.12);
-    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(141,178,85, 0.12);
+    border-color: rgba(141,178,85, 0.4);
   }
 
   .mobile-palette-node > i {
@@ -958,7 +958,7 @@ html, body {
   }
 
   .sheet-search-input:focus {
-    border-color: rgba(168, 85, 247, 0.45);
+    border-color: rgba(141,178,85, 0.45);
   }
 
   /* ── Flow List Drawer ────────────────────────────────────────────────── */
@@ -989,7 +989,7 @@ html, body {
   }
 
   .mobile-flow-item.active {
-    background: rgba(168, 85, 247, 0.1);
+    background: rgba(141,178,85, 0.1);
   }
 
   .mobile-flow-item-row {
@@ -1007,7 +1007,7 @@ html, body {
   }
 
   .mobile-flow-item.active .mobile-flow-item-name {
-    color: var(--pl);
+    color: var(--accent-l);
   }
 
   .mobile-flow-item-meta {
@@ -1023,10 +1023,10 @@ html, body {
     justify-content: center;
     gap: 0.5rem;
     padding: 0.75rem;
-    border: 1px dashed rgba(168, 85, 247, 0.35);
+    border: 1px dashed rgba(141,178,85, 0.35);
     border-radius: 10px;
-    background: rgba(168, 85, 247, 0.05);
-    color: var(--purple);
+    background: rgba(141,178,85, 0.05);
+    color: var(--accent);
     font-size: 0.78rem;
     font-weight: 600;
     font-family: inherit;
@@ -1037,7 +1037,7 @@ html, body {
   }
 
   .mobile-flow-new-btn:active {
-    background: rgba(168, 85, 247, 0.12);
+    background: rgba(141,178,85, 0.12);
   }
 
   /* ── Overflow Menu Sheet ─────────────────────────────────────────────── */
@@ -1098,8 +1098,8 @@ html, body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    background: rgba(168, 85, 247, 0.15);
-    color: var(--pl);
+    background: rgba(141,178,85, 0.15);
+    color: var(--accent-l);
     border-radius: 5px;
     padding: 0.15rem 0.45rem;
     margin-left: 0.5rem;
@@ -1151,7 +1151,7 @@ html, body {
   .node-edit-field input[type=password]:focus,
   .node-edit-field textarea:focus,
   .node-edit-field select:focus {
-    border-color: rgba(168, 85, 247, 0.5);
+    border-color: rgba(141,178,85, 0.5);
   }
 
   .node-edit-field select {
@@ -1174,7 +1174,7 @@ html, body {
 
   .node-edit-field input[type=range] {
     width: 100%;
-    accent-color: var(--purple);
+    accent-color: var(--accent);
     cursor: pointer;
     height: 36px;
   }

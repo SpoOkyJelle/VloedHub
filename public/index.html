@@ -26,19 +26,15 @@
 
 <!-- SCREEN 0: LIVE -->
 <div class='screen screen-entering' id='screen-0'>
-  <div class='ip-row'>
-    <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
-    <span class='ip-badge' id='wan-ip-badge'><i class='fa-solid fa-globe'></i> …</span>
-  </div>
-  <div class='layout-block' data-block='weather'>
-  <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-temperature-half'></i></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-droplet'></i></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-water'></i></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-wind'></i></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div></div>
-  </div>
   <div class='layout-block' data-block='power_live'>
   <div class='power-hero'>
     <div class='power-label'>Huidig verbruik</div>
     <div class='power-value delivered' id='del-total'>—<span class='unit'>kW</span></div>
     <div class='power-sub' id='price-elec'>— €/kWh</div>
   </div>
+  </div>
+  <div class='layout-block' data-block='weather'>
+  <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-temperature-half'></i></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-droplet'></i></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-water'></i></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><i class='fa-solid fa-wind'></i></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div></div>
   </div>
   <div class='layout-block' data-block='info_stats'>
   <div class='info-strip'>
@@ -60,13 +56,13 @@
   </div>
   </div>
   <div class='layout-block' data-block='led_default'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledQuickToggle()'><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledQuickToggle()'><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
   </div>
   <div class='layout-block' data-block='led_keuken'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledKeukenQuickToggle()'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
   </div>
   <div class='layout-block' data-block='led_gang'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(168,85,247,0.3)' onclick='ledGangQuickToggle()'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--pl)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledGangQuickToggle()'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
   </div>
   <div class='layout-block' data-block='relay_gang'>
   <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(34,197,94,0.3)' onclick='relayGangQuickToggle()'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><div class='info-value' id='home-relay-gang-status' style='color:var(--green)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
@@ -201,7 +197,7 @@
   <div class='safety-grid'>
     <div class='stat-card'><div class='stat-label'>Spanningsdips (7 dgn)</div><div class='stat-value' id='saf-dips' style='color:var(--red)'>—</div></div>
     <div class='stat-card'><div class='stat-label'>Max stroom L1/L2/L3</div><div class='stat-value voltage' id='saf-max-amp'>—</div></div>
-    <div class='stat-card'><div class='stat-label'>Nachtverbruik standby</div><div class='stat-value' style='color:var(--purple)' id='saf-night'>—<span class='stat-unit'>kW</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Nachtverbruik standby</div><div class='stat-value' style='color:var(--accent)' id='saf-night'>—<span class='stat-unit'>kW</span></div></div>
     <div class='stat-card'><div class='stat-label'>CO₂ vandaag (est.)</div><div class='stat-value' id='saf-co2'>—<span class='stat-unit'>kg</span></div></div>
   </div>
   <div class='card'>
@@ -228,11 +224,11 @@
 <div class='section-title'>Temperatuur</div>
 <div class='temp-grid' id='temp-grid'></div><div class='chart-card'><div class='chart-header'><span class='chart-title'>Temperatuurverloop</span><div class='tab-bar'><button class='tab active' data-temprange='day' onclick='loadTempChart("day",this)'>Dag</button><button class='tab' data-temprange='week' onclick='loadTempChart("week",this)'>Week</button><button class='tab' data-temprange='month' onclick='loadTempChart("month",this)'>Maand</button></div></div><div class='chart-wrap'><canvas id='chart-temp'></canvas></div></div>
 <div class='section-title'><span id='sname-led-default'>LED Strip</span></div>
-<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-default' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-default'>LED Strip</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::default","LED Strip",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--pl)' id='led-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led-onoff' onclick='ledToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("default",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:var(--pl);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-default' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led-brightness' oninput='ledBrightness(this.value)' style='flex:1;accent-color:#A855F7'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led-brightness-val'>180</span></div></div><div id='led-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led-color' value='#ffffff' oninput='ledSetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led-btn-0' onclick='ledSetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led-btn-1' onclick='ledSetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led-btn-2' onclick='ledSetEffect(2)' class='effect-btn'>Rainbow</button><button id='led-btn-3' onclick='ledSetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led-btn-4' onclick='ledSetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led-btn-5' onclick='ledSetEffect(5)' class='effect-btn'>Confetti</button><button id='led-btn-6' onclick='ledSetEffect(6)' class='effect-btn'>Vuur</button><button id='led-btn-7' onclick='ledSetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led-btn-8' onclick='ledSetEffect(8)' class='effect-btn'>Twinkle</button><button id='led-btn-9' onclick='ledSetEffect(9)' class='effect-btn'>Politielichten</button><button id='led-btn-10' onclick='ledSetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
+<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-default' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-default'>LED Strip</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::default","LED Strip",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led-onoff' onclick='ledToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("default",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-default' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led-brightness' oninput='ledBrightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led-brightness-val'>180</span></div></div><div id='led-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led-color' value='#ffffff' oninput='ledSetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led-btn-0' onclick='ledSetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led-btn-1' onclick='ledSetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led-btn-2' onclick='ledSetEffect(2)' class='effect-btn'>Rainbow</button><button id='led-btn-3' onclick='ledSetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led-btn-4' onclick='ledSetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led-btn-5' onclick='ledSetEffect(5)' class='effect-btn'>Confetti</button><button id='led-btn-6' onclick='ledSetEffect(6)' class='effect-btn'>Vuur</button><button id='led-btn-7' onclick='ledSetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led-btn-8' onclick='ledSetEffect(8)' class='effect-btn'>Twinkle</button><button id='led-btn-9' onclick='ledSetEffect(9)' class='effect-btn'>Politielichten</button><button id='led-btn-10' onclick='ledSetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
 <div class='section-title'><span id='sname-led-keuken'>Ledstrip Keuken</span></div>
-<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-keuken' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-keuken'>Ledstrip Keuken</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::keuken","Ledstrip Keuken",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--pl)' id='led2-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led2-onoff' onclick='led2Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("keuken",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:var(--pl);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-keuken' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led2-brightness' oninput='led2Brightness(this.value)' style='flex:1;accent-color:#A855F7'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led2-brightness-val'>180</span></div></div><div id='led2-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led2-color' value='#ffffff' oninput='led2SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led2-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led2-btn-0' onclick='led2SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led2-btn-1' onclick='led2SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led2-btn-2' onclick='led2SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led2-btn-3' onclick='led2SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led2-btn-4' onclick='led2SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led2-btn-5' onclick='led2SetEffect(5)' class='effect-btn'>Confetti</button><button id='led2-btn-6' onclick='led2SetEffect(6)' class='effect-btn'>Vuur</button><button id='led2-btn-7' onclick='led2SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led2-btn-8' onclick='led2SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led2-btn-9' onclick='led2SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led2-btn-10' onclick='led2SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
+<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-keuken' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-keuken'>Ledstrip Keuken</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::keuken","Ledstrip Keuken",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led2-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led2-onoff' onclick='led2Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("keuken",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-keuken' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led2-brightness' oninput='led2Brightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led2-brightness-val'>180</span></div></div><div id='led2-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led2-color' value='#ffffff' oninput='led2SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led2-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led2-btn-0' onclick='led2SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led2-btn-1' onclick='led2SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led2-btn-2' onclick='led2SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led2-btn-3' onclick='led2SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led2-btn-4' onclick='led2SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led2-btn-5' onclick='led2SetEffect(5)' class='effect-btn'>Confetti</button><button id='led2-btn-6' onclick='led2SetEffect(6)' class='effect-btn'>Vuur</button><button id='led2-btn-7' onclick='led2SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led2-btn-8' onclick='led2SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led2-btn-9' onclick='led2SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led2-btn-10' onclick='led2SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
 <div class='section-title'><span id='sname-led-gang'>Ledstrip Gang</span></div>
-<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-gang'>Ledstrip Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::gang","Ledstrip Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--pl)' id='led3-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led3-onoff' onclick='led3Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("gang",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.08);color:var(--pl);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-gang' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led3-brightness' oninput='led3Brightness(this.value)' style='flex:1;accent-color:#A855F7'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led3-brightness-val'>180</span></div></div><div id='led3-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led3-color' value='#ffffff' oninput='led3SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led3-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led3-btn-0' onclick='led3SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led3-btn-1' onclick='led3SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led3-btn-2' onclick='led3SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led3-btn-3' onclick='led3SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led3-btn-4' onclick='led3SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led3-btn-5' onclick='led3SetEffect(5)' class='effect-btn'>Confetti</button><button id='led3-btn-6' onclick='led3SetEffect(6)' class='effect-btn'>Vuur</button><button id='led3-btn-7' onclick='led3SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led3-btn-8' onclick='led3SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led3-btn-9' onclick='led3SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led3-btn-10' onclick='led3SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
+<div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-gang'>Ledstrip Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::gang","Ledstrip Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led3-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led3-onoff' onclick='led3Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("gang",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div><div id='led-panel-gang' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led3-brightness' oninput='led3Brightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led3-brightness-val'>180</span></div></div><div id='led3-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led3-color' value='#ffffff' oninput='led3SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led3-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led3-btn-0' onclick='led3SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led3-btn-1' onclick='led3SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led3-btn-2' onclick='led3SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led3-btn-3' onclick='led3SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led3-btn-4' onclick='led3SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led3-btn-5' onclick='led3SetEffect(5)' class='effect-btn'>Confetti</button><button id='led3-btn-6' onclick='led3SetEffect(6)' class='effect-btn'>Vuur</button><button id='led3-btn-7' onclick='led3SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led3-btn-8' onclick='led3SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led3-btn-9' onclick='led3SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led3-btn-10' onclick='led3SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
 <div class='section-title'><span id='sname-relay-gang'>Lamp Gang</span></div>
 <div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-relay-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-relay-gang'>Lamp Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("relay::gang","Lamp Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700' id='relay-gang-status-text' style='color:var(--green)'>UIT</div></div><button id='relay-gang-onoff' onclick='relayGangToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ADE80;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>UIT</button></div></div>
 </div>
@@ -243,7 +239,7 @@
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
     <div style='display:flex;justify-content:space-between;align-items:center'>
       <div><div class='power-label'>PIN wijzigen</div><div style='font-size:0.72rem;color:var(--dim)'>Verander je 4-cijferige PIN-code</div></div>
-      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(168,85,247,0.5);background:rgba(168,85,247,0.15);color:var(--pl);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
+      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
     </div>
     <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
       <div><div class='power-label'>Uitloggen</div><div style='font-size:0.72rem;color:var(--dim)'>Sessie beëindigen</div></div>
@@ -271,6 +267,12 @@
 
 <div class='section-title'>ESPHome sensornamen</div>
 <div id='settings-esphome-names'></div>
+
+<div class='section-title'>Netwerk</div>
+<div class='ip-row'>
+  <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
+  <span class='ip-badge' id='wan-ip-badge'><i class='fa-solid fa-globe'></i> …</span>
+</div>
 </div>
 </div><!-- /screens-track -->
 </div><!-- /screens-outer -->
@@ -321,7 +323,7 @@ function showScreen(n, btn, fromSwipe) {
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
   if (n === 4) { buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
-  if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(168,85,247,0.85)'; } }
+  if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); refreshCosts(); refreshComparison(); loadCostsDaily(); refreshCheapHours(); }
@@ -455,6 +457,39 @@ fetch('/api/led/state?device=gang').then(function(r){return r.json();}).then(fun
 fetch('/api/relay/state?device=gang').then(function(r){return r.json();}).then(function(s){relayGangState=s;updateRelayGangUI();}).catch(function(){});
 
 // ── Chart ──
+function accentGradient(c) {
+  var area = c.chart.chartArea;
+  if (!area) return 'rgba(141,178,85,0.1)';
+  var g = c.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+  g.addColorStop(0, 'rgba(141,178,85,0.35)');
+  g.addColorStop(1, 'rgba(141,178,85,0)');
+  return g;
+}
+var homeChart = null;
+function loadHomeChart(btn) {
+  var range = btn ? btn.dataset.homerange : 'day';
+  document.querySelectorAll('[data-homerange]').forEach(function(t) { t.classList.toggle('active', t === btn || (!btn && t.dataset.homerange === 'day')); });
+  fetch('/api/history?range=' + range).then(function(r) { return r.json(); }).then(function(rows) {
+    var ctx = document.getElementById('blk-chart-elektra');
+    if (!ctx) return;
+    if (homeChart) homeChart.destroy();
+    homeChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: rows.map(function(r) { return range === 'day' ? r.period.slice(11,16) : r.period; }), datasets: [
+        { label: 'Verbruik (kW)', data: rows.map(function(r) { return r.del != null ? Number(r.del).toFixed(3) : null; }), borderColor: '#8DB255', backgroundColor: accentGradient, borderWidth: 2, tension: 0.3, pointRadius: 0, fill: true }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#3D4D6A', maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
+          y: { ticks: { color: '#3D4D6A', maxTicksLimit: 4, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        }
+      }
+    });
+  }).catch(function() {});
+}
 var chart = null;
 function loadChart(range, btn) {
   document.querySelectorAll('[data-range]').forEach(function(t) { t.classList.remove('active'); });
@@ -466,7 +501,7 @@ function loadChart(range, btn) {
     chart = new Chart(document.getElementById('chart'), {
       type: 'line',
       data: { labels: labels, datasets: [
-        { label: 'Verbruik (kW)', data: del, borderColor: '#A855F7', backgroundColor: 'rgba(168,85,247,0.1)', tension: 0.3, pointRadius: 2, fill: true }
+        { label: 'Verbruik (kW)', data: del, borderColor: '#8DB255', backgroundColor: accentGradient, tension: 0.3, pointRadius: 2, fill: true }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -560,7 +595,7 @@ function loadPeaks() {
     chartPeaks = new Chart(document.getElementById('chart-peaks'), {
       type: 'bar',
       data: { labels: labels, datasets: [
-        { label: 'Gem. verbruik (kW)', data: delData, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3 }
+        { label: 'Gem. verbruik (kW)', data: delData, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -580,8 +615,8 @@ function loadPhaseChart() {
     chartPhases = new Chart(document.getElementById('chart-phases'), {
       type: 'bar',
       data: { labels: ['L1','L2','L3'], datasets: [
-        { label: 'Gemiddeld (kW)', data: [s.avg_l1,s.avg_l2,s.avg_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(168,85,247,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'], borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },
-        { label: 'Piek (kW)', data: [s.max_l1,s.max_l2,s.max_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(168,85,247,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'], borderColor: ['#A855F7','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }
+        { label: 'Gemiddeld (kW)', data: [s.avg_l1,s.avg_l2,s.avg_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },
+        { label: 'Piek (kW)', data: [s.max_l1,s.max_l2,s.max_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }
       ]},
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }, y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
     });
@@ -703,13 +738,17 @@ var BLOCKS = {
     render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
     refresh:function(){fetch('/api/gas-daily').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-gastoday');if(!el)return;var today=d&&d[0];if(!today){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+(today.m3!=null?today.m3.toFixed(3):'—')+'<span class="unit">m³</span></div>'+(today.eur!=null?'<div class="power-sub">€'+today.eur.toFixed(2)+'</div>':'');}).catch(function(){});}
   },
+  'chart_power': {label:'Elektra verloop',icon:'fa-chart-area',dynamic:true,
+    render:function(el){el.innerHTML='<div class="chart-card" style="min-height:0"><div class="chart-header"><span class="chart-title">Elektra verloop</span><div class="tab-bar"><button class="tab active" data-homerange="day" onclick="loadHomeChart(this)">Dag</button><button class="tab" data-homerange="week" onclick="loadHomeChart(this)">Week</button><button class="tab" data-homerange="month" onclick="loadHomeChart(this)">Maand</button></div></div><div class="chart-wrap" style="min-height:0;height:150px"><canvas id="blk-chart-elektra"></canvas></div></div>';},
+    refresh:function(){loadHomeChart(document.querySelector('[data-homerange].active'));}
+  },
   'chart_power_mini': {label:'Stroomgrafiek',icon:'fa-chart-line',dynamic:true,
     render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Stroomverbruik vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-power"></canvas></div></div>';},
-    refresh:function(){fetch('/api/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-power');if(!ctx)return;if(window._blkChartPower)window._blkChartPower.destroy();window._blkChartPower=new Chart(ctx,{type:'line',data:{labels:rows.map(function(r){return r.period.slice(11,16);}),datasets:[{data:rows.map(function(r){return r.del!=null?r.del:null;}),borderColor:'#A855F7',backgroundColor:'rgba(168,85,247,0.1)',borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
+    refresh:function(){fetch('/api/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-power');if(!ctx)return;if(window._blkChartPower)window._blkChartPower.destroy();window._blkChartPower=new Chart(ctx,{type:'line',data:{labels:rows.map(function(r){return r.period.slice(11,16);}),datasets:[{data:rows.map(function(r){return r.del!=null?r.del:null;}),borderColor:'#8DB255',backgroundColor:accentGradient,borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   },
   'chart_temp_mini': {label:'Temperatuurgrafiek',icon:'fa-temperature-half',dynamic:true,
     render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-temp"></canvas></div></div>';},
-    refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#A855F7'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
+    refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   }
 };
 
@@ -764,7 +803,7 @@ function toggleLayoutEdit() {
     btn.style.background = 'rgba(34,197,94,0.85)';
     renderEditBars(0);
   } else {
-    btn.style.background = 'rgba(168,85,247,0.85)';
+    btn.style.background = 'rgba(141,178,85,0.85)';
     removeEditBars(0);
     saveLayout();
   }
@@ -793,7 +832,7 @@ function renderEditBars(screenIdx) {
   var addBtn = document.createElement('button');
   addBtn.dataset.editAdd = '1';
   addBtn.onclick = showBlockPicker;
-  addBtn.style.cssText = 'width:100%;padding:0.65rem;border-radius:10px;border:1px dashed rgba(168,85,247,0.4);background:rgba(168,85,247,0.08);color:var(--pl);font-family:inherit;font-weight:600;cursor:pointer;font-size:0.85rem';
+  addBtn.style.cssText = 'width:100%;padding:0.65rem;border-radius:10px;border:1px dashed rgba(141,178,85,0.4);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;font-weight:600;cursor:pointer;font-size:0.85rem';
   addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Blok toevoegen';
   screen.appendChild(addBtn);
 }
@@ -851,7 +890,7 @@ function showBlockPicker() {
   } else {
     list.innerHTML = available.map(function(type) {
       var def = BLOCKS[type];
-      return '<button onclick="addBlock(0,\'' + type + '\')" style="display:flex;align-items:center;gap:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:0.75rem;cursor:pointer;color:inherit;font-family:inherit;font-size:0.85rem;width:100%"><i class="fa-solid ' + def.icon + '" style="color:var(--pl);width:1.2rem;text-align:center"></i><span style="font-weight:600">' + def.label + '</span></button>';
+      return '<button onclick="addBlock(0,\'' + type + '\')" style="display:flex;align-items:center;gap:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:0.75rem;cursor:pointer;color:inherit;font-family:inherit;font-size:0.85rem;width:100%"><i class="fa-solid ' + def.icon + '" style="color:var(--accent-l);width:1.2rem;text-align:center"></i><span style="font-weight:600">' + def.label + '</span></button>';
     }).join('');
   }
   var picker = document.getElementById('block-picker');
@@ -898,7 +937,7 @@ function refreshSettingsNames() {
         var ip = ipMap[key];
         var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
         return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid ' + icon + '" style="color:var(--pl);width:1rem;text-align:center"></i>' +
+          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid ' + icon + '" style="color:var(--accent-l);width:1rem;text-align:center"></i>' +
           '<div><span id="sn-' + kEnc + '" style="font-size:0.9rem;font-weight:600">' + name + '</span>' +
           (ip ? '<div style="font-size:0.65rem;color:var(--dim);font-family:monospace">' + ip + '</div>' : '') +
           '</div></div>' +
@@ -953,7 +992,7 @@ loadLayout();
 function esphomeRename(deviceEnc, sensorEnc, iconEl) { var device = decodeURIComponent(deviceEnc); var sensor = decodeURIComponent(sensorEnc); var nameEl = iconEl.parentElement; var current = nameEl.childNodes[0].textContent.trim(); var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.75rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.3rem;width:8rem;font-family:inherit'; nameEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/esphome/rename', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device:device, sensor_name:sensor, display_name:val}) }).then(function(){ refreshEsphome(); }); } input.addEventListener('keydown', function(e) { if (e.key === 'Enter') commit(); if (e.key === 'Escape') refreshEsphome(); }); input.addEventListener('blur', commit); }
 function refreshTemperature() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('temp-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">' + r.room + '</div><div class="temp-value">' + (r.temp_c != null ? Number(r.temp_c).toFixed(1) : '—') + '°C</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
 var chartTemp = null;
-function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#A855F7','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', tension: 0.3, pointRadius: 2, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } }); }).catch(function(){}); }
+function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', tension: 0.3, pointRadius: 2, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } }); }).catch(function(){}); }
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? new Date(s.since).toLocaleString('nl-NL', {hour12:false}) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
 
 // ── Cheap hours ──
@@ -987,7 +1026,7 @@ function loadWeekdayChart() {
     if (chartWeekday) chartWeekday.destroy();
     chartWeekday = new Chart(document.getElementById('chart-weekday'), {
       type: 'bar',
-      data: { labels: labels, datasets: [{ label: 'Gem. verbruik (kW)', data: data, backgroundColor: ['rgba(168,85,247,0.4)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.6)','rgba(168,85,247,0.4)'], borderColor: '#A855F7', borderWidth: 1, borderRadius: 4 }] },
+      data: { labels: labels, datasets: [{ label: 'Gem. verbruik (kW)', data: data, backgroundColor: ['rgba(141,178,85,0.4)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.4)'], borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
     });
   }).catch(function(){});
@@ -1034,7 +1073,7 @@ function loadCostsDaily() {
     chartCostsDaily = new Chart(document.getElementById('chart-costs-daily'), {
       type: 'bar',
       data: { labels: labels, datasets: [
-        { label: 'Stroom (€)', data: elecD, backgroundColor: 'rgba(168,85,247,0.55)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 3, stack: 'cost' },
+        { label: 'Stroom (€)', data: elecD, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
         { label: 'Gas (€)',    data: gasD,  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
       ]},
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
@@ -1079,16 +1118,16 @@ function buildLedGrid() { updateLedUI(); }
 
 function updateLedUI() {
   var onBtn = document.getElementById('led-onoff');
-  if (onBtn) { onBtn.textContent = ledClientState.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState.on ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState.on ? 'var(--pl)' : 'var(--muted)'; }
+  if (onBtn) { onBtn.textContent = ledClientState.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState.on ? 'rgba(141,178,85,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState.on ? 'var(--accent-l)' : 'var(--muted)'; }
   var nameEl = document.getElementById('led-effect-name');
   if (nameEl) nameEl.textContent = ledClientState.on ? LED_EFFECTS[ledClientState.effect] : 'Uit';
   LED_EFFECTS.forEach(function(_, i) {
     var btn = document.getElementById('led-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState.effect && ledClientState.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
-    btn.style.color = active ? '#C084FC' : '#F1F5F9';
+    btn.style.background = active ? 'rgba(141,178,85,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(141,178,85,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#BBDD8C' : '#F1F5F9';
   });
   var bEl = document.getElementById('led-brightness'); if (bEl) bEl.value = ledClientState.brightness;
   var bVal = document.getElementById('led-brightness-val'); if (bVal) bVal.textContent = ledClientState.brightness;
@@ -1126,16 +1165,16 @@ function buildLed2Grid() { updateLed2UI(); }
 
 function updateLed2UI() {
   var onBtn = document.getElementById('led2-onoff');
-  if (onBtn) { onBtn.textContent = ledClientState2.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState2.on ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState2.on ? 'var(--pl)' : 'var(--muted)'; }
+  if (onBtn) { onBtn.textContent = ledClientState2.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState2.on ? 'rgba(141,178,85,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState2.on ? 'var(--accent-l)' : 'var(--muted)'; }
   var nameEl = document.getElementById('led2-effect-name');
   if (nameEl) nameEl.textContent = ledClientState2.on ? LED_EFFECTS[ledClientState2.effect] : 'Uit';
   LED_EFFECTS.forEach(function(_, i) {
     var btn = document.getElementById('led2-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState2.effect && ledClientState2.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
-    btn.style.color = active ? '#C084FC' : '#F1F5F9';
+    btn.style.background = active ? 'rgba(141,178,85,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(141,178,85,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#BBDD8C' : '#F1F5F9';
   });
   var bEl = document.getElementById('led2-brightness'); if (bEl) bEl.value = ledClientState2.brightness;
   var bVal = document.getElementById('led2-brightness-val'); if (bVal) bVal.textContent = ledClientState2.brightness;
@@ -1174,16 +1213,16 @@ function buildLed3Grid() { updateLed3UI(); }
 
 function updateLed3UI() {
   var onBtn = document.getElementById('led3-onoff');
-  if (onBtn) { onBtn.textContent = ledClientState3.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState3.on ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState3.on ? 'var(--pl)' : 'var(--muted)'; }
+  if (onBtn) { onBtn.textContent = ledClientState3.on ? 'AAN' : 'UIT'; onBtn.style.borderColor = ledClientState3.on ? 'rgba(141,178,85,0.5)' : 'rgba(255,255,255,0.1)'; onBtn.style.color = ledClientState3.on ? 'var(--accent-l)' : 'var(--muted)'; }
   var nameEl = document.getElementById('led3-effect-name');
   if (nameEl) nameEl.textContent = ledClientState3.on ? LED_EFFECTS[ledClientState3.effect] : 'Uit';
   LED_EFFECTS.forEach(function(_, i) {
     var btn = document.getElementById('led3-btn-' + i);
     if (!btn) return;
     var active = i === ledClientState3.effect && ledClientState3.on;
-    btn.style.background = active ? 'rgba(168,85,247,0.25)' : '#1C2140';
-    btn.style.borderColor = active ? 'rgba(168,85,247,0.7)' : 'rgba(255,255,255,0.15)';
-    btn.style.color = active ? '#C084FC' : '#F1F5F9';
+    btn.style.background = active ? 'rgba(141,178,85,0.25)' : '#1C2140';
+    btn.style.borderColor = active ? 'rgba(141,178,85,0.7)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = active ? '#BBDD8C' : '#F1F5F9';
   });
   var bEl = document.getElementById('led3-brightness'); if (bEl) bEl.value = ledClientState3.brightness;
   var bVal = document.getElementById('led3-brightness-val'); if (bVal) bVal.textContent = ledClientState3.brightness;
@@ -1263,8 +1302,8 @@ buildLedGrid(); buildLed2Grid(); buildLed3Grid();
       </div>
       <div id="pin-modal-error" style="font-size:0.72rem;color:#F87171;min-height:1.2em;margin-bottom:0.75rem"></div>
       <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-        <button onclick="closePinModal()" style="background:transparent;border:1px solid rgba(255,255,255,0.07);color:#4A5880;border-radius:8px;padding:0.4rem 0.9rem;font-family:inherit;font-size:0.78rem;cursor:pointer">Annuleren</button>
-        <button onclick="savePinModal()" style="background:#A855F7;border:1px solid #A855F7;color:#fff;border-radius:8px;padding:0.4rem 0.9rem;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer">Opslaan</button>
+        <button onclick="closePinModal()" class="btn btn-ghost">Annuleren</button>
+        <button onclick="savePinModal()" class="btn btn-primary">Opslaan</button>
       </div>
     </div>
   </div>
@@ -1309,7 +1348,7 @@ document.getElementById('pin-modal-overlay').addEventListener('click', function(
 });
 </script>
 <script>document.addEventListener('DOMContentLoaded',function(){var eb=document.getElementById('layout-edit-btn');if(eb)eb.style.display='flex';});</script>
-<button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(168,85,247,0.85);border:none;color:#fff;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(168,85,247,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
+<button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(141,178,85,0.85);border:none;color:#16210A;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(141,178,85,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
 <div id='block-picker' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:flex-end;justify-content:center'>
   <div style='background:#141728;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto'>
     <div style='font-size:0.85rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between'>Blok toevoegen<button onclick='closeBlockPicker()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem'>✕</button></div>

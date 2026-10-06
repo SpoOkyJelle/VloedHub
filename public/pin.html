@@ -15,8 +15,8 @@
       --text: #F1F5F9;
       --muted: #4A5880;
       --dim: #3D4D6A;
-      --purple: #A855F7;
-      --pl: #C084FC;
+      --accent: #8DB255;
+      --accent-l: #BBDD8C;
       --red: #F87171;
       --green: #22C55E;
     }
@@ -62,8 +62,8 @@
       width: 56px;
       height: 56px;
       border-radius: 16px;
-      background: rgba(168,85,247,0.15);
-      border: 1px solid rgba(168,85,247,0.3);
+      background: rgba(141,178,85,0.15);
+      border: 1px solid rgba(141,178,85,0.3);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -100,8 +100,8 @@
       transition: background 0.15s, border-color 0.15s, transform 0.1s;
     }
     .pin-dot.filled {
-      background: var(--purple);
-      border-color: var(--purple);
+      background: var(--accent);
+      border-color: var(--accent);
       transform: scale(1.15);
     }
     .pin-dot.error {
@@ -151,8 +151,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .pin-key:active {
-      background: rgba(168,85,247,0.15);
-      border-color: rgba(168,85,247,0.4);
+      background: rgba(141,178,85,0.15);
+      border-color: rgba(141,178,85,0.4);
       transform: scale(0.94);
     }
     .pin-key.spacer { visibility: hidden; pointer-events: none; }
@@ -179,8 +179,8 @@
       font-size: 0.7rem;
       color: var(--muted);
       text-align: center;
-      background: rgba(168,85,247,0.08);
-      border: 1px solid rgba(168,85,247,0.2);
+      background: rgba(141,178,85,0.08);
+      border: 1px solid rgba(141,178,85,0.2);
       border-radius: 10px;
       padding: 0.6rem 1rem;
       line-height: 1.5;

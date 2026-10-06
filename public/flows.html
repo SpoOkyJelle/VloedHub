@@ -40,7 +40,7 @@
     outline: none;
     transition: border-color 0.15s;
   }
-  .flow-search-input:focus, .palette-search-input:focus { border-color: rgba(168,85,247,0.45); }
+  .flow-search-input:focus, .palette-search-input:focus { border-color: rgba(141,178,85,0.45); }
   .search-wrap { position: relative; }
   .search-wrap i { position: absolute; left: 0.55rem; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 0.65rem; pointer-events: none; }
 
@@ -235,7 +235,7 @@
   <header class="app-header">
     <div class="app-title">
       <a href="/" class="back-link" title="Terug"><i class="fa-solid fa-arrow-left"></i></a>
-      <i class="fa-solid fa-diagram-project" style="color:var(--purple)"></i>
+      <i class="fa-solid fa-diagram-project" style="color:var(--accent)"></i>
       <span>Flows</span>
     </div>
     <div class="header-center">
@@ -386,7 +386,7 @@
             <div><div class="palette-node-name">Tijdsvenster</div><div class="palette-node-desc">Ga door alleen tussen X en Y</div></div>
           </div>
           <div class="palette-node" draggable="true" data-node="condition" data-tooltip="Splitst de flow op basis van een conditie. Uitgang 1 = waar, uitgang 2 = niet waar." ondragstart="drag(event)">
-            <i class="fa-solid fa-code-branch" style="color:var(--purple)"></i>
+            <i class="fa-solid fa-code-branch" style="color:var(--accent)"></i>
             <div><div class="palette-node-name">Conditie</div><div class="palette-node-desc">Als/dan-splitsing</div></div>
           </div>
 
@@ -400,7 +400,7 @@
             <div><div class="palette-node-name">Lamp uit</div><div class="palette-node-desc">Zet LED-strip uit</div></div>
           </div>
           <div class="palette-node" draggable="true" data-node="led_effect" data-tooltip="Stel een animatie-effect in op een LED-strip: regenboog, ademen, kleurwisseling, twinkelen." ondragstart="drag(event)">
-            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--pl)"></i>
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-l)"></i>
             <div><div class="palette-node-name">LED effect</div><div class="palette-node-desc">Animatie instellen</div></div>
           </div>
           <div class="palette-node" draggable="true" data-node="dim_to" data-tooltip="Fade een LED-strip soepel naar een bepaalde helderheid in X seconden." ondragstart="drag(event)">
@@ -440,7 +440,7 @@
 
           <div class="palette-group-label" data-group="acties-meldingen">Acties — Meldingen<i class="fa-solid fa-chevron-down chevron"></i></div>
           <div class="palette-node" draggable="true" data-node="notify" data-tooltip="Stuur een bericht naar een Discord webhook." ondragstart="drag(event)">
-            <i class="fa-solid fa-bell" style="color:var(--purple)"></i>
+            <i class="fa-solid fa-bell" style="color:var(--accent)"></i>
             <div><div class="palette-node-name">Discord melding</div><div class="palette-node-desc">Stuur een bericht</div></div>
           </div>
           <div class="palette-node" draggable="true" data-node="telegram" data-tooltip="Stuur een bericht via de Telegram Bot API naar een opgegeven chat." ondragstart="drag(event)">
@@ -484,7 +484,7 @@
       <!-- Run log slide-in panel -->
       <div class="log-panel" id="log-panel">
         <div class="log-panel-header">
-          <span><i class="fa-solid fa-list" style="color:var(--purple);margin-right:0.4rem"></i>Run log</span>
+          <span><i class="fa-solid fa-list" style="color:var(--accent);margin-right:0.4rem"></i>Run log</span>
           <button class="btn-icon" id="btn-log-close" title="Sluiten"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="log-panel-body" id="log-panel-body">
@@ -519,7 +519,7 @@
   <div class="mobile-sheet" id="sheet-nodes">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <span class="sheet-title"><i class="fa-solid fa-plus" style="color:var(--purple);margin-right:0.4rem"></i>Nodes toevoegen</span>
+      <span class="sheet-title"><i class="fa-solid fa-plus" style="color:var(--accent);margin-right:0.4rem"></i>Nodes toevoegen</span>
       <button class="sheet-close" onclick="closeSheet('sheet-nodes')"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="sheet-body">
@@ -535,7 +535,7 @@
   <div class="mobile-sheet" id="sheet-flows">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <span class="sheet-title"><i class="fa-solid fa-diagram-project" style="color:var(--purple);margin-right:0.4rem"></i>Mijn flows</span>
+      <span class="sheet-title"><i class="fa-solid fa-diagram-project" style="color:var(--accent);margin-right:0.4rem"></i>Mijn flows</span>
       <button class="sheet-close" onclick="closeSheet('sheet-flows')"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="sheet-body">
@@ -623,7 +623,7 @@
   <!-- Keyboard shortcuts modal -->
   <div class="modal-overlay" id="modal-shortcuts">
     <div class="modal-card">
-      <div class="modal-title"><i class="fa-solid fa-keyboard" style="color:var(--purple);margin-right:0.5rem"></i>Sneltoetsen</div>
+      <div class="modal-title"><i class="fa-solid fa-keyboard" style="color:var(--accent);margin-right:0.5rem"></i>Sneltoetsen</div>
       <table class="shortcuts-table">
         <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Opslaan</td></tr>
         <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Ongedaan maken</td></tr>
@@ -1360,7 +1360,7 @@
         try { actions = JSON.parse(r.actions || '[]'); } catch(e) {}
         var ts = r.triggered_at ? r.triggered_at.replace('T', ' ').slice(0, 16) : '—';
         return '<div class="log-entry">' +
-          '<div class="log-entry-time"><i class="fa-solid fa-clock" style="margin-right:0.35rem;color:var(--purple)"></i>' + esc(ts) + '</div>' +
+          '<div class="log-entry-time"><i class="fa-solid fa-clock" style="margin-right:0.35rem;color:var(--accent)"></i>' + esc(ts) + '</div>' +
           '<div class="log-entry-actions">' + (actions.length ? actions.length + ' actie(s): ' + actions.map(function(a) { return a.action || '?'; }).join(', ') : 'Geen acties') + '</div>' +
           '</div>';
       }).join('');
@@ -1763,12 +1763,12 @@
     { group: 'Logica', nodes: [
       { type:'delay',           icon:'fa-hourglass-half',           color:'var(--muted)',  name:'Wacht',               desc:'Pauzeer X seconden' },
       { type:'time_window',     icon:'fa-calendar-check',           color:'var(--blue)',   name:'Tijdsvenster',        desc:'Ga door alleen tussen X en Y' },
-      { type:'condition',       icon:'fa-code-branch',              color:'var(--purple)', name:'Conditie',            desc:'Als/dan-splitsing' }
+      { type:'condition',       icon:'fa-code-branch',              color:'var(--accent)', name:'Conditie',            desc:'Als/dan-splitsing' }
     ]},
     { group: 'Acties — Lampen', nodes: [
       { type:'led_on',          icon:'fa-lightbulb',                color:'var(--yellow)', name:'Lamp aan',            desc:'Zet LED-strip aan' },
       { type:'led_off',         icon:'fa-regular fa-lightbulb',     color:'var(--muted)',  name:'Lamp uit',            desc:'Zet LED-strip uit' },
-      { type:'led_effect',      icon:'fa-wand-magic-sparkles',      color:'var(--pl)',     name:'LED effect',          desc:'Animatie instellen' },
+      { type:'led_effect',      icon:'fa-wand-magic-sparkles',      color:'var(--accent-l)',     name:'LED effect',          desc:'Animatie instellen' },
       { type:'dim_to',          icon:'fa-sliders',                  color:'var(--yellow)', name:'Dim naar',            desc:'Fade naar helderheid in X sec' },
       { type:'dim_relative',    icon:'fa-sliders',                  color:'var(--muted)',  name:'Dim relatief',        desc:'Pas helderheid +/- % aan' },
       { type:'color_temp',      icon:'fa-temperature-half',         color:'var(--orange)', name:'Kleurtemperatuur',    desc:'Stel Kelvin-waarde in' },
@@ -1781,7 +1781,7 @@
       { type:'relay_off',       icon:'fa-toggle-off',               color:'var(--dim)',    name:'Relais uit',          desc:'Zet een lamp/apparaat uit' }
     ]},
     { group: 'Acties — Meldingen', nodes: [
-      { type:'notify',          icon:'fa-bell',                     color:'var(--purple)', name:'Discord melding',     desc:'Stuur een bericht' },
+      { type:'notify',          icon:'fa-bell',                     color:'var(--accent)', name:'Discord melding',     desc:'Stuur een bericht' },
       { type:'telegram',        icon:'fa-paper-plane',              color:'var(--blue)',   name:'Telegram',            desc:'Stuur een Telegram bericht' },
       { type:'mqtt_publish',    icon:'fa-tower-broadcast',          color:'var(--green)',  name:'MQTT publiceer',      desc:'Stuur bericht naar topic' }
     ]},
