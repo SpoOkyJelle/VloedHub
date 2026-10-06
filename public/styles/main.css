@@ -618,7 +618,7 @@ to {
   color:var(--text)}
 .weather-loc {
   font-size:0.62rem;
-  color:var(--muted);
+  color:#B4C0D3;
   margin-top:0.1rem}
 .weather-temp {
   font-size:2.4rem;
@@ -638,12 +638,12 @@ to {
 .weather-stat-icon {
   font-size:1rem}
 .weather-stat-value {
-  font-size:0.72rem;
+  font-size:0.76rem;
   font-weight:700;
   color:var(--text)}
 .weather-stat-label {
-  font-size:0.5rem;
-  color:var(--dim);
+  font-size:0.54rem;
+  color:#B4C0D3;
   text-transform:uppercase;
   letter-spacing:0.04em}
 .wash-status-pill {
@@ -1013,14 +1013,14 @@ to {
   animation:wx-flicker 5s linear infinite}
 .weather-card[data-weather='cloud-rain']::after,.weather-card[data-weather='cloud-showers-heavy']::after {
   opacity:1;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M8 4l-2 9M30 22l-2 9M50 8l-2 9M18 40l-2 9M42 44l-2 9' stroke='%237DD3FC' stroke-opacity='.45' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M8 4l-2 9M30 22l-2 9M50 8l-2 9M18 40l-2 9M42 44l-2 9' stroke='%237DD3FC' stroke-opacity='.3' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E");
   animation:wx-fall-rain 0.9s linear infinite}
 .weather-card[data-weather='cloud-showers-heavy']::after {
   background-size:40px 40px;
   animation:wx-fall-rain-heavy 0.45s linear infinite}
 .weather-card[data-weather='snowflake']::after,.weather-card[data-weather='icicles']::after {
   opacity:1;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23fff' fill-opacity='.5'%3E%3Ccircle cx='10' cy='12' r='1.6'/%3E%3Ccircle cx='44' cy='6' r='1.1'/%3E%3Ccircle cx='66' cy='30' r='1.8'/%3E%3Ccircle cx='26' cy='46' r='1.2'/%3E%3Ccircle cx='54' cy='62' r='1.5'/%3E%3Ccircle cx='8' cy='70' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23fff' fill-opacity='.35'%3E%3Ccircle cx='10' cy='12' r='1.6'/%3E%3Ccircle cx='44' cy='6' r='1.1'/%3E%3Ccircle cx='66' cy='30' r='1.8'/%3E%3Ccircle cx='26' cy='46' r='1.2'/%3E%3Ccircle cx='54' cy='62' r='1.5'/%3E%3Ccircle cx='8' cy='70' r='1'/%3E%3C/g%3E%3C/svg%3E");
   animation:wx-fall-snow 7s linear infinite}
 .weather-card[data-weather='cloud-bolt']::after {
   background:#fff;
