@@ -825,7 +825,8 @@
         '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
     notify: t('df-node-title--notify','fa-bell','Discord melding') +
-      b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>')),
+      b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>') +
+        f('Ander kanaal (optioneel)','<input type="text" df-webhook placeholder="Webhook-URL, leeg = standaard">')),
 
     webhook_trigger: t('df-node-title--timer','fa-globe','Webhook trigger') +
       b(f('Token','<input type="text" df-token placeholder="mijn-geheime-token">') +
@@ -922,7 +923,7 @@
     led_on:          { device: 'default', brightness: '180', color: '#ffffff' },
     led_off:         { device: 'default' },
     led_effect:      { device: 'default', effect: '0', brightness: '180', color: '#ffffff' },
-    notify:          { message: 'Flow getriggerd!' },
+    notify:          { message: 'Flow getriggerd!', webhook: '' },
     webhook_trigger: { token: '' },
     mqtt_trigger:    { broker: 'mqtt://localhost:1883', topic: '', username: '', password: '' },
     webhook:         { url: '', body: '' },
@@ -1993,12 +1994,21 @@
     times:        { label: 'Aantal keer',         type: 'number', min: 1, max: 20, step: 1 },
     interval_ms:  { label: 'Interval (ms)',       type: 'number', min: 100, max: 5000, step: 100 },
     chat_id:      { label: 'Chat ID',             type: 'text' },
+    webhook:      { label: 'Ander kanaal (optioneel)', type: 'text', placeholder: 'Webhook-URL, leeg = standaard' },
     price:        { label: 'Drempel (€/kWh)',     type: 'number', min: -1, max: 2, step: 0.01 },
     when:         { label: 'Wanneer',             type: 'select', options: [['before','De dag ervoor'],['same','Op de dag zelf']] },
     kind:         { label: 'Soort',               type: 'select', options: [['all','Alle soorten'],['GFT','GFT'],['PMD','PMD'],['Papier','Papier'],['Restafval','Restafval']] },
     compartment:  { label: 'Vak',                 type: 'select', options: [['refrigerator','Koelkast'],['freezer','Vriezer'],['variation','Variabel vak']] },
     scene:        { label: 'Scène',               type: 'select', options: [['all_off','Alles uit'],['evening','Avond'],['all_on','Alles aan'],['disco','Disco']] }
   };
+
+  // De scènes zijn aan te passen bij Instellingen: haal de actuele lijst op voor de Scène-node
+  fetch('/api/scenes').then(function(r) { return r.json(); }).then(function(d) {
+    if (!d.scenes || !d.scenes.length) return;
+    FIELD_META.scene.options = d.scenes.map(function(sc) { return [sc.id, sc.label]; });
+    NODE_HTML.scene = NODE_HTML.scene.replace(/<select df-scene>[\s\S]*?<\/select>/, '<select df-scene>' +
+      d.scenes.map(function(sc) { return '<option value="' + sc.id + '">' + esc(sc.label) + '</option>'; }).join('') + '</select>');
+  }).catch(function() {});
 
   function buildNodeEditForm(nodeType, data) {
     var defaults = NODE_DEFAULTS[nodeType] || {};

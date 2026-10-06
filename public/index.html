@@ -24,6 +24,16 @@ var MODULES = {};
 try { MODULES = JSON.parse(document.getElementById('modules-data').textContent); } catch (e) {}
 function moduleOn(key) { return MODULES[key] !== false; }
 Object.keys(MODULES).forEach(function(k) { if (!moduleOn(k)) document.body.classList.add('mod-off-' + k); });
+// Wandtablet-weergave: aan met /?kiosk=1, uit met /?kiosk=0; de keuze blijft op dit apparaat bewaard
+var KIOSK = (function() {
+  try {
+    var q = new URLSearchParams(location.search).get('kiosk');
+    if (q === '1') localStorage.setItem('vh-kiosk', '1');
+    if (q === '0') localStorage.removeItem('vh-kiosk');
+    return localStorage.getItem('vh-kiosk') === '1';
+  } catch (e) { return false; }
+})();
+if (KIOSK) document.body.classList.add('kiosk');
 // de Thuis-pagina verdwijnt als alles wat erop staat uit is
 if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) document.body.classList.add('mod-off-thuis');
 </script>
@@ -34,6 +44,8 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
     <button class='icon-link' title='Instellingen' onclick='showScreen(5,null)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
   </div>
 </header>
+<div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'>✕</button></div>
+<div id='conn-banner' role='status' hidden><i class='fa-solid fa-triangle-exclamation'></i><span id='conn-text'></span></div>
 <div class='screens-outer' id='screens-outer'>
 <div class='screens-track' id='screens-track'>
 
@@ -276,6 +288,29 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
   </div>
 </div>
 
+<div class='section-title' data-module='lights'>Scènes</div>
+<div id='settings-scenes' data-module='lights'></div>
+
+<div class='section-title'>Weergave</div>
+<div class='power-hero'>
+  <div style='display:flex;justify-content:space-between;align-items:center;gap:0.75rem'>
+    <div><div class='power-label'>Wandtablet-weergave</div><div style='font-size:0.72rem;color:var(--dim)'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>
+    <a href='/?kiosk=1' class='btn btn-ghost' style='text-decoration:none;white-space:nowrap'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
+  </div>
+</div>
+
+<div class='section-title'>Discord</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div><div class='power-label'>Webhook</div><div style='font-size:0.72rem;color:var(--dim)' id='discord-status'>Laden…</div></div>
+    <div class='discord-form'>
+      <input class='field' id='discord-webhook' type='password' autocomplete='off' placeholder='https://discord.com/api/webhooks/…'>
+      <button class='btn btn-primary' onclick='saveDiscordWebhook()'>Opslaan</button>
+      <button class='btn btn-ghost' onclick='testDiscordWebhook(this)'>Test</button>
+    </div>
+  </div>
+</div>
+
 <div class='section-title'>Modules</div>
 <div id='settings-modules'></div>
 
@@ -408,7 +443,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {
@@ -437,6 +472,7 @@ outerEl.addEventListener('touchstart', function(e) {
   isSwiping = false;
 }, {passive: true});
 outerEl.addEventListener('touchmove', function(e) {
+  if (KIOSK) return;
   var dx = e.touches[0].clientX - touchX0;
   var dy = e.touches[0].clientY - touchY0;
   if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }
@@ -499,7 +535,11 @@ function setCard(id, v, dec, unit) {
 // ── Live refresh ──
 var lastPowerVal = null;
 function refresh() {
-  fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {
+  fetch('/api/latest').then(function(r) {
+    if (r.status === 401) { location.href = '/pin'; return Promise.reject(new Error('niet ingelogd')); }
+    connOk();
+    return r.json();
+  }, function(e) { connFail(); throw e; }).then(function(d) {
     var l = d.latest;
     if (!l) return;
     updatePhaseLoad(l);
@@ -873,8 +913,8 @@ var BLOCKS = {
     refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var el=document.getElementById('blk-gastoday');if(!el)return;var m3=res[0].today?res[0].today.gas_used:null;var cost=res[1].day?res[1].day.gas_cost:null;if(m3==null){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+m3.toFixed(3)+'<span class="unit">m³</span></div>'+(cost!=null?'<div class="power-sub">€'+cost.toFixed(2)+'</div>':'');}).catch(function(){});}
   },
   'scenes': {label:'Scènes',icon:'fa-wand-magic-sparkles',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card scene-card"><div class="chart-title">Scènes</div><div class="scene-row"><button class="btn btn-ghost" data-scene="all_off" onclick="runScene(this)"><i class="fa-solid fa-power-off"></i> Alles uit</button><button class="btn btn-ghost" data-scene="evening" onclick="runScene(this)"><i class="fa-solid fa-moon"></i> Avond</button><button class="btn btn-ghost" data-scene="all_on" onclick="runScene(this)"><i class="fa-solid fa-lightbulb"></i> Alles aan</button><button class="btn btn-ghost btn-disco" data-scene="disco" onclick="runScene(this)"><i class="fa-solid fa-music"></i> Disco</button></div></div>';},
-    refresh:function(){}
+    render:function(el){el.innerHTML='<div class="card scene-card"><div class="chart-title">Scènes</div><div class="scene-row"></div></div>';},
+    refresh:function(){loadScenes();}
   },
   'month_forecast': {label:'Maandprognose',icon:'fa-calendar-days',dynamic:true,
     render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Verwacht deze maand</div><div class="power-value skel" id="blk-forecast-value" style="color:var(--yellow)">—</div><div class="power-sub" id="blk-forecast-sub">&nbsp;</div></div>';},
@@ -968,6 +1008,78 @@ function loadTodayVsNormal() {
     setEl('blk-tvn-sub', 'Normaal ' + nlNum(d.normal_kwh, 2) + ' kWh op dit tijdstip · gemiddelde van ' + d.samples + ' ' + (d.basis === 'weekday' ? dayNames[new Date().getDay()] : 'dagen'));
   }).catch(function() { setEl('blk-tvn-value', '—'); });
 }
+// ── Verbinding ──
+// Twee mislukte verzoeken achter elkaar (ruim 6 s) tonen een balkje; het eerste dat weer lukt haalt het weg.
+var connFails = 0, lastConnOk = null;
+function connOk() {
+  connFails = 0;
+  lastConnOk = new Date();
+  var b = document.getElementById('conn-banner');
+  if (b) b.hidden = true;
+}
+function connFail() {
+  connFails++;
+  var b = document.getElementById('conn-banner');
+  if (!b || connFails < 2) return;
+  document.getElementById('conn-text').textContent = 'Geen verbinding met VloedHub' +
+    (lastConnOk ? ' · laatste update ' + lastConnOk.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false}) : '');
+  b.hidden = false;
+}
+
+// ── Wandtablet-weergave ──
+function kioskTick() {
+  var now = new Date();
+  var c = document.getElementById('kiosk-clock'), d = document.getElementById('kiosk-date');
+  if (c) c.textContent = now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false});
+  if (d) d.textContent = now.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'});
+}
+function exitKiosk() {
+  try { localStorage.removeItem('vh-kiosk'); } catch (e) {}
+  location.href = '/';
+}
+if (KIOSK) {
+  kioskTick();
+  setInterval(kioskTick, 10000);
+  // scherm aan houden waar de browser dat toestaat (alleen via https)
+  var keepAwake = function() { if (navigator.wakeLock && document.visibilityState === 'visible') navigator.wakeLock.request('screen').catch(function(){}); };
+  keepAwake();
+  document.addEventListener('visibilitychange', keepAwake);
+  // twee keer per dag vers laden, zodat een tablet die altijd aan staat updates meekrijgt
+  setTimeout(function() { location.reload(); }, 12 * 3600 * 1000);
+}
+
+// ── Scènes ──
+var SCENE_DATA = { scenes: [], icons: [], led: [], relay: [] };
+var SCENE_DEVICE_NAMES = { 'led::default': 'LED Strip', 'led::keuken': 'Ledstrip Keuken', 'led::gang': 'Ledstrip Gang', 'relay::gang': 'Lamp Gang' };
+function escHtml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function sceneDeviceName(key) { return (typeof deviceNamesCache !== 'undefined' && deviceNamesCache[key]) || SCENE_DEVICE_NAMES[key] || key; }
+function renderScenes() {
+  var buttons = SCENE_DATA.scenes.map(function(s) {
+    return '<button class="btn btn-ghost' + (s.id === 'disco' ? ' btn-disco' : '') + '" data-scene="' + s.id + '" onclick="runScene(this)"><i class="fa-solid fa-' + s.icon + '"></i> ' + escHtml(s.label) + '</button>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('.scene-row'), function(el) {
+    el.innerHTML = buttons || '<div class="fridge-msg" style="min-height:0">Nog geen scènes. Maak er een bij Instellingen.</div>';
+  });
+  var list = document.getElementById('settings-scenes');
+  if (!list) return;
+  list.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
+    SCENE_DATA.scenes.map(function(s, i) {
+      var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;' + border + '">' +
+        '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0"><i class="fa-solid fa-' + s.icon + '" style="color:var(--accent-l);width:1rem;text-align:center"></i>' +
+        '<span style="font-size:0.9rem;font-weight:600">' + escHtml(s.label) + '</span></div>' +
+        '<button class="btn btn-ghost" style="padding:0.35rem 0.8rem" data-id="' + s.id + '" onclick="openSceneEditor(this.dataset.id)"><i class="fa-solid fa-pen"></i> Bewerken</button></div>';
+    }).join('') +
+    '<div style="' + (SCENE_DATA.scenes.length ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '') + '"><button class="btn btn-primary" onclick="openSceneEditor(null)"><i class="fa-solid fa-plus"></i> Nieuwe scène</button></div>' +
+    '</div></div>';
+}
+function loadScenes() {
+  fetch('/api/scenes').then(function(r){return r.json();}).then(function(d) {
+    if (!d || !d.scenes) return;
+    SCENE_DATA = d;
+    renderScenes();
+  }).catch(function(){});
+}
 function runScene(btn) {
   btn.disabled = true;
   fetch('/api/scenes/run', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({scene: btn.dataset.scene})})
@@ -980,6 +1092,95 @@ function runScene(btn) {
       setTimeout(function() { updateHomeLedStatus(); updateHomeLed2Status(); updateHomeLed3Status(); updateRelayGangUI(); }, 400);
     }).catch(function() { btn.disabled = false; });
 }
+
+// Scène maken of bewerken
+var sceneEditId = null, sceneEditIcon = 'lightbulb';
+function sceneModeSelect(id, value) {
+  return '<select class="field scene-mode" id="' + id + '" onchange="sceneEditorSync()">' +
+    [['keep','Niet wijzigen'],['off','Uit'],['on','Aan']].map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === value ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
+}
+function openSceneEditor(id) {
+  var s = SCENE_DATA.scenes.filter(function(x) { return x.id === id; })[0] || { id: null, label: '', icon: 'lightbulb', led: {}, relay: {} };
+  sceneEditId = s.id;
+  sceneEditIcon = s.icon;
+  var html = '<div class="scene-field"><label>Naam</label><input class="field" id="scene-name" maxlength="24" placeholder="bijv. Film kijken" value="' + escHtml(s.label) + '"></div>' +
+    '<div class="scene-field"><label>Icoon</label><div class="scene-icons">' + SCENE_DATA.icons.map(function(ic) {
+      return '<button type="button" class="scene-icon' + (ic === s.icon ? ' on' : '') + '" data-icon="' + ic + '" onclick="scenePickIcon(this)" aria-label="' + ic + '"><i class="fa-solid fa-' + ic + '"></i></button>';
+    }).join('') + '</div></div>';
+  SCENE_DATA.led.forEach(function(dev) {
+    var cfg = (s.led || {})[dev];
+    var mode = !cfg ? 'keep' : cfg.on ? 'on' : 'off';
+    var effect = cfg && cfg.effect != null ? cfg.effect : 0;
+    var bright = cfg && cfg.brightness != null ? cfg.brightness : 180;
+    var col = cfg && cfg.color ? '#' + [cfg.color.r, cfg.color.g, cfg.color.b].map(function(v) { return ('0' + v.toString(16)).slice(-2); }).join('') : '#ffffff';
+    html += '<div class="scene-device" data-led="' + dev + '"><div class="scene-device-head"><span>' + escHtml(sceneDeviceName('led::' + dev)) + '</span>' + sceneModeSelect('scene-led-' + dev, mode) + '</div>' +
+      '<div class="scene-device-opts">' +
+      '<select class="field scene-effect" onchange="sceneEditorSync()">' + LED_EFFECTS.map(function(name, i) { return '<option value="' + i + '"' + (i === effect ? ' selected' : '') + '>' + name + '</option>'; }).join('') + '</select>' +
+      '<label class="scene-bright">Helderheid<input type="range" min="10" max="255" value="' + bright + '" class="scene-brightness" style="accent-color:#8DB255"></label>' +
+      '<label class="scene-color">Kleur<input type="color" value="' + col + '" class="scene-colorpick"></label>' +
+      '</div></div>';
+  });
+  SCENE_DATA.relay.forEach(function(dev) {
+    var cfg = (s.relay || {})[dev];
+    html += '<div class="scene-device" data-relay="' + dev + '"><div class="scene-device-head"><span>' + escHtml(sceneDeviceName('relay::' + dev)) + '</span>' + sceneModeSelect('scene-relay-' + dev, !cfg ? 'keep' : cfg.on ? 'on' : 'off') + '</div></div>';
+  });
+  html += '<div id="scene-error" style="font-size:0.72rem;color:#F87171;min-height:1.2em"></div>' +
+    '<div style="display:flex;gap:0.5rem;align-items:center">' +
+    (s.id ? '<button class="btn" id="scene-delete" style="background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.4);color:#F87171" onclick="deleteScene(this)">Verwijderen</button>' : '') +
+    '<span style="flex:1"></span><button class="btn btn-ghost" onclick="closeSceneEditor()">Annuleren</button><button class="btn btn-primary" onclick="saveScene()">Opslaan</button></div>';
+  document.getElementById('scene-modal-title').textContent = s.id ? 'Scène bewerken' : 'Nieuwe scène';
+  document.getElementById('scene-modal-body').innerHTML = html;
+  document.getElementById('scene-modal-overlay').style.display = 'flex';
+  sceneEditorSync();
+}
+function closeSceneEditor() { document.getElementById('scene-modal-overlay').style.display = 'none'; }
+function scenePickIcon(btn) {
+  sceneEditIcon = btn.dataset.icon;
+  Array.prototype.forEach.call(document.querySelectorAll('.scene-icon'), function(b) { b.classList.toggle('on', b === btn); });
+}
+// extra instellingen alleen tonen bij "Aan"; de kleurkiezer alleen bij het effect "Eigen kleur"
+function sceneEditorSync() {
+  Array.prototype.forEach.call(document.querySelectorAll('.scene-device[data-led]'), function(row) {
+    var on = row.querySelector('.scene-mode').value === 'on';
+    row.querySelector('.scene-device-opts').style.display = on ? '' : 'none';
+    row.querySelector('.scene-color').style.display = parseInt(row.querySelector('.scene-effect').value, 10) === LED_EFFECTS.length - 1 ? '' : 'none';
+  });
+}
+function saveScene() {
+  var scene = { id: sceneEditId, label: document.getElementById('scene-name').value, icon: sceneEditIcon, led: {}, relay: {} };
+  Array.prototype.forEach.call(document.querySelectorAll('.scene-device[data-led]'), function(row) {
+    var mode = row.querySelector('.scene-mode').value;
+    if (mode === 'keep') return;
+    var cfg = { on: mode === 'on' };
+    if (cfg.on) {
+      cfg.effect = parseInt(row.querySelector('.scene-effect').value, 10);
+      cfg.brightness = parseInt(row.querySelector('.scene-brightness').value, 10);
+      if (cfg.effect === LED_EFFECTS.length - 1) {
+        var hex = row.querySelector('.scene-colorpick').value;
+        cfg.color = { r: parseInt(hex.substr(1, 2), 16), g: parseInt(hex.substr(3, 2), 16), b: parseInt(hex.substr(5, 2), 16) };
+      }
+    }
+    scene.led[row.dataset.led] = cfg;
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.scene-device[data-relay]'), function(row) {
+    var mode = row.querySelector('.scene-mode').value;
+    if (mode !== 'keep') scene.relay[row.dataset.relay] = { on: mode === 'on' };
+  });
+  fetch('/api/scenes', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(scene)})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (!d.ok) { document.getElementById('scene-error').textContent = d.error || 'Opslaan mislukt'; return; }
+      closeSceneEditor();
+      loadScenes();
+    }).catch(function() { document.getElementById('scene-error').textContent = 'Verbindingsfout'; });
+}
+function deleteScene(btn) {
+  // eerste tik vraagt om bevestiging, de tweede verwijdert
+  if (!btn.dataset.sure) { btn.dataset.sure = '1'; btn.textContent = 'Zeker weten?'; return; }
+  fetch('/api/scenes/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: sceneEditId})})
+    .then(function(r){return r.json();}).then(function() { closeSceneEditor(); loadScenes(); })
+    .catch(function() { document.getElementById('scene-error').textContent = 'Verbindingsfout'; });
+}
+loadScenes();
 
 // ── Koelkast ──
 function fridgeSkeleton() {
@@ -1018,6 +1219,44 @@ function loadFridge() {
 }
 Array.prototype.forEach.call(document.querySelectorAll('.fridge-slot'), function(el) { el.innerHTML = fridgeSkeleton(); });
 setInterval(loadFridge, 5 * 60 * 1000);
+
+// ── Discord ──
+function showDiscordStatus(d, note) {
+  var el = document.getElementById('discord-status');
+  if (!el) return;
+  el.style.color = 'var(--dim)';
+  var text = d.configured ? 'Ingesteld (eindigt op …' + d.hint + ')' : 'Nog niet ingesteld: er worden geen meldingen verstuurd';
+  if (d.fromEnv) text += ' · vast ingesteld op de server';
+  if (d.configured && d.enabled === false) text += ' · meldingen staan uit bij Modules';
+  el.textContent = note ? note + ' · ' + text : text;
+}
+function loadDiscordStatus() {
+  fetch('/api/discord').then(function(r){return r.json();}).then(function(d) { showDiscordStatus(d); }).catch(function(){});
+}
+function discordError(msg) {
+  var el = document.getElementById('discord-status');
+  el.style.color = 'var(--red)';
+  el.textContent = msg;
+}
+function saveDiscordWebhook() {
+  var input = document.getElementById('discord-webhook');
+  fetch('/api/discord', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({webhook: input.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (!d.ok) { discordError(d.error || 'Opslaan mislukt'); return; }
+      input.value = '';
+      showDiscordStatus(d, 'Opgeslagen');
+    }).catch(function() { discordError('Verbindingsfout'); });
+}
+function testDiscordWebhook(btn) {
+  btn.disabled = true;
+  fetch('/api/discord/test', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
+    btn.disabled = false;
+    if (!d.ok) { discordError(d.error || 'Test mislukt'); return; }
+    var el = document.getElementById('discord-status');
+    el.style.color = 'var(--green)';
+    el.textContent = 'Testbericht verstuurd';
+  }).catch(function() { btn.disabled = false; discordError('Verbindingsfout'); });
+}
 
 // ── Modules ──
 function loadModules() {
@@ -1168,6 +1407,14 @@ function applyLayout(screenIdx) {
     if (def && def.dynamic && def.refresh && blockEnabled(item.type)) def.refresh();
   });
 }
+
+setInterval(function() {
+  if (layoutEditMode) return;
+  (layoutConfig['0'] || []).forEach(function(item) {
+    var def = BLOCKS[item.type];
+    if (def && def.dynamic && def.refresh && blockEnabled(item.type)) def.refresh();
+  });
+}, 5 * 60 * 1000);
 
 function saveLayout() {
   fetch('/api/layout', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(layoutConfig)}).then(function(){applyLayout(0);});
@@ -1870,6 +2117,12 @@ document.getElementById('pin-modal-overlay').addEventListener('click', function(
 </script>
 <script>document.addEventListener('DOMContentLoaded',function(){var eb=document.getElementById('layout-edit-btn');if(eb)eb.style.display='flex';});</script>
 <button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + var(--nav-safe) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(141,178,85,0.85);border:none;color:#16210A;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(141,178,85,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
+<div id='scene-modal-overlay' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;padding:1rem'>
+  <div class='scene-modal'>
+    <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem'><div id='scene-modal-title' style='font-size:0.95rem;font-weight:700'>Scène</div><button onclick='closeSceneEditor()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem' aria-label='Sluiten'>✕</button></div>
+    <div id='scene-modal-body'></div>
+  </div>
+</div>
 <div id='block-picker' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:flex-end;justify-content:center'>
   <div style='background:#141728;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto'>
     <div style='font-size:0.85rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between'>Blok toevoegen<button onclick='closeBlockPicker()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem'>✕</button></div>

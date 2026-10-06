@@ -155,7 +155,7 @@ function executeNode(node, ctx) {
 
   if (node.name === 'notify') {
     var msg = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
-    discord.sendDiscord('\uD83D\uDD14 ' + msg);
+    discord.sendDiscord('\uD83D\uDD14 ' + msg, (node.data.webhook || '').trim());
     console.log('[Flow] Melding:', msg);
     return { action: 'notify', message: msg };
   }

@@ -17,7 +17,7 @@ var MIME_TYPES = {
 };
 
 module.exports = function(req, res) {
-  if (req.method === "GET" && req.url === "/") {
+  if (req.method === "GET" && req.url.split("?")[0] === "/") {
     var layoutJson = JSON.stringify(layout.load()).replace(/</g, "\\u003c");
     var html = HTML_TEMPLATE.replace(/__LOCAL_IP__/g, discord.LOCAL_IP).replace("__LAYOUT_JSON__", function() { return layoutJson; })
       .replace("__MODULES_JSON__", function() { return JSON.stringify(modules.getMap()); });

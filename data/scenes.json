@@ -1,0 +1,93 @@
+[
+  {
+    "id": "all_off",
+    "label": "Alles uit",
+    "icon": "power-off",
+    "led": {
+      "default": {
+        "on": false
+      },
+      "keuken": {
+        "on": false
+      },
+      "gang": {
+        "on": false
+      }
+    },
+    "relay": {
+      "gang": {
+        "on": false
+      }
+    }
+  },
+  {
+    "id": "evening",
+    "label": "Avond",
+    "icon": "moon",
+    "led": {
+      "default": {
+        "on": true,
+        "effect": 0,
+        "brightness": 110
+      },
+      "keuken": {
+        "on": false
+      },
+      "gang": {
+        "on": true,
+        "effect": 0,
+        "brightness": 110
+      }
+    },
+    "relay": {
+      "gang": {
+        "on": true
+      }
+    }
+  },
+  {
+    "id": "all_on",
+    "label": "Alles aan",
+    "icon": "lightbulb",
+    "led": {
+      "default": {
+        "on": true
+      },
+      "keuken": {
+        "on": true
+      },
+      "gang": {
+        "on": true
+      }
+    },
+    "relay": {
+      "gang": {
+        "on": true
+      }
+    }
+  },
+  {
+    "id": "disco",
+    "label": "Disco",
+    "icon": "music",
+    "led": {
+      "default": {
+        "on": true,
+        "effect": 3
+      },
+      "keuken": {
+        "on": true,
+        "effect": 3
+      },
+      "gang": {
+        "on": true,
+        "effect": 2
+      }
+    },
+    "relay": {
+      "gang": {
+        "on": false
+      }
+    }
+  }
+]

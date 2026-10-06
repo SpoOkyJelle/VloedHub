@@ -1386,3 +1386,149 @@ to {
 .mod-switch.locked {
   opacity:0.45;
   cursor:default}
+/* Verbindingsmelding */
+#conn-banner {
+  position:fixed;
+  top:calc(var(--header-h) + 0.5rem);
+  left:0;
+  right:0;
+  margin:0 auto;
+  width:fit-content;
+  z-index:250;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  max-width:calc(100% - 1.5rem);
+  padding:0.45rem 0.9rem;
+  border-radius:20px;
+  background:#3A1518;
+  border:1px solid rgba(248,113,113,0.5);
+  color:#FCA5A5;
+  font-size:0.72rem;
+  font-weight:600;
+  box-shadow:0 6px 24px rgba(0,0,0,0.45)}
+#conn-banner[hidden] {
+  display:none}
+/* Scène-editor */
+.scene-modal {
+  width:100%;
+  max-width:26rem;
+  max-height:calc(100% - 1rem);
+  overflow-y:auto;
+  background:var(--surface);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:18px;
+  padding:1.1rem}
+#scene-modal-body {
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem}
+.scene-field label,.scene-bright,.scene-color {
+  display:block;
+  font-size:0.6rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-weight:600;
+  color:var(--muted);
+  margin-bottom:0.3rem}
+.scene-icons {
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.35rem}
+.scene-icon {
+  width:2.2rem;
+  height:2.2rem;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03);
+  color:var(--muted);
+  cursor:pointer;
+  font-size:0.9rem}
+.scene-icon.on {
+  border-color:rgba(141,178,85,0.6);
+  background:rgba(141,178,85,0.18);
+  color:var(--accent-l)}
+.scene-device {
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:0.6rem 0.7rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.55rem}
+.scene-device-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.6rem;
+  font-size:0.82rem;
+  font-weight:600}
+.scene-device-head .field {
+  width:auto}
+.scene-device-opts {
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem}
+.scene-bright,.scene-color {
+  display:flex;
+  align-items:center;
+  gap:0.6rem;
+  margin:0}
+.scene-bright input {
+  flex:1}
+.scene-color input {
+  width:2.4rem;
+  height:1.8rem;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:none;
+  padding:0}
+/* Wandtablet-weergave: alleen Home, zonder menu, met klok en grotere cijfers */
+.kiosk-bar {
+  display:none}
+:root:has(body.kiosk) {
+  font-size:clamp(16px,1.35vw,22px)}
+body.kiosk {
+  flex-direction:column;
+  padding-top:0}
+body.kiosk .app-header,body.kiosk .bottom-nav,body.kiosk #layout-edit-btn {
+  display:none !important}
+body.kiosk .kiosk-bar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  padding:calc(0.6rem + env(safe-area-inset-top, 0px)) 1rem 0.2rem}
+#kiosk-clock {
+  font-size:2.4rem;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  line-height:1;
+  font-variant-numeric:tabular-nums}
+#kiosk-date {
+  font-size:0.75rem;
+  color:#94A3B8;
+  text-transform:capitalize;
+  margin-top:0.2rem}
+.kiosk-bar button {
+  width:2.2rem;
+  height:2.2rem;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);
+  color:var(--dim);
+  cursor:pointer;
+  font-size:0.8rem}
+body.kiosk .screen {
+  padding-bottom:calc(1rem + env(safe-area-inset-bottom, 0px))}
+body.kiosk #conn-banner {
+  top:calc(0.5rem + env(safe-area-inset-top, 0px))}
+.discord-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:0.4rem}
+@media(max-width:480px) {
+  .discord-form {
+  grid-template-columns:1fr 1fr}
+  .discord-form .field {
+  grid-column:1 / -1}
+}

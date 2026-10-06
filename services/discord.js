@@ -1,4 +1,6 @@
 var https = require("https");
+var fs = require("fs");
+var path = require("path");
 var os = require("os");
 var modules = require("./modules");
 
@@ -15,23 +17,68 @@ function getLocalIP() {
 var LOCAL_IP = getLocalIP();
 var WAN_IP = "ophalen\u2026";
 
-var DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1542267218073616445/Q5m05IVLBKR5Au5CGnY54Rp-9NeHW5qyBZ6-QWLzYK6bEr8EA1aYDai14L363aljodxR";
+// De webhook staat niet in de code: hij komt uit de omgevingsvariabele DISCORD_WEBHOOK
+// of uit data/discord.json, en is in te stellen bij Instellingen.
+var CONFIG_FILE = path.join(__dirname, "../data/discord.json");
 
-function sendDiscord(message) {
-  // uit te zetten bij Instellingen > Modules
-  if (!modules.isOn("discord")) return;
+function getWebhook() {
+  if (process.env.DISCORD_WEBHOOK) return process.env.DISCORD_WEBHOOK;
+  try { return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")).webhook || null; } catch (e) { return null; }
+}
+
+function validWebhook(url) {
+  try {
+    var u = new URL(url);
+    return u.protocol === "https:" && /^((canary|ptb)\.)?(discord|discordapp)\.com$/.test(u.hostname) && u.pathname.indexOf("/api/webhooks/") === 0;
+  } catch (e) { return false; }
+}
+
+// Lege waarde wist de webhook; false als het geen Discord-webhook is
+function setWebhook(url) {
+  url = String(url || "").trim();
+  if (url && !validWebhook(url)) return false;
+  var dir = path.dirname(CONFIG_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ webhook: url || null }, null, 2));
+  return true;
+}
+
+function getStatus() {
+  var url = getWebhook();
+  return { configured: !!url, hint: url ? url.slice(-4) : null, fromEnv: !!process.env.DISCORD_WEBHOOK, enabled: modules.isOn("discord") };
+}
+
+function post(webhook, message, cb) {
   var body = JSON.stringify({ content: message });
-  var url = new URL(DISCORD_WEBHOOK);
-  var options = {
+  var url = new URL(webhook);
+  var req = https.request({
     hostname: url.hostname,
     path: url.pathname,
     method: "POST",
     headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
-  };
-  var req = https.request(options, function(res) { res.resume(); });
-  req.on("error", function() {});
+  }, function(res) { res.resume(); if (cb) cb(null, res.statusCode); });
+  req.on("error", function(e) { if (cb) cb(e); });
   req.write(body);
   req.end();
+}
+
+// otherWebhook: een andere Discord-webhook voor dit ene bericht (bijv. vanuit een flow)
+function sendDiscord(message, otherWebhook) {
+  // uit te zetten bij Instellingen > Modules
+  if (!modules.isOn("discord")) return;
+  var webhook = (otherWebhook && validWebhook(otherWebhook)) ? otherWebhook : getWebhook();
+  if (!webhook) return;
+  post(webhook, message);
+}
+
+// Stuurt een testbericht, ook als de meldingen uit staan. cb(foutmelding of null)
+function sendTest(cb) {
+  var webhook = getWebhook();
+  if (!webhook) return cb("Nog geen webhook ingesteld");
+  post(webhook, "\u2705 Testbericht van VloedHub", function(err, status) {
+    if (err) return cb("Discord niet bereikbaar");
+    cb(status >= 200 && status < 300 ? null : "Discord weigerde het bericht (code " + status + ")");
+  });
 }
 
 function fetchWanIP(callback) {
@@ -66,6 +113,8 @@ module.exports = {
   fetchWanIP: fetchWanIP,
   get LOCAL_IP() { return LOCAL_IP; },
   get WAN_IP() { return WAN_IP; },
-  DISCORD_WEBHOOK: DISCORD_WEBHOOK,
+  sendTest: sendTest,
+  setWebhook: setWebhook,
+  getStatus: getStatus,
   init: init
 };
