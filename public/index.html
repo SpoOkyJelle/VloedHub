@@ -137,23 +137,16 @@
   </div>
 
 
-  <div class='compare-grid'>
-    <div class='compare-card'>
-      <div class='compare-title'>Vandaag</div>
-      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-today-elec'>—</span></div>
-      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-today-gas'>—</span></div>
-      <div class='compare-row'><span class='compare-label'>Verwacht</span><span class='compare-value' id='cmp-today-exp' style='color:var(--yellow)'>—</span></div>
-    </div>
-    <div class='compare-card'>
-      <div class='compare-title'>Gisteren</div>
-      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-yest-elec'>—</span></div>
-      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-yest-gas'>—</span></div>
-    </div>
-    <div class='compare-card'>
-      <div class='compare-title'>Week geleden</div>
-      <div class='compare-row'><span class='compare-label'>Stroom</span><span class='compare-value' id='cmp-week-elec'>—</span></div>
-      <div class='compare-row'><span class='compare-label'>Gas</span><span class='compare-value' id='cmp-week-gas'>—</span></div>
-    </div>
+  <div class='card'>
+    <div class='section-title' style='margin-bottom:0.5rem'>Verbruik vergeleken</div>
+    <table class='cost-table compare-table'>
+      <thead><tr><th></th><th class='num'>Vandaag</th><th class='num'>Gisteren</th><th class='num'>Week geleden</th></tr></thead>
+      <tbody>
+        <tr><td>Stroom</td><td class='num' id='cmp-today-elec'>—</td><td class='num' id='cmp-yest-elec'>—</td><td class='num' id='cmp-week-elec'>—</td></tr>
+        <tr><td>Gas</td><td class='num' id='cmp-today-gas'>—</td><td class='num' id='cmp-yest-gas'>—</td><td class='num' id='cmp-week-gas'>—</td></tr>
+        <tr><td>Verwacht</td><td class='num' id='cmp-today-exp' style='color:var(--yellow)'>—</td><td></td><td></td></tr>
+      </tbody>
+    </table>
   </div>
   <div class='card'>
     <div class='section-title' style='margin-bottom:0.5rem'>Geschatte kosten <span style='color:var(--dim);font-size:0.55rem;font-weight:400'>(stroom per uurprijs · gas per dagprijs)</span></div>
@@ -236,7 +229,7 @@
 <div class='lamp-block'><span id='sname-relay-gang' hidden>Lamp Gang</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-relay-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-relay-gang'>Lamp Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("relay::gang","Lamp Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700' id='relay-gang-status-text' style='color:var(--green)'>UIT</div></div><button id='relay-gang-onoff' onclick='relayGangToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ADE80;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>UIT</button></div></div></div>
 </div>
 <div class='section-title'>ESPHome Sensoren</div>
-<div class='temp-grid' id='esphome-grid'></div>
+<div class='esp-grid' id='esphome-grid'></div>
 <div class='section-title'>Temperatuur</div>
 <div class='temp-grid' id='temp-grid'></div><div class='chart-card'><div class='chart-header'><span class='chart-title'>Temperatuurverloop</span><div class='tab-bar'><button class='tab active' data-temprange='day' onclick='loadTempChart("day",this)'>Dag</button><button class='tab' data-temprange='week' onclick='loadTempChart("week",this)'>Week</button><button class='tab' data-temprange='month' onclick='loadTempChart("month",this)'>Maand</button></div></div><div class='chart-wrap'><canvas id='chart-temp'></canvas></div></div>
 <div class='section-title'>Wasmachine</div>
@@ -781,7 +774,28 @@ function refreshSafety() {
 var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(56,189,248,0.55)', borderColor: '#38BDF8', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } } }); }).catch(function(){}); }
 
 function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste: ' + (s.last_finished_at ? new Date(s.last_finished_at).toLocaleString('nl-NL', {hour12:false}) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + new Date(r.finished_at).toLocaleString('nl-NL', {hour12:false}) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
-function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (!grid) return; if (!rows.length) { grid.innerHTML = '<div class="temp-card"><div class="temp-room">Nog geen data</div></div>'; return; } grid.innerHTML = rows.map(function(r) { var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000); var ageText = age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden'; var valStr = r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'); var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room" style="display:flex;align-items:center;gap:0.35rem">' + r.display_name + '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + dEnc + '\',\'' + sEnc + '\',this)"></i></div><div class="temp-value">' + valStr + '</div><div class="temp-age">' + ageText + '</div><div class="temp-device">' + (r.device || '?') + '</div></div>'; }).join(''); }).catch(function(){}); }
+function esphomeCards(rows, editable) {
+  if (!rows.length) return '<div class="esp-card"><div class="esp-head">Nog geen data</div></div>';
+  var byDevice = {}, order = [];
+  rows.forEach(function(r) {
+    var d = r.device || '?';
+    if (!byDevice[d]) { byDevice[d] = []; order.push(d); }
+    byDevice[d].push(r);
+  });
+  return order.map(function(device) {
+    var list = byDevice[device];
+    var newest = Math.max.apply(null, list.map(function(r) { return new Date(r.received_at).getTime(); }));
+    var age = Math.round((Date.now() - newest) / 60000);
+    var ageText = isNaN(age) ? '' : age < 60 ? age + ' min geleden' : Math.round(age / 60) + ' uur geleden';
+    return '<div class="esp-card"><div class="esp-head"><i class="fa-solid fa-microchip"></i><span>' + device + '</span><span class="esp-age">' + ageText + '</span></div>' +
+      list.map(function(r) {
+        var valStr = r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—');
+        var pen = editable ? '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"></i>' : '';
+        return '<div class="esp-row"><span class="esp-name">' + r.display_name + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (grid) grid.innerHTML = esphomeCards(rows, true); }).catch(function(){}); }
 // ── Layout system ──
 var layoutConfig = {};
 var layoutEditMode = false;
@@ -801,8 +815,8 @@ var BLOCKS = {
     refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?Number(r.temp_c).toFixed(1):'—')+'°C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
   },
   'esphome_grid': {label:'ESPHome Sensoren', icon:'fa-microchip', dynamic:true,
-    render: function(el) { el.innerHTML = '<div class="section-title">ESPHome Sensoren</div><div class="temp-grid" id="dyn-esphome-grid"></div>'; },
-    refresh: function() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-esphome-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var valStr=r.value!=null?Number(r.value).toFixed(1)+(r.unit?' '+r.unit:''):(r.value_text||'—'); return '<div class="temp-card"><i class="fa-solid fa-microchip"></i><div class="temp-room">'+r.display_name+'</div><div class="temp-value">'+valStr+'</div></div>';}).join('');}).catch(function(){}); }
+    render: function(el) { el.innerHTML = '<div class="section-title" style="margin-bottom:0.5rem">ESPHome Sensoren</div><div class="esp-grid" id="dyn-esphome-grid"></div>'; },
+    refresh: function() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-esphome-grid'); if(g) g.innerHTML=esphomeCards(rows, false); }).catch(function(){}); }
   },
   'sun_times': {label:'Zon',icon:'fa-sun',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-sun" class="info-strip" style="grid-template-columns:1fr 1fr"></div>';},

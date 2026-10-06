@@ -260,7 +260,7 @@ to {
   font-weight:600}
 .power-value {
   font-size:clamp(2.8rem,13vw,4.5rem);
-  font-size:clamp(1.5rem,15cqi,4.5rem);
+  font-size:clamp(1.6rem,20cqi,4.5rem);
   font-weight:700;
   letter-spacing:-0.04em;
   color:var(--accent-l);
@@ -633,16 +633,18 @@ to {
   letter-spacing:-0.03em;
   color:var(--text)}
 .weather-stats {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:space-between;
-  gap:0.4rem 0.75rem;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0.4rem;
   border-top:1px solid var(--border);
   padding-top:0.65rem}
 .weather-stat {
   display:flex;
+  flex-direction:column;
   align-items:center;
-  gap:0.4rem}
+  text-align:center;
+  gap:0.3rem;
+  min-width:0}
 .weather-stat-icon {
   font-size:1rem}
 .weather-stat-value {
@@ -790,11 +792,6 @@ to {
   .layout-block[data-size='1'] { width:calc(50% - 0.3rem); }
   .layout-block[data-size='2'], .layout-block[data-size='3'], .layout-block[data-size='half'] { width:100%; }
 }
-@container (max-width:260px) {
-  .afval-when { display:none; }
-  .afval-date { min-width:0; }
-  .info-card .info-value { font-size:1rem; }
-}
 .layout-block-edit-bar { display:flex; align-items:center; justify-content:space-between; background:rgba(141,178,85,0.12); border:1px dashed rgba(141,178,85,0.4); border-radius:8px; padding:0.35rem 0.6rem; margin-bottom:0.4rem; font-size:0.72rem; color:var(--accent-l); }
 .layout-block-edit-bar button { background:none; border:none; color:inherit; cursor:pointer; padding:0.2rem 0.4rem; border-radius:6px; font-size:0.8rem; }
 .layout-block-edit-bar button:hover { background:rgba(141,178,85,0.2); }
@@ -881,7 +878,10 @@ to {
 .afval-label {
   font-weight:600;
   flex:1;
-  min-width:0}
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap}
 .afval-when {
   color:var(--muted);
   font-size:0.7rem}
@@ -895,6 +895,7 @@ to {
   font-size:0.7rem;
   min-width:5.2rem;
   text-align:right;
+  white-space:nowrap;
   font-variant-numeric:tabular-nums}
 .afval-empty {
   min-height:8.4rem;
@@ -1076,7 +1077,7 @@ to {
   gap:0.6rem}
 .scene-row {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
   gap:0.5rem}
 .scene-row .btn {
   display:flex;
@@ -1178,3 +1179,77 @@ to {
   stroke-linejoin:round}
 .icon-link .line-icon {
   font-size:1rem}
+/* Scènes: op een telefoon twee aan twee in plaats van vier op een rij */
+@container (max-width:520px) {
+  .scene-row {
+  grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* Smal blok (bijv. een kwartblok op een telefoon) */
+@container (max-width:260px) {
+  .afval-when { display:none; }
+  .afval-date { min-width:0; font-size:0.64rem; }
+  .afval-row { gap:0.4rem; font-size:0.72rem; }
+  .afval-card { padding-left:0.7rem; padding-right:0.7rem; }
+  .info-card .info-value { font-size:1rem; }
+}
+/* Verbruik en andere grote getallen: verticaal in het midden als het blok hoger is dan de inhoud */
+.layout-block > .power-hero {
+  justify-content:center}
+/* Verbruik vergeleken */
+.compare-table td.num {
+  color:var(--text);
+  font-weight:600;
+  white-space:nowrap}
+.compare-table .delta-up,.compare-table .delta-down,.compare-table .delta-same {
+  display:block;
+  margin-left:0;
+  font-weight:500}
+/* ESPHome: één kaart per apparaat */
+.esp-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));
+  gap:0.5rem}
+.esp-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:0.7rem 0.85rem;
+  min-width:0}
+.esp-head {
+  display:flex;
+  align-items:center;
+  gap:0.45rem;
+  font-size:0.6rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--dim);
+  margin-bottom:0.25rem}
+.esp-head i {
+  font-size:0.9rem;
+  color:var(--blue)}
+.esp-age {
+  margin-left:auto;
+  text-transform:none;
+  letter-spacing:0;
+  font-weight:400;
+  color:var(--muted)}
+.esp-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.6rem;
+  min-height:2.1rem;
+  border-top:1px solid rgba(255,255,255,0.04)}
+.esp-name {
+  display:flex;
+  align-items:center;
+  gap:0.35rem;
+  font-size:0.78rem;
+  color:#94A3B8;
+  min-width:0}
+.esp-val {
+  font-size:1rem;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap}
