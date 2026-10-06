@@ -14,7 +14,13 @@
   --yellow:#FBBF24;
   --red:#F87171;
   --nav-h:64px;
-  --header-h:calc(52px + env(safe-area-inset-top, 0px))}
+  --header-h:calc(52px + env(safe-area-inset-top, 0px));
+  --nav-safe:env(safe-area-inset-bottom, 0px)}
+/* Vanaf het beginscherm: de menubalk mag dichter op de onderrand, tot vlak boven de veegbalk */
+@media (display-mode:standalone) {
+  :root {
+  --nav-safe:max(0px, env(safe-area-inset-bottom, 0px) - 18px)}
+}
 * {
   box-sizing:border-box;
   margin:0;
@@ -87,7 +93,7 @@ body {
   height:100%;
   overflow-y:auto;
   overflow-x:hidden;
-  padding:0.75rem max(0.85rem, env(safe-area-inset-right, 0px)) calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.85rem) max(0.85rem, env(safe-area-inset-left, 0px));
+  padding:0.75rem max(0.85rem, env(safe-area-inset-right, 0px)) calc(var(--nav-h) + var(--nav-safe) + 0.85rem) max(0.85rem, env(safe-area-inset-left, 0px));
   -webkit-overflow-scrolling:touch;
   display:flex;
   flex-direction:column;
@@ -97,8 +103,8 @@ body {
 .screen {
   scrollbar-width:none}
 .bottom-nav {
-  height:calc(var(--nav-h) + env(safe-area-inset-bottom));
-  padding-bottom:env(safe-area-inset-bottom);
+  height:calc(var(--nav-h) + var(--nav-safe));
+  padding-bottom:var(--nav-safe);
   flex-shrink:0;
   display:flex;
   background:rgba(20,23,40,0.97);

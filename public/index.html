@@ -1735,7 +1735,7 @@ document.getElementById('pin-modal-overlay').addEventListener('click', function(
 });
 </script>
 <script>document.addEventListener('DOMContentLoaded',function(){var eb=document.getElementById('layout-edit-btn');if(eb)eb.style.display='flex';});</script>
-<button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(141,178,85,0.85);border:none;color:#16210A;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(141,178,85,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
+<button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + var(--nav-safe) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(141,178,85,0.85);border:none;color:#16210A;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(141,178,85,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
 <div id='block-picker' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:flex-end;justify-content:center'>
   <div style='background:#141728;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto'>
     <div style='font-size:0.85rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between'>Blok toevoegen<button onclick='closeBlockPicker()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem'>✕</button></div>
