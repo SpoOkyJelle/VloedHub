@@ -16,11 +16,6 @@
   --nav-h:64px;
   --header-h:calc(52px + env(safe-area-inset-top, 0px));
   --nav-safe:env(safe-area-inset-bottom, 0px)}
-/* Vanaf het beginscherm: de menubalk mag dichter op de onderrand, tot vlak boven de veegbalk */
-@media (display-mode:standalone) {
-  :root {
-  --nav-safe:max(0px, env(safe-area-inset-bottom, 0px) - 18px)}
-}
 * {
   box-sizing:border-box;
   margin:0;
@@ -36,6 +31,12 @@ body {
   display:flex;
   flex-direction:column;
   overflow:hidden}
+/* Vanaf het beginscherm zijn er geen browserbalken: de pagina moet het hele scherm vullen.
+   100dvh valt op iOS in die modus te kort uit, waardoor de menubalk boven de onderrand bleef hangen. */
+@media (display-mode:standalone) {
+  html,body {
+  height:100vh}
+}
 .app-header {
   height:var(--header-h);
   flex-shrink:0;
