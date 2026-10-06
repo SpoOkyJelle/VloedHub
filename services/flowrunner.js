@@ -3,6 +3,12 @@ var dbModule = require('../db/setup');
 var discord = require('./discord');
 var weather = require('./weather');
 var sun     = require('./sun');
+var prices  = require('./prices');
+var fridge  = require('./fridge');
+var afval   = require('./afval');
+var monitor = require('./monitor');
+var modules = require('./modules');
+var scenes  = require('../routes/scenes');
 var http    = require('http');
 var https   = require('https');
 
@@ -11,7 +17,8 @@ var TRIGGERS = {
   timer: 1, power_above: 1, power_below: 1, temp_above: 1, temp_below: 1,
   wash_done: 1, wash_started: 1, gas_above: 1, voltage_dip: 1,
   phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
-  sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1
+  sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1,
+  afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -98,8 +105,14 @@ function timeInWindow(startType, startVal, endType, endVal) {
     : (now >= start || now <= end); // overnight e.g. 22:00–06:00
 }
 
+// Vult {naam} in een bericht in met waarden uit de trigger, bijv. {afval} of {apparaat}
+function fillMessage(msg, ctx) {
+  var vars = (ctx && ctx.vars) || {};
+  return msg.replace(/\{(\w+)\}/g, function(m, key) { return vars[key] != null ? vars[key] : m; });
+}
+
 // ── Execute action node ────────────────────────────────────────────────────
-function executeNode(node) {
+function executeNode(node, ctx) {
   var device = node.data.device || 'default';
   var ls;
 
@@ -141,7 +154,7 @@ function executeNode(node) {
   }
 
   if (node.name === 'notify') {
-    var msg = (node.data.message || 'VloedHub flow getriggerd').trim();
+    var msg = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
     discord.sendDiscord('\uD83D\uDD14 ' + msg);
     console.log('[Flow] Melding:', msg);
     return { action: 'notify', message: msg };
@@ -280,7 +293,7 @@ function executeNode(node) {
   if (node.name === 'telegram') {
     var tgToken  = (node.data.token   || '').trim();
     var tgChatId = (node.data.chat_id || '').trim();
-    var tgMsg    = (node.data.message || 'VloedHub flow getriggerd').trim();
+    var tgMsg    = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
     if (tgToken && tgChatId) {
       var tgBody = JSON.stringify({ chat_id: tgChatId, text: tgMsg });
       var tgPath = '/bot' + tgToken + '/sendMessage';
@@ -296,6 +309,13 @@ function executeNode(node) {
     }
     console.log('[Flow] Telegram:', tgChatId, tgMsg);
     return { action: 'telegram', chat_id: tgChatId, message: tgMsg };
+  }
+
+  if (node.name === 'scene') {
+    var sceneId = node.data.scene || 'all_off';
+    scenes.run(sceneId);
+    console.log('[Flow] Scène:', sceneId);
+    return { action: 'scene', scene: sceneId };
   }
 
   if (node.name === 'mqtt_publish') {
@@ -328,6 +348,10 @@ function evaluateCondition(node, ctx) {
     case 'temp_above':   return ((ctx.temps || {})[room] || 0) > value;
     case 'temp_below':   return ((ctx.temps || {})[room] || 999) < value;
     case 'rain_above':   return (ctx.rainProb   || 0) > value;
+    case 'price_below':  return ctx.price != null && ctx.price < value;
+    case 'price_above':  return ctx.price != null && ctx.price > value;
+    case 'fridge_above': return (ctx.fridge || {}).refrigerator != null && ctx.fridge.refrigerator > value;
+    case 'afval_tomorrow': return (ctx.afvalTomorrow || []).length > 0;
     case 'time_between': return timeInWindow(node.data.timestart || '00:00', node.data.timeend || '23:59');
     default: return false;
   }
@@ -387,7 +411,7 @@ function traverseFrom(allNodes, nodeId, ctx, visited, results) {
   }
 
   // Normal action node
-  var r = executeNode(node);
+  var r = executeNode(node, ctx);
   if (r) results.push(r);
   followAll();
 }
@@ -476,9 +500,41 @@ function gatherContext(db, callback) {
             // Weather (from cache — non-blocking)
             weather.fetchWeather(function(wErr, wData) {
               if (!wErr && wData) ctx.rainProb = wData.precipitation_probability || 0;
-              callback(ctx);
+              gatherExtras(ctx, callback);
             });
           });
+        });
+      });
+    });
+  });
+}
+
+// Stroomprijs, koelkast, afval en offline apparaten. Elke bron heeft zijn eigen cache;
+// een bron die niet is ingesteld of uit staat wordt overgeslagen.
+var lastCtx = {};
+
+function gatherExtras(ctx, callback) {
+  ctx.vars = {};
+  prices.fetchPrices(function(pErr, p) {
+    if (!pErr && p && p.electricity_eur_kwh != null) {
+      ctx.price = p.electricity_eur_kwh;
+      ctx.vars.prijs = '\u20AC' + p.electricity_eur_kwh.toFixed(2).replace('.', ',');
+    }
+    var useFridge = modules.isOn('fridge') && fridge.getConfig();
+    (useFridge ? fridge.fetchStatus : function(cb) { cb(null, null); })(function(fErr, f) {
+      ctx.fridge = {};
+      if (f && f.ok) {
+        f.compartments.forEach(function(c) { if (c.temp != null) ctx.fridge[c.key] = c.temp; });
+        if (ctx.fridge.refrigerator != null) ctx.vars.koelkast = ctx.fridge.refrigerator + '\u00B0';
+        if (ctx.fridge.freezer != null) ctx.vars.vriezer = ctx.fridge.freezer + '\u00B0';
+      }
+      (modules.isOn('afval') ? afval.fetchCalendar : function(cb) { cb(null, null); })(function(aErr, a) {
+        ctx.afvalTomorrow = (a && a.configured && a.pickups) ? a.pickups.filter(function(x) { return x.days === 1; }).map(function(x) { return x.label; }) : [];
+        monitor.getStatus(function(list) {
+          // null zolang de bewaking na een herstart nog niets kan zeggen
+          ctx.offline = monitor.isReady() ? list.filter(function(d) { return !d.online; }) : null;
+          lastCtx = ctx;
+          callback(ctx);
         });
       });
     });
@@ -515,6 +571,7 @@ function runFlow(flow, db, callback) {
 // ── Sensor state: crossing detection ──────────────────────────────────────
 // "flowId:nodeId" → bool (was condition true last check)
 var sensorState   = {};
+var offlineSeen   = {};  // "flowId:nodeId" → apparaten die bij de vorige controle al offline waren
 var lastWashCount = null;
 var prevWashState = null;
 
@@ -567,6 +624,37 @@ function checkSensorTriggers(rows, ctx) {
             var t2 = (ctx.temps || {})[room2];
             isOn = t2 !== undefined && t2 < (parseFloat(node.data.temp) || 18);
             break;
+          }
+          case 'price_below': {
+            var pb = parseFloat(node.data.price);
+            isOn = ctx.price != null && ctx.price < (isNaN(pb) ? 0.20 : pb);
+            break;
+          }
+          case 'price_above': {
+            var pa = parseFloat(node.data.price);
+            isOn = ctx.price != null && ctx.price > (isNaN(pa) ? 0.35 : pa);
+            break;
+          }
+          case 'fridge_temp_above': {
+            var ft = (ctx.fridge || {})[node.data.compartment || 'refrigerator'];
+            var limit = parseFloat(node.data.temp);
+            isOn = ft != null && ft > (isNaN(limit) ? 8 : limit);
+            break;
+          }
+          case 'device_offline': {
+            // vuurt voor elk apparaat dat nieuw offline is; {apparaat} bevat de naam
+            if (!ctx.offline) return;
+            var seenBefore = offlineSeen[key] || {};
+            var nowOffline = {};
+            ctx.offline.forEach(function(d) { nowOffline[d.key] = true; });
+            var fresh = ctx.offline.filter(function(d) { return !seenBefore[d.key]; });
+            offlineSeen[key] = nowOffline;
+            if (fresh.length) {
+              var offCtx = Object.assign({}, ctx, { vars: Object.assign({}, ctx.vars, { apparaat: fresh.map(function(d) { return d.name; }).join(', ') }) });
+              console.log('[Flow] Trigger "device_offline" — flow ' + flow.id + ' "' + flow.name + '"');
+              traverseOutputs(node, nodes, offCtx, flow.id);
+            }
+            return;
           }
           case 'wash_started':
             isOn = ctx.washState === 'bezig' && prevWashState !== 'bezig';
@@ -626,7 +714,7 @@ function checkSunTriggers(rows, dateStr, timeStr, sunTimes) {
         lastFired[key] = true;
 
         console.log('[Flow] ' + node.name + ' (offset ' + offset + 'min, ' + target + ') — flow ' + flow.id + ' "' + flow.name + '"');
-        traverseOutputs(node, nodes, {}, flow.id);
+        traverseOutputs(node, nodes, lastCtx, flow.id);
       });
     } catch(e) {}
   });
@@ -655,7 +743,7 @@ function checkTimerTriggers(rows, dateStr, timeStr, isWeekday) {
         lastFired[key] = true;
 
         console.log('[Flow] Timer — flow ' + flow.id + ' "' + flow.name + '" om ' + timeStr);
-        traverseOutputs(node, nodes, {}, flow.id);
+        traverseOutputs(node, nodes, lastCtx, flow.id);
       });
     } catch(e) {}
   });
@@ -663,6 +751,42 @@ function checkTimerTriggers(rows, dateStr, timeStr, isWeekday) {
   // Purge yesterday's keys
   Object.keys(lastFired).forEach(function(k) {
     if (k.indexOf(dateStr) === -1) delete lastFired[k];
+  });
+}
+
+// ── Afval-trigger ──────────────────────────────────────────────────────────
+// Vuurt op het ingestelde tijdstip als er de volgende dag (of die dag zelf) iets wordt opgehaald.
+function checkAfvalTriggers(rows, dateStr, timeStr) {
+  if (!modules.isOn('afval')) return;
+  var due = [];
+  rows.forEach(function(flow) {
+    try {
+      var data  = JSON.parse(flow.data || '{}');
+      if (!data.drawflow) return;
+      var nodes = (data.drawflow.Home || {}).data || {};
+      Object.values(nodes).forEach(function(node) {
+        if (node.name !== 'afval_pickup' || (node.data.time || '21:00') !== timeStr) return;
+        var key = flow.id + ':' + node.id + ':afval:' + dateStr;
+        if (lastFired[key]) return;
+        lastFired[key] = true;
+        due.push({ flow: flow, node: node, nodes: nodes });
+      });
+    } catch(e) {}
+  });
+  if (!due.length) return;
+
+  afval.fetchCalendar(function(err, cal) {
+    if (err || !cal || !cal.configured) return;
+    due.forEach(function(d) {
+      var days = d.node.data.when === 'same' ? 0 : 1;
+      var kind = d.node.data.kind || 'all';
+      var labels = cal.pickups.filter(function(p) { return p.days === days && (kind === 'all' || p.label === kind); })
+                              .map(function(p) { return p.label; });
+      if (!labels.length) return;
+      var ctx = Object.assign({}, lastCtx, { vars: Object.assign({}, lastCtx.vars, { afval: labels.join(' en ') }) });
+      console.log('[Flow] afval_pickup (' + labels.join(', ') + ') — flow ' + d.flow.id + ' "' + d.flow.name + '"');
+      traverseOutputs(d.node, d.nodes, ctx, d.flow.id);
+    });
   });
 }
 
@@ -678,6 +802,7 @@ function checkAll(db) {
     if (err || !rows || !rows.length) return;
 
     checkTimerTriggers(rows, dateStr, timeStr, isWeekday);
+    checkAfvalTriggers(rows, dateStr, timeStr);
 
     sun.getSunTimes(function(err, sunTimes) {
       if (!err && sunTimes) { cachedSunTimes = sunTimes; checkSunTriggers(rows, dateStr, timeStr, sunTimes); }
@@ -701,7 +826,7 @@ function triggerWebhook(token, db) {
         Object.values(nodes).forEach(function(node) {
           if (node.name === 'webhook_trigger' && (node.data.token || '') === token) {
             console.log('[Flow] webhook_trigger token="' + token + '" — flow ' + flow.id + ' "' + flow.name + '"');
-            traverseOutputs(node, nodes, {}, flow.id);
+            traverseOutputs(node, nodes, lastCtx, flow.id);
           }
         });
       } catch(e) {}

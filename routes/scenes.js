@@ -12,6 +12,15 @@ var SCENES = {
   "disco":   { label: "Disco",     icon: "music",     led: { on: true, effect: 3 }, ledPer: { "gang": { effect: 2 } }, relay: { on: false } }
 };
 
+function runScene(id) {
+  var scene = SCENES[id];
+  if (!scene) return false;
+  LED_DEVICES.forEach(function(d) { Object.assign(state.getLedState(d), scene.led, (scene.ledPer || {})[d]); });
+  RELAY_DEVICES.forEach(function(d) { Object.assign(state.getRelayState(d), scene.relay); });
+  state.saveState();
+  return true;
+}
+
 function json(res, status, data) {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(data));
@@ -29,12 +38,9 @@ module.exports = function(req, res) {
     var body = "";
     req.on("data", function(c) { body += c; });
     req.on("end", function() {
-      var scene;
-      try { scene = SCENES[JSON.parse(body || "{}").scene]; } catch (e) {}
-      if (!scene) return json(res, 400, { ok: false, error: "Onbekende scène" });
-      LED_DEVICES.forEach(function(d) { Object.assign(state.getLedState(d), scene.led, (scene.ledPer || {})[d]); });
-      RELAY_DEVICES.forEach(function(d) { Object.assign(state.getRelayState(d), scene.relay); });
-      state.saveState();
+      var id;
+      try { id = JSON.parse(body || "{}").scene; } catch (e) {}
+      if (!runScene(id)) return json(res, 400, { ok: false, error: "Onbekende scène" });
       json(res, 200, { ok: true });
     });
     return true;
@@ -42,3 +48,6 @@ module.exports = function(req, res) {
 
   return false;
 };
+
+module.exports.run = runScene;
+module.exports.SCENES = SCENES;

@@ -102,4 +102,7 @@ function start() {
   setInterval(check, CHECK_INTERVAL);
 }
 
-module.exports = { start: start, seen: seen, getStatus: getStatus, check: check };
+// Vlak na een herstart is nog niet te zeggen wie er offline is
+function isReady() { return Date.now() - startedAt >= STARTUP_GRACE; }
+
+module.exports = { start: start, seen: seen, getStatus: getStatus, check: check, isReady: isReady };
