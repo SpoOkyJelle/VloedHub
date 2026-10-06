@@ -1346,6 +1346,7 @@ to {
 #screen-4 .fridge-card .chart-header {
   justify-content:flex-end}
 /* Modules: wat bij een uitgezette module hoort, verdwijnt */
+.mod-off-storingen [data-module~='storingen'],
 .mod-off-gas [data-module~='gas'],
 .mod-off-weather [data-module~='weather'],
 .mod-off-afval [data-module~='afval'],
@@ -1532,3 +1533,64 @@ body.kiosk #conn-banner {
   .discord-form .field {
   grid-column:1 / -1}
 }
+/* Weerwaarschuwingen in de weerkaart */
+#weather-warnings {
+  display:flex;
+  flex-direction:column;
+  gap:0.35rem}
+#weather-warnings[hidden] {
+  display:none}
+.wx-warning {
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  padding:0.4rem 0.65rem;
+  border-radius:10px;
+  font-size:0.72rem;
+  border:1px solid rgba(251,191,36,0.45);
+  background:rgba(251,191,36,0.14);
+  color:#FDE68A}
+.wx-warning.wx-oranje {
+  border-color:rgba(249,115,22,0.55);
+  background:rgba(249,115,22,0.16);
+  color:#FDBA74}
+.wx-warning.wx-rood {
+  border-color:rgba(248,113,113,0.6);
+  background:rgba(248,113,113,0.18);
+  color:#FCA5A5}
+/* Stroomstoringen */
+.outage-card {
+  display:flex;
+  flex-direction:column;
+  gap:0.55rem;
+  padding-top:0.7rem;
+  padding-bottom:0.7rem}
+.outage-card.has-outage {
+  border-color:rgba(248,113,113,0.5)}
+.outage-line {
+  display:flex;
+  align-items:center;
+  gap:0.65rem;
+  min-height:1.9rem}
+.outage-line > i {
+  width:1.1rem;
+  text-align:center;
+  color:var(--muted)}
+.outage-line.good > i { color:var(--green) }
+.outage-line.warn > i { color:var(--yellow) }
+.outage-line.bad > i { color:var(--red) }
+.outage-line > div {
+  flex:1;
+  min-width:0}
+.outage-text {
+  font-size:0.8rem;
+  font-weight:600}
+.outage-line.muted .outage-text {
+  color:#94A3B8}
+.outage-sub {
+  font-size:0.64rem;
+  color:var(--muted)}
+.outage-link {
+  color:var(--muted);
+  font-size:0.75rem;
+  padding:0.3rem}

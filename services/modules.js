@@ -5,7 +5,8 @@ var auth = require("./auth");
 // De P1-meter (stroom) is de basis en staat altijd aan.
 var MODULES = [
   { key: "gas",         label: "Gas",                    hint: "Gas-pagina en gascijfers bij Elektra" },
-  { key: "weather",     label: "Weer",                   hint: "Weerblok op Home" },
+  { key: "weather",     label: "Weer",                   hint: "Weerblok op Home en weerwaarschuwingen van het KNMI" },
+  { key: "storingen",   label: "Stroomstoringen",        hint: "Storingen van Enexis op je postcode, als blok en als melding" },
   { key: "afval",       label: "Afvalkalender",          hint: "Blok op Home en de herinnering via Discord" },
   { key: "lights",      label: "Verlichting en scènes",  hint: "Ledstrips, lamp en scèneknoppen" },
   { key: "fridge",      label: "Koelkast",               hint: "Koelkastkaart en offline-melding" },

@@ -29,6 +29,10 @@
       "size": "1"
     },
     {
+      "type": "outages",
+      "size": "4"
+    },
+    {
       "type": "scenes",
       "size": "4"
     },

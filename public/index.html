@@ -59,7 +59,7 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
   </div>
   </div>
   <div class='layout-block' data-block='weather'>
-  <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z'/></svg></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z'/></svg></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M2 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0'/></svg></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2'/></svg></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div></div>
+  <div class='weather-card'><div class='weather-top'><div class='weather-cond'><span class='weather-icon' id='weather-icon'>—</span><div><div class='weather-desc' id='weather-desc'>Laden…</div><div class='weather-loc'>Princenhage, Breda</div></div></div><div class='weather-temp' id='weather-temp'>—°</div></div><div class='weather-stats'><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z'/></svg></span><div><div class='weather-stat-value' id='weather-feels'>—°C</div><div class='weather-stat-label'>Gevoelstemp.</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z'/></svg></span><div><div class='weather-stat-value' id='weather-precip'>—%</div><div class='weather-stat-label'>Neerslag</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M2 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0'/></svg></span><div><div class='weather-stat-value' id='weather-humidity'>—%</div><div class='weather-stat-label'>Vochtigheid</div></div></div><div class='weather-stat'><span class='weather-stat-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2'/></svg></span><div><div class='weather-stat-value' id='weather-wind'>—</div><div class='weather-stat-label'>Wind</div></div></div></div><div id='weather-warnings' hidden></div></div>
   </div>
   <div class='layout-block' data-block='info_stats'>
   <div class='info-strip'>
@@ -863,7 +863,7 @@ var layoutConfig = {};
 var layoutEditMode = false;
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -935,6 +935,10 @@ var BLOCKS = {
   'fridge': {label:'Koelkast',icon:'fa-snowflake',dynamic:true,
     render:function(el){el.innerHTML='<div class="card fridge-card fridge-slot">'+fridgeSkeleton()+'</div>';},
     refresh:function(){loadFridge();}
+  },
+  'outages': {label:'Stroomstoringen',icon:'fa-plug-circle-bolt',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-outages"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    refresh:function(){loadOutages();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
@@ -1181,6 +1185,52 @@ function deleteScene(btn) {
     .catch(function() { document.getElementById('scene-error').textContent = 'Verbindingsfout'; });
 }
 loadScenes();
+
+// ── Weerwaarschuwingen ──
+function loadWarnings() {
+  var el = document.getElementById('weather-warnings');
+  if (!el) return;
+  fetch('/api/warnings').then(function(r){return r.json();}).then(function(d) {
+    var list = (d && d.warnings) || [];
+    if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
+    function t(iso) { var x = new Date(iso); return isNaN(x.getTime()) ? '' : x.toLocaleString('nl-NL', {weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false}); }
+    el.innerHTML = list.map(function(w) {
+      var period = w.from ? t(w.from) + (w.until ? ' tot ' + t(w.until) : '') : '';
+      return '<div class="wx-warning wx-' + w.code + '" title="' + escHtml(w.description) + '"><i class="fa-solid fa-triangle-exclamation"></i>' +
+        '<span><strong>Code ' + w.code + '</strong> · ' + escHtml(w.type) + (period ? ' · ' + period : '') + '</span></div>';
+    }).join('');
+    el.hidden = false;
+  }).catch(function(){});
+}
+loadWarnings();
+setInterval(loadWarnings, 15 * 60 * 1000);
+
+// ── Stroomstoringen ──
+function loadOutages() {
+  fetch('/api/outages').then(function(r){return r.json();}).then(function(d) {
+    var el = document.getElementById('blk-outages');
+    if (!el) return;
+    el.className = 'card outage-card';
+    function line(icon, text, sub, cls, url) {
+      return '<div class="outage-line ' + (cls || '') + '"><i class="fa-solid ' + icon + '"></i><div><div class="outage-text">' + text + '</div>' + (sub ? '<div class="outage-sub">' + sub + '</div>' : '') + '</div>' +
+        (url ? '<a href="' + url + '" target="_blank" rel="noopener" class="outage-link" aria-label="Meer informatie bij Enexis"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>' : '') + '</div>';
+    }
+    if (!d.ok) { el.innerHTML = line('fa-plug-circle-xmark', escHtml(d.error || 'Storingen niet beschikbaar'), '', 'muted'); return; }
+    if (!d.postcode) { el.innerHTML = line('fa-plug-circle-bolt', 'Stroomstoringen', 'Vul je adres in bij Instellingen (Afvalkalender) om storingen op je postcode te zien', 'muted'); return; }
+    var html = '';
+    d.mine.filter(function(e) { return !e.planned; }).forEach(function(e) {
+      html += line('fa-bolt', escHtml(e.kind) + ' op ' + d.postcode, escHtml(e.status || '') + (e.when ? ' · ' + escHtml((e.whenLabel || 'Tijd') + ': ' + e.when) : ''), 'bad', e.url);
+    });
+    d.mine.filter(function(e) { return e.planned; }).forEach(function(e) {
+      html += line('fa-calendar-day', 'Geplande ' + escHtml(e.kind.toLowerCase()) + ' op ' + d.postcode, escHtml(e.when || ''), 'warn', e.url);
+    });
+    d.nearby.forEach(function(e) {
+      html += line(e.planned ? 'fa-calendar-day' : 'fa-bolt', (e.planned ? 'Geplande ' + escHtml(e.kind.toLowerCase()) : escHtml(e.kind)) + ' in de buurt', escHtml((e.planned ? '' : (e.status || '') + (e.when ? ' · ' : '')) + (e.when || '')), 'muted', e.url);
+    });
+    if (d.mine.some(function(e) { return !e.planned; })) el.className += ' has-outage';
+    el.innerHTML = html || line('fa-circle-check', 'Geen storingen op ' + d.postcode, 'Enexis · elke 10 minuten bijgewerkt', 'good');
+  }).catch(function(){});
+}
 
 // ── Koelkast ──
 function fridgeSkeleton() {

@@ -12,6 +12,7 @@ var DEFAULT_LAYOUT = {
     {type:"led_keuken",size:"1"},
     {type:"led_gang",size:"1"},
     {type:"relay_gang",size:"1"},
+    {type:"outages",size:"4"},
     {type:"scenes",size:"4"},
     {type:"fridge",size:"2"},
     {type:"chart_power",size:"2"},

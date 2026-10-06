@@ -25,6 +25,7 @@ var routes = [
   require("./routes/fridge"),
   require("./routes/modules"),
   require("./routes/discord"),
+  require("./routes/region"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

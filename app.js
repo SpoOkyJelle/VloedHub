@@ -18,6 +18,8 @@ var flowrunner = require("./services/flowrunner");
 var afval      = require("./services/afval");
 var prices     = require("./services/prices");
 var monitor    = require("./services/monitor");
+var outages    = require("./services/outages");
+var warnings   = require("./services/warnings");
 var db         = require("./db/setup");
 
 var PORT = 5000;
@@ -27,6 +29,8 @@ flowrunner.start(db);
 afval.startReminder();
 prices.backfill();
 monitor.start();
+outages.start();
+warnings.start();
 
 server.listen(PORT, "0.0.0.0", function() {
   console.log("Server listening on http://0.0.0.0:" + PORT);
