@@ -13,7 +13,7 @@
   --blue: #38BDF8;
   --yellow: #FBBF24;
   --red: #F87171;
-  --header-h: 52px;
+  --header-h: calc(52px + env(safe-area-inset-top, 0px));
   --sidebar-w: 240px;
 }
 
@@ -33,7 +33,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: env(safe-area-inset-top, 0px) 1rem 0;
   background: rgba(12,15,29,0.97);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);

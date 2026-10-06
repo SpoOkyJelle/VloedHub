@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <title>VloedHub — Inloggen</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#0C0F1D">
@@ -54,7 +54,7 @@
       align-items: center;
       justify-content: center;
       gap: clamp(0.75rem, 2.5vh, 1.75rem);
-      padding: clamp(1rem, 3vh, 2rem) 1.25rem;
+      padding: calc(clamp(1rem, 3vh, 2rem) + env(safe-area-inset-top, 0px)) 1.25rem calc(clamp(1rem, 3vh, 2rem) + env(safe-area-inset-bottom, 0px));
       width: 100%;
       max-width: 520px;
       height: 100%;

@@ -6,7 +6,7 @@ body {
   font-family:'Poppins',system-ui,sans-serif;
   background:#0C0F1D;
   color:#F1F5F9;
-  padding:1rem 1.25rem;
+  padding:calc(1rem + env(safe-area-inset-top, 0px)) 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px));
   min-height:100vh}
 a {
   color:#8DB255;
