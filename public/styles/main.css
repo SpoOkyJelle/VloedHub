@@ -669,9 +669,9 @@ to {
   background:rgba(255,255,255,0.03);
   align-self:flex-start}
 .wash-status-pill.running {
-  color:#38BDF8;
-  border-color:rgba(56,189,248,0.4);
-  background:rgba(56,189,248,0.1)}
+  color:#FBBF24;
+  border-color:rgba(251,191,36,0.4);
+  background:rgba(251,191,36,0.1)}
 .wash-status-pill.done {
   color:#22C55E;
   border-color:rgba(34,197,94,0.4);
@@ -1270,3 +1270,78 @@ to {
   margin:0 auto 0.75rem;
   flex-shrink:0}
 }
+/* Koelkast */
+.fridge-card {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}
+.fridge-row {
+  display:flex;
+  gap:0.5rem}
+.fridge-cell {
+  flex:1 1 0;
+  min-width:0;
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:0.55rem 0.65rem}
+.fridge-label {
+  font-size:0.52rem;
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  font-weight:600;
+  color:var(--dim)}
+.fridge-temp {
+  font-size:1.5rem;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:var(--blue);
+  font-variant-numeric:tabular-nums}
+.fridge-temp.warm {
+  color:var(--red)}
+.fridge-set {
+  font-size:0.58rem;
+  color:var(--muted);
+  white-space:nowrap}
+.fridge-msg {
+  font-size:0.75rem;
+  color:var(--muted);
+  min-height:3.5rem;
+  display:flex;
+  align-items:center}
+.fridge-msg code {
+  font-size:0.68rem;
+  color:#94A3B8;
+  margin-left:0.25rem}
+/* Wasmachine: status en tellers in één kaart */
+.wash-card {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}
+.wash-card .wash-status-pill {
+  align-self:center}
+/* Thuis: dezelfde kaartopzet en kleuren voor koelkast, sensoren, temperatuur en wasmachine */
+.esp-card > .esp-row:first-child {
+  border-top:none}
+.esp-head i {
+  color:var(--accent-l)}
+.esp-name {
+  flex-wrap:wrap}
+.esp-room {
+  color:var(--text);
+  font-weight:600;
+  text-transform:capitalize}
+.esp-sub {
+  font-size:0.62rem;
+  color:var(--muted)}
+.wash-card .fridge-temp {
+  color:var(--text)}
+.wash-card #wash-total {
+  color:var(--accent-l)}
+.wash-card .chart-header {
+  flex-wrap:wrap}
+/* op Thuis staat de naam al als kopje boven de kaart */
+#screen-4 .fridge-card .chart-title {
+  display:none}
+#screen-4 .fridge-card .chart-header {
+  justify-content:flex-end}

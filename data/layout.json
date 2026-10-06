@@ -33,6 +33,10 @@
       "size": "4"
     },
     {
+      "type": "fridge",
+      "size": "2"
+    },
+    {
       "type": "chart_power",
       "size": "2"
     },

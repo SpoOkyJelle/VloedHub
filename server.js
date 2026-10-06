@@ -22,6 +22,7 @@ var routes = [
   require("./routes/insights"),
   require("./routes/scenes"),
   require("./routes/monitor"),
+  require("./routes/fridge"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

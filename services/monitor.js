@@ -3,6 +3,7 @@ var path = require("path");
 var db = require("../db/setup");
 var state = require("../utils/state");
 var discord = require("./discord");
+var fridge = require("./fridge");
 
 // Bewaakt of apparaten nog berichten sturen en meldt via Discord als er één wegvalt of terugkomt.
 var CHECK_INTERVAL = 60 * 1000;
@@ -14,7 +15,8 @@ var LIMITS = {
   p1:          5 * 60 * 1000,  // stuurt elke 15 s
   temperature: 10 * 60 * 1000, // stuurt elke 60 s
   esphome:     15 * 60 * 1000,
-  polling:     2 * 60 * 1000   // ledstrips en relais vragen elke halve seconde hun stand op
+  polling:     2 * 60 * 1000,  // ledstrips en relais vragen elke halve seconde hun stand op
+  fridge:      30 * 60 * 1000  // hoe vaak de koelkast een meting wegschrijft is niet bekend; ruim genomen
 };
 
 var DEFAULT_NAMES = { "led::default": "LED Strip", "led::keuken": "Ledstrip Keuken", "led::gang": "Ledstrip Gang", "relay::gang": "Lamp Gang" };
@@ -67,7 +69,11 @@ function getStatus(cb) {
       (rooms || []).forEach(function(r) { add("temp::" + r.room, "Temperatuursensor " + r.room, r.last, LIMITS.temperature); });
       db.all("SELECT device, MAX(received_at) as last FROM esphome_readings GROUP BY device", function(err3, devices) {
         (devices || []).forEach(function(d) { add("esphome::" + d.device, "ESPHome " + d.device, d.last, LIMITS.esphome); });
-        cb(list);
+        if (!fridge.getConfig()) return cb(list);
+        fridge.fetchStatus(function(err4, f) {
+          if (f && f.ok && f.updated) add("fridge", "Koelkast", localString(Date.parse(f.updated)), LIMITS.fridge);
+          cb(list);
+        });
       });
     });
   });
