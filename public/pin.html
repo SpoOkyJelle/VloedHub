@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>VloedHub — Inloggen</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+  <link rel="prefetch" href="/styles/main.css">
+  <link rel="prefetch" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="prefetch" href="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js">
   <style>
     :root {
       --bg: #0C0F1D;
@@ -146,8 +150,9 @@
       justify-content: center;
       flex-direction: column;
       gap: 0.1rem;
-      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+      transition: background 0.08s, border-color 0.08s, transform 0.05s;
       user-select: none;
+      touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
     .pin-key:active {
@@ -193,14 +198,11 @@
   <div class="pin-logo">
     <div class="pin-logo-icon">⚡</div>
     <div class="pin-logo-title">VloedHub</div>
-    <div class="pin-logo-sub">Slimme energie · thuis</div>
   </div>
 
   <div id="setup-notice" class="pin-setup-notice" style="display:none">
     Geen pincode ingesteld.<br>Kies een nieuwe 4-cijferige code.
   </div>
-
-  <div class="pin-subtitle" id="pin-subtitle">Voer je pincode in</div>
 
   <div class="pin-dots" id="pin-dots">
     <div class="pin-dot" id="d0"></div>
@@ -212,18 +214,18 @@
   <div class="pin-error" id="pin-error"></div>
 
   <div class="pin-numpad">
-    <button class="pin-key" onclick="pressKey('1')">1</button>
-    <button class="pin-key" onclick="pressKey('2')">2<span class="pin-key-sub">ABC</span></button>
-    <button class="pin-key" onclick="pressKey('3')">3<span class="pin-key-sub">DEF</span></button>
-    <button class="pin-key" onclick="pressKey('4')">4<span class="pin-key-sub">GHI</span></button>
-    <button class="pin-key" onclick="pressKey('5')">5<span class="pin-key-sub">JKL</span></button>
-    <button class="pin-key" onclick="pressKey('6')">6<span class="pin-key-sub">MNO</span></button>
-    <button class="pin-key" onclick="pressKey('7')">7<span class="pin-key-sub">PQRS</span></button>
-    <button class="pin-key" onclick="pressKey('8')">8<span class="pin-key-sub">TUV</span></button>
-    <button class="pin-key" onclick="pressKey('9')">9<span class="pin-key-sub">WXYZ</span></button>
+    <button class="pin-key" data-key="1">1</button>
+    <button class="pin-key" data-key="2">2<span class="pin-key-sub">ABC</span></button>
+    <button class="pin-key" data-key="3">3<span class="pin-key-sub">DEF</span></button>
+    <button class="pin-key" data-key="4">4<span class="pin-key-sub">GHI</span></button>
+    <button class="pin-key" data-key="5">5<span class="pin-key-sub">JKL</span></button>
+    <button class="pin-key" data-key="6">6<span class="pin-key-sub">MNO</span></button>
+    <button class="pin-key" data-key="7">7<span class="pin-key-sub">PQRS</span></button>
+    <button class="pin-key" data-key="8">8<span class="pin-key-sub">TUV</span></button>
+    <button class="pin-key" data-key="9">9<span class="pin-key-sub">WXYZ</span></button>
     <div class="pin-key spacer"></div>
-    <button class="pin-key" onclick="pressKey('0')">0</button>
-    <button class="pin-key delete" onclick="pressDelete()">⌫</button>
+    <button class="pin-key" data-key="0">0</button>
+    <button class="pin-key delete" data-key="del">⌫</button>
   </div>
 
 </div>
@@ -245,9 +247,7 @@
     if (pin.length >= 4) return;
     pin += digit;
     updateDots();
-    if (pin.length === 4) {
-      setTimeout(submit, 120);
-    }
+    if (pin.length === 4) submit();
   }
 
   function pressDelete() {
@@ -275,9 +275,9 @@
     var dots = document.getElementById('pin-dots');
     updateDots('error');
     dots.classList.add('shake');
+    pin = ''; // meteen opnieuw kunnen typen, de animatie loopt gewoon door
     setTimeout(function() {
       dots.classList.remove('shake');
-      pin = '';
       updateDots();
     }, 420);
   }
@@ -317,7 +317,7 @@
       }).then(function(d) {
         if (d.ok) {
           updateDots('success');
-          setTimeout(function() { window.location.href = '/'; }, 300);
+          window.location.href = '/';
         }
       }).catch(function(e) { showError(e.message || 'Fout'); });
       return;
@@ -332,12 +332,27 @@
       if (d.ok) {
         updateDots('success');
         var dest = new URLSearchParams(location.search).get('next') || '/';
-        setTimeout(function() { window.location.href = dest; }, 300);
+        window.location.href = dest;
       } else {
         showError(d.error || 'Verkeerde pincode');
       }
     }).catch(function() { showError('Verbindingsfout'); });
   }
+
+  // Numpad: reageer bij het aanraken, niet pas bij het loslaten
+  var numpad = document.querySelector('.pin-numpad');
+  function handleKey(btn) {
+    if (!btn) return;
+    if (btn.dataset.key === 'del') pressDelete();
+    else pressKey(btn.dataset.key);
+  }
+  numpad.addEventListener('pointerdown', function(e) {
+    if (e.button) return;
+    handleKey(e.target.closest('[data-key]'));
+  });
+  numpad.addEventListener('click', function(e) {
+    if (e.detail === 0) handleKey(e.target.closest('[data-key]')); // toetsenbord (Enter/spatie)
+  });
 
   // Keyboard support
   document.addEventListener('keydown', function(e) {
