@@ -8,7 +8,7 @@ var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status', '/api/auth/se
 var PUBLIC_API_PREFIXES = ['/api/p1', '/api/led', '/api/relay', '/api/temperature', '/api/wasmachine', '/api/gas', '/api/webhook/', '/api/esphome', '/api/device-names', '/api/layout'];
 
 // Static asset extensions that are always public (needed by /pin page)
-var PUBLIC_EXTS  = ['.css', '.js', '.png', '.ico', '.svg', '.woff', '.woff2'];
+var PUBLIC_EXTS  = ['.css', '.js', '.png', '.ico', '.svg', '.woff', '.woff2', '.webmanifest'];
 
 var routes = [
   require("./routes/auth"),
@@ -19,6 +19,8 @@ var routes = [
   require("./routes/costs"),
   require("./routes/weather"),
   require("./routes/afval"),
+  require("./routes/insights"),
+  require("./routes/scenes"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

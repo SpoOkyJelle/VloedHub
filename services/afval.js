@@ -1,5 +1,6 @@
 var https = require("https");
 var auth  = require("./auth");
+var discord = require("./discord");
 
 // Gemeente Breda gebruikt het Burgerportaal (21South) voor de afvalkalender.
 // Er is geen officiële API; dit zijn dezelfde aanroepen als de Afvalservice-app doet.
@@ -149,7 +150,36 @@ function fetchCalendar(cb) {
   });
 }
 
+// Herinnering: de avond voor een ophaaldag (vanaf 21:00) één Discord-bericht.
+var REMINDER_HOUR = 21;
+
+function checkReminder() {
+  var addr = getAddress();
+  if (!addr || !addr.addressId) return;
+  var hour = parseInt(new Date().toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam" }).slice(11, 13), 10);
+  if (hour < REMINDER_HOUR) return;
+  var tomorrow = new Date(Date.parse(today() + "T00:00:00Z") + 86400000).toISOString().slice(0, 10);
+  if (addr.lastReminder === tomorrow) return;
+
+  fetchCalendar(function(err, data) {
+    if (err || !data.configured) return;
+    var cfg = auth.readConfig();
+    if (!cfg.afval) return;
+    cfg.afval.lastReminder = tomorrow;
+    auth.writeConfig(cfg);
+    var labels = data.pickups.filter(function(p) { return p.days === 1; }).map(function(p) { return p.label; });
+    if (!labels.length) return;
+    discord.sendDiscord("🗑️ **Morgen wordt opgehaald: " + labels.join(" en ") + "** — zet het vanavond buiten.");
+  });
+}
+
+function startReminder() {
+  setTimeout(checkReminder, 30000);
+  setInterval(checkReminder, 10 * 60 * 1000);
+}
+
 module.exports = {
+  startReminder: startReminder,
   fetchCalendar: fetchCalendar,
   getAddress: getAddress,
   setAddress: setAddress

@@ -11,7 +11,8 @@ var MIME_TYPES = {
   ".js":  "application/javascript",
   ".png": "image/png",
   ".ico": "image/x-icon",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".webmanifest": "application/manifest+json"
 };
 
 module.exports = function(req, res) {

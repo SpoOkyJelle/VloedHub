@@ -1022,11 +1022,6 @@ to {
   opacity:1;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23fff' fill-opacity='.5'%3E%3Ccircle cx='10' cy='12' r='1.6'/%3E%3Ccircle cx='44' cy='6' r='1.1'/%3E%3Ccircle cx='66' cy='30' r='1.8'/%3E%3Ccircle cx='26' cy='46' r='1.2'/%3E%3Ccircle cx='54' cy='62' r='1.5'/%3E%3Ccircle cx='8' cy='70' r='1'/%3E%3C/g%3E%3C/svg%3E");
   animation:wx-fall-snow 7s linear infinite}
-.weather-card[data-weather='smog']::after {
-  opacity:1;
-  background:repeating-linear-gradient(180deg,transparent 0 18px,rgba(148,163,184,0.08) 18px 30px);
-  background-size:100% 60px;
-  animation:wx-fog 10s linear infinite}
 .weather-card[data-weather='cloud-bolt']::after {
   background:#fff;
   animation:wx-flash 7s linear infinite}
@@ -1060,9 +1055,6 @@ to {
 @keyframes wx-fall-snow {
   to { background-position:80px 160px }
 }
-@keyframes wx-fog {
-  to { background-position:0 60px }
-}
 @keyframes wx-flash {
   0%,86%,89%,93%,100% { opacity:0 }
   87%,91% { opacity:0.14 }
@@ -1071,3 +1063,100 @@ to {
   .weather-card::before,.weather-card::after,.weather-card .weather-icon {
   animation:none !important}
 }
+/* Scènes en inzichten */
+.scene-card,.insight-card {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}
+.scene-row {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr));
+  gap:0.5rem}
+.scene-row .btn {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.4rem;
+  padding:0.65rem 0.4rem;
+  white-space:nowrap}
+.scene-row .btn-disco {
+  border:2px solid transparent;
+  background:linear-gradient(#1A1E35,#1A1E35) padding-box,linear-gradient(90deg,#F87171,#FBBF24,#4ADE80,#38BDF8,#C084FC,#F472B6,#F87171) border-box;
+  background-size:100% 100%,200% 100%;
+  color:var(--text);
+  animation:disco-border 3s linear infinite}
+.scene-row .btn-disco i {
+  color:#F472B6}
+@keyframes disco-border {
+  to {
+  background-position:0 0,-200% 0}
+}
+@media (prefers-reduced-motion:reduce) {
+  .scene-row .btn-disco {
+  animation:none}
+}
+.scene-row .btn.done {
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#16210A}
+.scene-row .btn:disabled {
+  opacity:0.6}
+.tvn-value {
+  font-size:1.5rem;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  font-variant-numeric:tabular-nums}
+.tvn-diff {
+  font-size:0.75rem;
+  font-weight:600;
+  margin-left:0.5rem}
+.tvn-track {
+  position:relative;
+  height:8px;
+  border-radius:4px;
+  background:rgba(255,255,255,0.07)}
+.tvn-fill {
+  height:100%;
+  width:0;
+  border-radius:4px;
+  background:var(--accent);
+  transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.tvn-mark {
+  display:none;
+  position:absolute;
+  top:-4px;
+  bottom:-4px;
+  width:2px;
+  margin-left:-1px;
+  border-radius:1px;
+  background:var(--text)}
+.pl-row {
+  display:flex;
+  align-items:center;
+  gap:0.6rem;
+  font-size:0.72rem}
+.pl-name {
+  width:1.4rem;
+  font-weight:700;
+  color:var(--dim)}
+.pl-track {
+  flex:1;
+  height:8px;
+  border-radius:4px;
+  background:rgba(255,255,255,0.07);
+  overflow:hidden}
+.pl-fill {
+  height:100%;
+  width:0;
+  border-radius:4px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-l));
+  transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.pl-fill.mid {
+  background:var(--yellow)}
+.pl-fill.high {
+  background:var(--red)}
+.pl-val {
+  min-width:2.6rem;
+  text-align:right;
+  font-weight:600;
+  font-variant-numeric:tabular-nums}

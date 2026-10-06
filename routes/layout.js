@@ -12,8 +12,13 @@ var DEFAULT_LAYOUT = {
     {type:"led_keuken",size:"1"},
     {type:"led_gang",size:"1"},
     {type:"relay_gang",size:"1"},
+    {type:"scenes",size:"4"},
     {type:"chart_power",size:"2"},
-    {type:"phases",size:"2"}
+    {type:"phases",size:"2"},
+    {type:"phase_load",size:"2"},
+    {type:"today_vs_normal",size:"2"},
+    {type:"month_forecast",size:"1"},
+    {type:"standby",size:"1"}
   ]
 };
 

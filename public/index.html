@@ -6,6 +6,10 @@
 <meta name='apple-mobile-web-app-capable' content='yes'>
 <meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'>
 <title>VloedHub</title>
+<link rel='manifest' href='/manifest.webmanifest'>
+<meta name='theme-color' content='#0C0F1D'>
+<link rel='icon' href='/icons/icon.svg' type='image/svg+xml'>
+<link rel='apple-touch-icon' href='/icons/icon-180.png'>
 <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'>
 <link rel='preconnect' href='https://fonts.googleapis.com'>
 <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
@@ -472,6 +476,7 @@ function refresh() {
   fetch('/api/latest').then(function(r) { return r.json(); }).then(function(d) {
     var l = d.latest;
     if (!l) return;
+    updatePhaseLoad(l);
     if (lastPowerVal !== null && Math.abs(l.power_delivered_total_kw - lastPowerVal) > 0.01) flashEl('del-total');
     lastPowerVal = l.power_delivered_total_kw;
     setCard('del-total', l.power_delivered_total_kw, 3, 'kW');
@@ -802,6 +807,26 @@ var BLOCKS = {
     render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
     refresh:function(){fetch('/api/gas-daily').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-gastoday');if(!el)return;var today=d&&d[0];if(!today){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+(today.m3!=null?today.m3.toFixed(3):'—')+'<span class="unit">m³</span></div>'+(today.eur!=null?'<div class="power-sub">€'+today.eur.toFixed(2)+'</div>':'');}).catch(function(){});}
   },
+  'scenes': {label:'Scènes',icon:'fa-wand-magic-sparkles',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card scene-card"><div class="chart-title">Scènes</div><div class="scene-row"><button class="btn btn-ghost" data-scene="all_off" onclick="runScene(this)"><i class="fa-solid fa-power-off"></i> Alles uit</button><button class="btn btn-ghost" data-scene="evening" onclick="runScene(this)"><i class="fa-solid fa-moon"></i> Avond</button><button class="btn btn-ghost" data-scene="all_on" onclick="runScene(this)"><i class="fa-solid fa-lightbulb"></i> Alles aan</button><button class="btn btn-ghost btn-disco" data-scene="disco" onclick="runScene(this)"><i class="fa-solid fa-music"></i> Disco</button></div></div>';},
+    refresh:function(){}
+  },
+  'month_forecast': {label:'Maandprognose',icon:'fa-calendar-days',dynamic:true,
+    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Verwacht deze maand</div><div class="power-value skel" id="blk-forecast-value" style="color:var(--yellow)">—</div><div class="power-sub" id="blk-forecast-sub">&nbsp;</div></div>';},
+    refresh:function(){loadForecast();}
+  },
+  'standby': {label:'Sluipverbruik',icon:'fa-plug',dynamic:true,
+    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Sluipverbruik</div><div class="power-value skel" id="blk-standby-value" style="color:var(--blue)">—</div><div class="power-sub" id="blk-standby-sub">&nbsp;</div></div>';},
+    refresh:function(){loadStandby();}
+  },
+  'today_vs_normal': {label:'Vandaag t.o.v. normaal',icon:'fa-scale-balanced',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-title">Vandaag t.o.v. normaal</div><div class="tvn-value skel" id="blk-tvn-value">—</div><div class="tvn-track"><div class="tvn-fill" id="blk-tvn-fill"></div><div class="tvn-mark" id="blk-tvn-mark"></div></div><div class="power-sub" id="blk-tvn-sub">&nbsp;</div></div>';},
+    refresh:function(){loadTodayVsNormal();}
+  },
+  'phase_load': {label:'Fase-belasting',icon:'fa-gauge-high',dynamic:true,
+    render:function(el){var rows='';for(var i=1;i<=3;i++)rows+='<div class="pl-row"><span class="pl-name">L'+i+'</span><div class="pl-track"><div class="pl-fill" id="blk-pl-fill-'+i+'"></div></div><span class="pl-val" id="blk-pl-val-'+i+'">—</span></div>';el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Fase-belasting</span><span class="power-sub">van '+FUSE_AMPS+' A per fase</span></div>'+rows+'</div>';},
+    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){if(d.latest)updatePhaseLoad(d.latest);}).catch(function(){});}
+  },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
     refresh:function(){loadAfval();}
@@ -819,6 +844,73 @@ var BLOCKS = {
     refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   }
 };
+
+// ── Inzichten en scènes ──
+var FUSE_AMPS = 25; // hoofdzekering per fase
+function nlNum(v, d) { return Number(v).toLocaleString('nl-NL', {minimumFractionDigits: d, maximumFractionDigits: d}); }
+function updatePhaseLoad(l) {
+  for (var i = 1; i <= 3; i++) {
+    var fill = document.getElementById('blk-pl-fill-' + i);
+    var valEl = document.getElementById('blk-pl-val-' + i);
+    if (!fill || !valEl) return;
+    var a = l['current_l' + i];
+    if (a == null) { valEl.textContent = '—'; continue; }
+    var pct = Math.min(100, a / FUSE_AMPS * 100);
+    fill.style.width = pct + '%';
+    fill.className = 'pl-fill' + (pct >= 80 ? ' high' : pct >= 60 ? ' mid' : '');
+    valEl.textContent = nlNum(a, 0) + ' A';
+  }
+}
+function loadForecast() {
+  fetch('/api/insights/forecast').then(function(r){return r.json();}).then(function(f) {
+    var sub = 'Tot nu toe €' + nlNum(f.cost || 0, 2) + ' · ' + nlNum(f.elec_kwh || 0, 0) + ' kWh · ' + nlNum(f.gas_m3 || 0, 0) + ' m³';
+    if (f.forecast_cost == null) { setEl('blk-forecast-value', '—'); setEl('blk-forecast-sub', f.days_measured ? sub : 'Nog geen volledige dag gemeten deze maand'); return; }
+    setEl('blk-forecast-value', '€' + nlNum(f.forecast_cost, 0));
+    setEl('blk-forecast-sub', sub);
+  }).catch(function() { setEl('blk-forecast-value', '—'); });
+}
+function loadStandby() {
+  Promise.all([
+    fetch('/api/night-usage').then(function(r){return r.json();}),
+    fetch('/api/prices').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(res) {
+    var kw = res[0].night_avg, price = res[1].electricity_eur_kwh;
+    if (kw == null) { setEl('blk-standby-value', '—'); setEl('blk-standby-sub', 'Nog geen nachtmetingen'); return; }
+    var yearKwh = kw * 8760;
+    setEl('blk-standby-value', nlNum(kw * 1000, 0) + '<span class="unit">W</span>');
+    setEl('blk-standby-sub', "'s Nachts gemiddeld · ≈ " + nlNum(yearKwh, 0) + ' kWh' + (price != null ? ' of €' + nlNum(yearKwh * price, 0) : '') + ' per jaar');
+  }).catch(function() { setEl('blk-standby-value', '—'); });
+}
+function loadTodayVsNormal() {
+  fetch('/api/insights/today-vs-normal').then(function(r){return r.json();}).then(function(d) {
+    var fill = document.getElementById('blk-tvn-fill'), mark = document.getElementById('blk-tvn-mark');
+    if (!fill) return;
+    if (d.today_kwh == null) { setEl('blk-tvn-value', '—'); setEl('blk-tvn-sub', 'Nog geen metingen vandaag'); return; }
+    if (d.normal_kwh == null) { setEl('blk-tvn-value', nlNum(d.today_kwh, 2) + '<span class="card-unit">kWh</span>'); setEl('blk-tvn-sub', 'Nog geen eerdere dagen om mee te vergelijken'); return; }
+    var diff = (d.today_kwh - d.normal_kwh) / d.normal_kwh * 100;
+    var color = diff > 10 ? 'var(--red)' : diff < -5 ? 'var(--green)' : 'var(--yellow)';
+    var max = Math.max(d.today_kwh, d.normal_kwh) * 1.25;
+    fill.style.width = (d.today_kwh / max * 100) + '%';
+    fill.style.background = color;
+    mark.style.left = (d.normal_kwh / max * 100) + '%';
+    mark.style.display = 'block';
+    setEl('blk-tvn-value', nlNum(d.today_kwh, 2) + '<span class="card-unit">kWh</span><span class="tvn-diff" style="color:' + color + '">' + (diff >= 0 ? '+' : '−') + nlNum(Math.abs(diff), 0) + '%</span>');
+    var dayNames = ['zondagen','maandagen','dinsdagen','woensdagen','donderdagen','vrijdagen','zaterdagen'];
+    setEl('blk-tvn-sub', 'Normaal ' + nlNum(d.normal_kwh, 2) + ' kWh op dit tijdstip · gemiddelde van ' + d.samples + ' ' + (d.basis === 'weekday' ? dayNames[new Date().getDay()] : 'dagen'));
+  }).catch(function() { setEl('blk-tvn-value', '—'); });
+}
+function runScene(btn) {
+  btn.disabled = true;
+  fetch('/api/scenes/run', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({scene: btn.dataset.scene})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) return;
+      btn.classList.add('done');
+      setTimeout(function() { btn.classList.remove('done'); }, 900);
+      refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState();
+      setTimeout(function() { updateHomeLedStatus(); updateHomeLed2Status(); updateHomeLed3Status(); updateRelayGangUI(); }, 400);
+    }).catch(function() { btn.disabled = false; });
+}
 
 // ── Afvalkalender ──
 function afvalWhen(days) { return days === 0 ? 'Vandaag' : days === 1 ? 'Morgen' : 'Over ' + days + ' dagen'; }
