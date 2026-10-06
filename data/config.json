@@ -1,3 +1,10 @@
 {
-  "pinHash": "f9ab05f8ba0c569fa658bb44cdcadb6e9284dfde949fdc24df7e62a705b89d2b"
+  "pinHash": "f9ab05f8ba0c569fa658bb44cdcadb6e9284dfde949fdc24df7e62a705b89d2b",
+  "afval": {
+    "postcode": "4813PB",
+    "huisnummer": "63",
+    "toevoeging": "",
+    "addressId": "238127830354281808",
+    "straat": "Vloed 63, Breda"
+  }
 }

@@ -82,4 +82,4 @@ setInterval(function() {
   Object.keys(sessions).forEach(function(t) { if (sessions[t] < now) delete sessions[t]; });
 }, 3600000);
 
-module.exports = { pinIsSet, pinIsCorrect, setPin, createSession, isValidSession, destroySession, getSessionToken, sessionCookie, clearCookie };
+module.exports = { readConfig, writeConfig, pinIsSet, pinIsCorrect, setPin, createSession, isValidSession, destroySession, getSessionToken, sessionCookie, clearCookie };

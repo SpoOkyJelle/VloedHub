@@ -17,6 +17,10 @@
       "size": "4"
     },
     {
+      "type": "afval",
+      "size": "2"
+    },
+    {
       "type": "led_default",
       "size": "2"
     },

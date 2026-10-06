@@ -18,6 +18,7 @@ var routes = [
   require("./routes/gas"),
   require("./routes/costs"),
   require("./routes/weather"),
+  require("./routes/afval"),
   require("./routes/sun"),
   require("./routes/led"),
   require("./routes/relay"),

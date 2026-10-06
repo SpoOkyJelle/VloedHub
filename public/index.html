@@ -268,6 +268,19 @@
 <div class='section-title'>ESPHome sensornamen</div>
 <div id='settings-esphome-names'></div>
 
+<div class='section-title'>Afvalkalender</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div><div class='power-label'>Adres</div><div style='font-size:0.72rem;color:var(--dim)' id='afval-address-status'>Vul je postcode en huisnummer in (gemeente Breda)</div></div>
+    <div class='afval-form'>
+      <input class='field' id='afval-postcode' placeholder='Postcode' maxlength='7' autocomplete='postal-code' autocapitalize='characters'>
+      <input class='field' id='afval-huisnummer' placeholder='Nr.' inputmode='numeric' maxlength='5'>
+      <input class='field' id='afval-toevoeging' placeholder='Toev.' maxlength='6'>
+      <button class='btn btn-primary' onclick='saveAfvalAddress()'>Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <div class='section-title'>Netwerk</div>
 <div class='ip-row'>
   <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
@@ -790,6 +803,10 @@ var BLOCKS = {
     render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
     refresh:function(){fetch('/api/gas-daily').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-gastoday');if(!el)return;var today=d&&d[0];if(!today){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+(today.m3!=null?today.m3.toFixed(3):'—')+'<span class="unit">m³</span></div>'+(today.eur!=null?'<div class="power-sub">€'+today.eur.toFixed(2)+'</div>':'');}).catch(function(){});}
   },
+  'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
+    render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
+    refresh:function(){loadAfval();}
+  },
   'chart_power': {label:'Elektra verloop',icon:'fa-chart-area',dynamic:true,
     render:function(el){el.innerHTML='<div class="chart-card" style="min-height:0"><div class="chart-header"><span class="chart-title">Elektra verloop</span><div class="tab-bar"><button class="tab active" data-homerange="day" onclick="loadHomeChart(this)">Dag</button><button class="tab" data-homerange="week" onclick="loadHomeChart(this)">Week</button><button class="tab" data-homerange="month" onclick="loadHomeChart(this)">Maand</button></div></div><div class="chart-wrap" style="min-height:0;height:150px"><canvas id="blk-chart-elektra"></canvas></div></div>';},
     refresh:function(){loadHomeChart(document.querySelector('[data-homerange].active'));}
@@ -803,6 +820,54 @@ var BLOCKS = {
     refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   }
 };
+
+// ── Afvalkalender ──
+function afvalWhen(days) { return days === 0 ? 'Vandaag' : days === 1 ? 'Morgen' : 'Over ' + days + ' dagen'; }
+function loadAfval() {
+  fetch('/api/afval').then(function(r){return r.json();}).then(function(d) {
+    var el = document.getElementById('blk-afval');
+    if (!el) return;
+    if (d.error) { el.innerHTML = '<div class="afval-empty">Afvalkalender niet bereikbaar</div>'; return; }
+    if (!d.configured) { el.innerHTML = '<div class="afval-empty">Nog geen adres ingesteld<button class="btn btn-ghost" onclick="showScreen(5,null)">Adres instellen</button></div>'; return; }
+    var rows = d.pickups.slice(0, 4);
+    if (!rows.length) { el.innerHTML = '<div class="afval-empty">Geen ophaaldagen bekend</div>'; return; }
+    el.innerHTML = rows.map(function(p) {
+      var date = new Date(p.date + 'T12:00:00').toLocaleDateString('nl-NL', {weekday:'short', day:'numeric', month:'short'});
+      return '<div class="afval-row' + (p.days <= 1 ? ' soon' : '') + '">' +
+        '<span class="afval-icon" style="color:' + p.color + '"><i class="fa-solid fa-' + p.icon + '"></i></span>' +
+        '<span class="afval-label">' + p.label + '</span>' +
+        '<span class="afval-when">' + afvalWhen(p.days) + '</span>' +
+        '<span class="afval-date">' + date + '</span></div>';
+    }).join('');
+  }).catch(function() {
+    var el = document.getElementById('blk-afval');
+    if (el) el.innerHTML = '<div class="afval-empty">Afvalkalender niet bereikbaar</div>';
+  });
+}
+function loadAfvalAddress() {
+  fetch('/api/afval/address').then(function(r){return r.json();}).then(function(a) {
+    if (!a.postcode) return;
+    document.getElementById('afval-postcode').value = a.postcode;
+    document.getElementById('afval-huisnummer').value = a.huisnummer;
+    document.getElementById('afval-toevoeging').value = a.toevoeging || '';
+    document.getElementById('afval-address-status').textContent = a.straat;
+  }).catch(function(){});
+}
+function saveAfvalAddress() {
+  var status = document.getElementById('afval-address-status');
+  status.style.color = 'var(--dim)';
+  status.textContent = 'Adres opzoeken…';
+  fetch('/api/afval/address', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    postcode: document.getElementById('afval-postcode').value,
+    huisnummer: document.getElementById('afval-huisnummer').value,
+    toevoeging: document.getElementById('afval-toevoeging').value
+  })}).then(function(r){return r.json();}).then(function(d) {
+    if (!d.ok) { status.style.color = 'var(--red)'; status.textContent = d.error || 'Opslaan mislukt'; return; }
+    status.textContent = d.straat;
+    loadAfval();
+  }).catch(function() { status.style.color = 'var(--red)'; status.textContent = 'Verbindingsfout'; });
+}
+loadAfvalAddress();
 
 function loadLayout() {
   // Indeling staat al in de pagina, zodat de blokken niet verspringen na het laden

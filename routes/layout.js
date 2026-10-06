@@ -9,6 +9,7 @@ var DEFAULT_LAYOUT = {
     {type:"power_live",size:"4"},
     {type:"info_stats",size:"4"},
     {type:"chart_power",size:"4"},
+    {type:"afval",size:"4"},
     {type:"led_default",size:"2"},
     {type:"led_keuken",size:"2"},
     {type:"led_gang",size:"2"},
