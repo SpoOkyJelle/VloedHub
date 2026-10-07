@@ -45,6 +45,10 @@
       "size": "2"
     },
     {
+      "type": "camera",
+      "size": "2"
+    },
+    {
       "type": "chart_power",
       "size": "2"
     },

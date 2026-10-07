@@ -72,7 +72,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {

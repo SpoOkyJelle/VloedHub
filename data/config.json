@@ -17,5 +17,8 @@
     "temperature": true,
     "esphome": true,
     "wasmachine": true
-  }
+  },
+  "defaultFlows": [
+    "kostenoverzicht"
+  ]
 }

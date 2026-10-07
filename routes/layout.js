@@ -16,6 +16,7 @@ var DEFAULT_LAYOUT = {
     {type:"scenes",size:"4"},
     {type:"fridge",size:"2"},
     {type:"internet",size:"2"},
+    {type:"camera",size:"2"},
     {type:"chart_power",size:"2"},
     {type:"phases",size:"2"},
     {type:"phase_load",size:"2"},

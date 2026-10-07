@@ -1377,6 +1377,7 @@ to {
 .mod-off-gas [data-module~='gas'],
 .mod-off-weather [data-module~='weather'],
 .mod-off-internet [data-module~='internet'],
+.mod-off-camera [data-module~='camera'],
 .mod-off-afval [data-module~='afval'],
 .mod-off-lights [data-module~='lights'],
 .mod-off-fridge [data-module~='fridge'],
@@ -1416,6 +1417,40 @@ to {
 .mod-switch.locked {
   opacity:0.45;
   cursor:default}
+/* Deurbelcamera */
+.cam-frame {
+  position:relative;
+  border-radius:10px;
+  overflow:hidden;
+  background:#0B0D18;
+  aspect-ratio:4 / 3}
+.cam-frame img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover}
+.cam-msg {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+  text-align:center;
+  font-size:0.72rem;
+  color:var(--muted)}
+.cam-frame img[hidden],.cam-msg[hidden] {
+  display:none}
+.cam-form {
+  display:grid;
+  grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto;
+  gap:0.4rem}
+@media(max-width:480px) {
+  .cam-form {
+  grid-template-columns:1fr 1fr}
+  .cam-form .field:first-child {
+  grid-column:1 / -1}
+}
 /* Instellingen: tabbladen bovenaan, per tabblad de onderdelen naast elkaar als daar ruimte voor is */
 .set-tabs .tab {
   font-size:0.75rem;

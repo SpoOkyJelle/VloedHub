@@ -74,6 +74,34 @@ function testDiscordWebhook(btn) {
   }).catch(function() { btn.disabled = false; discordError('Verbindingsfout'); });
 }
 
+// ── Deurbelcamera ──
+function showCameraStatus(d, note, error) {
+  var el = document.getElementById('camera-status');
+  if (!el) return;
+  el.style.color = error ? 'var(--red)' : note ? 'var(--green)' : 'var(--dim)';
+  var text = d.configured ? 'Ingesteld op ' + d.host + ' (gebruiker ' + d.user + ')' : 'Nog niet ingesteld. Zet HTTP aan op de camera en maak daar een gebruiker met alleen kijkrechten.';
+  el.textContent = error || (note ? note + ' · ' + text : text);
+  if (d.configured) { document.getElementById('camera-host').value = d.host; document.getElementById('camera-user').value = d.user; document.getElementById('camera-password').placeholder = 'Wachtwoord (ongewijzigd)'; }
+}
+function loadCameraStatus() {
+  fetch('/api/camera').then(function(r){return r.json();}).then(function(d) { showCameraStatus(d); }).catch(function(){});
+}
+function saveCameraConfig(btn) {
+  btn.disabled = true;
+  fetch('/api/camera', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    host: document.getElementById('camera-host').value,
+    user: document.getElementById('camera-user').value,
+    password: document.getElementById('camera-password').value
+  })}).then(function(r){return r.json();}).then(function(d) {
+    btn.disabled = false;
+    if (!d.ok) { showCameraStatus({}, null, d.error || 'Opslaan mislukt'); return; }
+    document.getElementById('camera-password').value = '';
+    if (d.test_error) showCameraStatus(d, null, 'Opgeslagen, maar: ' + d.test_error);
+    else showCameraStatus(d, d.configured ? 'Opgeslagen, beeld ontvangen' : 'Gewist');
+    loadCamera();
+  }).catch(function() { btn.disabled = false; showCameraStatus({}, null, 'Verbindingsfout'); });
+}
+
 // ── Vaatwasser (Home Connect) ──
 var DISH_PROGRAMS = { Eco50:'Eco 50°', Auto2:'Auto 45–65°', Auto1:'Auto 35–45°', Auto3:'Auto 65–75°', Intensiv70:'Intensief 70°', Quick45:'Snel 45°', Quick65:'Snel 65°', Kurz60:'Express 60°', Glas40:'Glas 40°', NightWash:'Stil 50', PreRinse:'Voorspoelen', MachineCare:'Machinereiniging', Super60:'Super 60°' };
 var DISH_STATES = { Run:['running','fa-rotate','Bezig'], Finished:['done','fa-circle-check','Klaar, nog uitruimen'], Pause:['running','fa-pause','Gepauzeerd'], DelayedStart:['idle','fa-clock','Uitgestelde start'], ActionRequired:['running','fa-triangle-exclamation','Actie nodig'], Error:['idle','fa-triangle-exclamation','Storing'], Aborting:['idle','fa-xmark','Wordt afgebroken'], Ready:['idle','fa-moon','Stand-by'], Inactive:['idle','fa-moon','Uit'] };

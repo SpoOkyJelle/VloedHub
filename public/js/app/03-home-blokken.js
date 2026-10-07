@@ -29,7 +29,7 @@ var layoutConfig = {};
 var layoutEditMode = false;
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', internet:'internet',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -113,6 +113,10 @@ var BLOCKS = {
   'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,
     render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap" style="min-height:0;height:60px"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},
     refresh:function(){loadInternet();}
+  },
+  'camera': {label:'Deurbelcamera',icon:'fa-video',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Deurbel</span><span class="power-sub" id="blk-cam-time"></span></div><div class="cam-frame"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg">Laden…</div></div></div>';},
+    refresh:function(){loadCamera();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
@@ -220,6 +224,42 @@ function runInternetTest() {
   var btn = document.getElementById('blk-inet-run');
   if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
   fetch('/api/internet/run', {method:'POST'}).then(loadInternet).catch(loadInternet);
+}
+// ── Deurbelcamera ──
+// Het beeld is een momentopname die om de paar seconden ververst, alleen zolang Home open staat.
+var CAM_INTERVAL = 3000, CAM_RETRY = 15000;
+var camTimer = null, camBusy = false;
+function camNext(ms) { clearTimeout(camTimer); camTimer = setTimeout(loadCamera, ms); }
+function camMessage(text) {
+  var img = document.getElementById('blk-cam-img'), msg = document.getElementById('blk-cam-msg');
+  if (!img || !msg) return;
+  img.hidden = true; msg.hidden = false; msg.textContent = text;
+  setEl('blk-cam-time', '');
+}
+function loadCamera() {
+  var img = document.getElementById('blk-cam-img');
+  if (!img || !blockEnabled('camera') || img.closest('.layout-block').style.display === 'none') { clearTimeout(camTimer); return; }
+  if (camBusy) return;
+  if (document.hidden || currentScreen !== 0 || layoutEditMode) return camNext(CAM_INTERVAL);
+  camBusy = true;
+  // eerst ophalen en dan pas tonen, zodat het beeld niet knippert
+  fetch('/api/camera/snapshot?t=' + Date.now()).then(function(r) {
+    if (r.ok) return r.blob();
+    return r.json().then(function(d) { throw new Error(d.error || 'Geen beeld'); });
+  }).then(function(blob) {
+    var old = img.src, msg = document.getElementById('blk-cam-msg');
+    img.src = URL.createObjectURL(blob);
+    if (old && old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
+    img.hidden = false;
+    if (msg) msg.hidden = true;
+    setEl('blk-cam-time', new Date().toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}));
+    camBusy = false;
+    camNext(CAM_INTERVAL);
+  }).catch(function(e) {
+    camBusy = false;
+    camMessage(e && e.message && !/fetch|network/i.test(e.message) ? e.message : 'Geen verbinding');
+    camNext(CAM_RETRY);
+  });
 }
 // ── Verbinding ──
 // Twee mislukte verzoeken achter elkaar (ruim 6 s) tonen een balkje; het eerste dat weer lukt haalt het weg.
