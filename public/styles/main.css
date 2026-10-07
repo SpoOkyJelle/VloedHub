@@ -1721,6 +1721,13 @@ body.kiosk .meld-panel {
   border-radius:50%;
   background:var(--red);
   vertical-align:middle}
+.meld-bell.has-active {
+  color:var(--yellow)}
+.outage-line.meld-active .meld-time {
+  color:var(--yellow);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.05em}
 .meld-time {
   font-size:0.6rem;
   color:var(--dim);
