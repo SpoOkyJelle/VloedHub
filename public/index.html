@@ -286,37 +286,18 @@
 </div>
 <!-- SCREEN 5: INSTELLINGEN -->
 <div class='screen' id='screen-5'>
-<div class='section-title'>Beveiliging</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div style='display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>PIN wijzigen</div><div style='font-size:0.72rem;color:var(--dim)'>Verander je 4-cijferige PIN-code</div></div>
-      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
-    </div>
-    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Uitloggen</div><div style='font-size:0.72rem;color:var(--dim)'>Sessie beëindigen</div></div>
-      <button onclick='logout()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.1);color:#F87171;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
-    </div>
-  </div>
+<div class='tab-bar set-tabs' id='settings-tabs'>
+  <button class='tab active' data-set='algemeen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-sliders'></i> Algemeen</button>
+  <button class='tab' data-set='apparaten' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-microchip'></i> Apparaten</button>
+  <button class='tab' data-set='koppelingen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
+  <button class='tab' data-set='systeem' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-server'></i> Systeem</button>
 </div>
-
-<div class='section-title'>Navigatie</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div style='display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Automatisering</div><div style='font-size:0.72rem;color:var(--dim)'>Flows aanmaken en beheren</div></div>
-      <a href='/flows' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.1);color:#818CF8;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-diagram-project'></i> Flows</a>
-    </div>
-    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Debug</div><div style='font-size:0.72rem;color:var(--dim)'>Serverinfo, logs en diagnostiek</div></div>
-      <a href='/debug' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--muted);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-bug'></i> Debug</a>
-    </div>
-  </div>
+<div class='set-group active' data-set='algemeen'>
+<div class='set-section'>
+<div class='section-title'>Modules</div>
+<div id='settings-modules'></div>
 </div>
-
-<div class='section-title' data-module='lights'>Scènes</div>
-<div id='settings-scenes' data-module='lights'></div>
-
+<div class='set-section'>
 <div class='section-title'>Weergave</div>
 <div class='power-hero'>
   <div style='display:flex;justify-content:space-between;align-items:center;gap:0.75rem'>
@@ -324,7 +305,28 @@
     <a href='/?kiosk=1' class='btn btn-ghost' style='text-decoration:none;white-space:nowrap'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
   </div>
 </div>
-
+</div>
+</div>
+<div class='set-group' data-set='apparaten'>
+<div class='set-section'>
+<div class='section-title'>Apparaatstatus</div>
+<div id='settings-device-status'></div>
+</div>
+<div class='set-section' data-module='lights'>
+<div class='section-title' data-module='lights'>Apparaatnamen</div>
+<div id='settings-device-names' data-module='lights'></div>
+</div>
+<div class='set-section' data-module='esphome'>
+<div class='section-title' data-module='esphome'>ESPHome sensornamen</div>
+<div id='settings-esphome-names' data-module='esphome'></div>
+</div>
+<div class='set-section' data-module='lights'>
+<div class='section-title' data-module='lights'>Scènes</div>
+<div id='settings-scenes' data-module='lights'></div>
+</div>
+</div>
+<div class='set-group' data-set='koppelingen'>
+<div class='set-section'>
 <div class='section-title'>Discord</div>
 <div class='power-hero'>
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
@@ -336,7 +338,8 @@
     </div>
   </div>
 </div>
-
+</div>
+<div class='set-section' data-module='vaatwasser'>
 <div class='section-title' data-module='vaatwasser'>Vaatwasser (Home Connect)</div>
 <div class='power-hero' data-module='vaatwasser'>
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
@@ -350,19 +353,8 @@
     </div>
   </div>
 </div>
-
-<div class='section-title'>Modules</div>
-<div id='settings-modules'></div>
-
-<div class='section-title' data-module='lights'>Apparaatnamen</div>
-<div id='settings-device-names' data-module='lights'></div>
-
-<div class='section-title' data-module='esphome'>ESPHome sensornamen</div>
-<div id='settings-esphome-names' data-module='esphome'></div>
-
-<div class='section-title'>Apparaatstatus</div>
-<div id='settings-device-status'></div>
-
+</div>
+<div class='set-section' data-module='afval'>
 <div class='section-title' data-module='afval'>Afvalkalender</div>
 <div class='power-hero' data-module='afval'>
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
@@ -375,11 +367,46 @@
     </div>
   </div>
 </div>
-
+</div>
+</div>
+<div class='set-group' data-set='systeem'>
+<div class='set-section'>
+<div class='section-title'>Beveiliging</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div style='display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>PIN wijzigen</div><div style='font-size:0.72rem;color:var(--dim)'>Verander je 4-cijferige PIN-code</div></div>
+      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
+    </div>
+    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Uitloggen</div><div style='font-size:0.72rem;color:var(--dim)'>Sessie beëindigen</div></div>
+      <button onclick='logout()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.1);color:#F87171;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
+    </div>
+  </div>
+</div>
+</div>
+<div class='set-section'>
+<div class='section-title'>Navigatie</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div style='display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Automatisering</div><div style='font-size:0.72rem;color:var(--dim)'>Flows aanmaken en beheren</div></div>
+      <a href='/flows' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.1);color:#818CF8;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-diagram-project'></i> Flows</a>
+    </div>
+    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
+      <div><div class='power-label'>Debug</div><div style='font-size:0.72rem;color:var(--dim)'>Serverinfo, logs en diagnostiek</div></div>
+      <a href='/debug' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--muted);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-bug'></i> Debug</a>
+    </div>
+  </div>
+</div>
+</div>
+<div class='set-section'>
 <div class='section-title'>Netwerk</div>
 <div class='ip-row'>
   <span class='ip-badge'><i class='fa-solid fa-server'></i> __LOCAL_IP__:5000</span>
   <span class='ip-badge' id='wan-ip-badge'><i class='fa-solid fa-globe'></i> …</span>
+</div>
+</div>
 </div>
 </div>
 </div><!-- /screens-track -->

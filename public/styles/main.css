@@ -1416,6 +1416,22 @@ to {
 .mod-switch.locked {
   opacity:0.45;
   cursor:default}
+/* Instellingen: tabbladen bovenaan, per tabblad de onderdelen naast elkaar als daar ruimte voor is */
+.set-tabs .tab {
+  font-size:0.75rem;
+  padding:0.4rem 0.9rem}
+.set-group {
+  display:none;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));
+  gap:0.9rem 0.75rem;
+  align-items:start}
+.set-group.active {
+  display:grid}
+.set-section {
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+  min-width:0}
 /* Verbindingsmelding */
 #conn-banner {
   position:fixed;

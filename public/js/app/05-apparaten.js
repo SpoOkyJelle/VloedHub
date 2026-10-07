@@ -178,6 +178,15 @@ function saveHcConfig() {
 function linkHc() { hcPost('link'); }
 function unlinkHc() { hcPost('unlink'); }
 
+// ── Tabbladen van Instellingen ──
+// Het gekozen tabblad blijft op dit apparaat bewaard
+function showSettingsTab(name) {
+  if (!document.querySelector('.set-group[data-set="' + name + '"]')) name = 'algemeen';
+  document.querySelectorAll('#screen-5 [data-set]').forEach(function(el) { el.classList.toggle('active', el.dataset.set === name); });
+  try { localStorage.setItem('vh-settings-tab', name); } catch (e) {}
+}
+try { showSettingsTab(localStorage.getItem('vh-settings-tab') || 'algemeen'); } catch (e) {}
+
 // ── Modules ──
 function loadModules() {
   fetch('/api/modules').then(function(r){return r.json();}).then(function(list) {
