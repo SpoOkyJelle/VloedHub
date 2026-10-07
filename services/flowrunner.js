@@ -11,6 +11,7 @@ var modules = require('./modules');
 var scenes  = require('../routes/scenes');
 var costs   = require('../routes/costs');
 var auth    = require('./auth');
+var homeconnect = require('./homeconnect');
 var http    = require('http');
 var https   = require('https');
 
@@ -20,7 +21,8 @@ var TRIGGERS = {
   wash_done: 1, wash_started: 1, gas_above: 1, voltage_dip: 1,
   phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
   sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1,
-  afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1
+  afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1,
+  dish_started: 1, dish_done: 1, dish_alert: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -535,6 +537,12 @@ function gatherExtras(ctx, callback) {
         monitor.getStatus(function(list) {
           // null zolang de bewaking na een herstart nog niets kan zeggen
           ctx.offline = monitor.isReady() ? list.filter(function(d) { return !d.online; }) : null;
+          if (modules.isOn('vaatwasser')) {
+            var hc = homeconnect.getStatus();
+            ctx.dish = { operation: hc.state.operation, alerts: hc.alerts };
+            ctx.vars.vaatwasser_programma = homeconnect.programName(hc.state.program) || '\u2014';
+            ctx.vars.vaatwasser_melding = hc.alerts.join(', ') || '\u2014';
+          }
           costs.overview(function(o) {
             addCostVars(ctx.vars, o);
             lastCtx = ctx;
@@ -725,9 +733,21 @@ function checkSensorTriggers(rows, ctx) {
           case 'wash_done':
             isOn = lastWashCount !== null && ctx.cycleCount > lastWashCount;
             break;
+          case 'dish_started':
+            isOn = (ctx.dish || {}).operation === 'Run';
+            break;
+          case 'dish_done':
+            isOn = (ctx.dish || {}).operation === 'Finished';
+            break;
+          case 'dish_alert':
+            isOn = ((ctx.dish || {}).alerts || []).length > 0;
+            break;
           default:
             return; // not a sensor trigger
         }
+
+        // De vaatwasser kan uren op "klaar" blijven staan: de eerste keer na een herstart alleen onthouden, niet vuren
+        if (node.name.indexOf('dish_') === 0 && !(key in sensorState)) { sensorState[key] = isOn; return; }
 
         sensorState[key] = isOn;
 

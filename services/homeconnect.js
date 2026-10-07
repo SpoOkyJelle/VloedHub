@@ -5,6 +5,7 @@ var modules = require("./modules");
 var discord = require("./discord");
 var db = require("../db/setup");
 var time = require("../utils/time");
+var prices = require("./prices");
 
 // Vaatwasser via de Home Connect-API van Bosch/Siemens.
 // Koppelen gaat met de "device flow": VloedHub vraagt een code aan, jij keurt die goed op de site
@@ -19,11 +20,21 @@ db.run(
   "CREATE TABLE IF NOT EXISTS vaatwasser_cycles (" +
   "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
   "  started_at TEXT, finished_at TEXT NOT NULL," +
-  "  program TEXT, duration_min REAL, energy_pct REAL, water_pct REAL, options TEXT" +
-  ")"
+  "  program TEXT, duration_min REAL, energy_pct REAL, water_pct REAL, options TEXT," +
+  // geschat verbruik en kosten van een beurt, afgeleid uit de P1-meter (zie estimateCycle)
+  "  est_kwh REAL, est_cost REAL" +
+  ")",
+  function() {
+    // een tabel van voor deze kolommen krijgt ze er hier bij; bestaan ze al, dan gebeurt er niets
+    db.run("ALTER TABLE vaatwasser_cycles ADD COLUMN est_kwh REAL", function() {
+      db.run("ALTER TABLE vaatwasser_cycles ADD COLUMN est_cost REAL", function() {});
+    });
+  }
 );
 var HOST = "api.home-connect.com";
 var SCOPE = "IdentifyAppliance Dishwasher-Monitor";
+var PROGRAMS = { Eco50: "Eco 50°", Auto2: "Auto 45-65°", Auto1: "Auto 35-45°", Auto3: "Auto 65-75°", Intensiv70: "Intensief 70°", Quick45: "Snel 45°", Quick65: "Snel 65°", Kurz60: "Express 60°", Glas40: "Glas 40°", NightWash: "Stil 50", PreRinse: "Voorspoelen", MachineCare: "Machinereiniging", Super60: "Super 60°" };
+var DEFAULT_DURATION_MIN = 180; // zolang er nog geen beurt gemeten is
 // Extra's die je per beurt aan kunt zetten
 var EXTRAS = { ExtraDry: "ExtraDry", HygienePlus: "HygiënePlus", HalfLoad: "Halve belading", VarioSpeedPlus: "SpeedPerfect+", SilenceOnDemand: "Geluid dempen", IntensivZone: "IntensiveZone", BrillianceDry: "Glans drogen", EcoDry: "EcoDry", ZeoliteDry: "Zeolith drogen" };
 var RETRY_MS = 5 * 60 * 1000;
@@ -297,7 +308,66 @@ function logCycle() {
     "INSERT INTO vaatwasser_cycles (started_at, finished_at, program, duration_min, energy_pct, water_pct, options) VALUES (?,?,?,?,?,?,?)",
     [c && c.exact ? time.cutoff(now - c.started) : null, time.cutoff(0), state.program,
      c && c.exact ? (now - c.started) / 60000 : null, state.energy, state.water, state.extras.join(",")],
-    function(err) { if (err) console.error("[vaatwasser] beurt opslaan:", err.message); }
+    function(err) {
+      if (err) return console.error("[vaatwasser] beurt opslaan:", err.message);
+      if (c && c.exact) estimateCycle(this.lastID, c.started, now);
+    }
+  );
+}
+
+// Schat wat een beurt aan stroom kostte: het gemiddelde vermogen tijdens de beurt min dat van het uur ervoor,
+// maal de duur. Andere apparaten die tijdens de beurt aan- of uitgaan tellen mee, dus het blijft een schatting.
+function estimateCycle(id, startMs, endMs) {
+  var start = time.cutoff(Date.now() - startMs), end = time.cutoff(Date.now() - endMs);
+  var before = time.cutoff(Date.now() - startMs + 3600000);
+  var q = "SELECT AVG(power_delivered_total_kw) as kw, COUNT(*) as n FROM readings WHERE received_at >= ? AND received_at < ? AND power_delivered_total_kw IS NOT NULL";
+  db.get(q, [start, end], function(err, during) {
+    db.get(q, [before, start], function(err2, base) {
+      if (!during || during.n < 5 || !base || base.n < 5) return;
+      var kwh = Math.max(0, during.kw - base.kw) * (endMs - startMs) / 3600000;
+      prices.priceMaps(start.slice(0, 10), function(maps) {
+        var price = windowPrice(startMs, endMs - startMs, maps.elec);
+        db.run("UPDATE vaatwasser_cycles SET est_kwh = ?, est_cost = ? WHERE id = ?", [kwh, price != null ? kwh * price : null, id], function() {});
+      });
+    });
+  });
+}
+
+// Gemiddelde stroomprijs over een tijdvak, of null als niet elk uur ervan bekend is
+function windowPrice(startMs, durationMs, byHour) {
+  var sum = 0, n = 0;
+  for (var t = startMs; t < startMs + durationMs; t += 5 * 60 * 1000) {
+    var p = byHour[new Date(t).toLocaleString("sv-SE", { timeZone: "Europe/Amsterdam" }).slice(0, 13)];
+    if (p == null) return null;
+    sum += p; n++;
+  }
+  return n ? sum / n : null;
+}
+
+// Wanneer is een beurt het goedkoopst? Vergelijkt nu starten met elk heel uur waarvoor de prijzen bekend zijn.
+// De duur is die van je meest gedraaide programma; zonder gemeten beurten een aanname van drie uur.
+function advice(cb) {
+  db.get(
+    "SELECT program, AVG(duration_min) as duration, AVG(est_kwh) as kwh, COUNT(*) as n FROM vaatwasser_cycles" +
+    " WHERE duration_min IS NOT NULL GROUP BY program ORDER BY n DESC LIMIT 1",
+    function(err, row) {
+      var measured = !!(row && row.duration);
+      var durationMin = measured ? row.duration : DEFAULT_DURATION_MIN;
+      var out = { program: measured ? row.program : null, duration_min: durationMin, measured: measured, kwh: row && row.kwh != null ? row.kwh : null, now_price: null, best_start: null, best_price: null };
+      prices.upcoming(function(byHour) {
+        var dur = durationMin * 60000, now = Date.now();
+        out.now_price = windowPrice(now, dur, byHour);
+        var best = out.now_price != null ? { at: now, price: out.now_price } : null;
+        for (var t = Math.ceil(now / 3600000) * 3600000; t < now + 36 * 3600000; t += 3600000) {
+          var p = windowPrice(t, dur, byHour);
+          if (p == null) break;
+          // een later uur moet merkbaar goedkoper zijn om het wachten waard te zijn
+          if (!best || p < best.price - 0.005) best = { at: t, price: p };
+        }
+        if (best) { out.best_price = best.price; out.best_start = best.at === now ? "now" : new Date(best.at).toISOString(); }
+        cb(out);
+      });
+    }
   );
 }
 
@@ -306,12 +376,13 @@ function getStats(cb) {
     "SELECT COUNT(*) as total," +
     " SUM(CASE WHEN finished_at >= ? THEN 1 ELSE 0 END) as this_week," +
     " SUM(CASE WHEN finished_at >= ? THEN 1 ELSE 0 END) as this_month," +
-    " AVG(duration_min) as avg_duration, AVG(energy_pct) as avg_energy, AVG(water_pct) as avg_water" +
+    " AVG(duration_min) as avg_duration, AVG(energy_pct) as avg_energy, AVG(water_pct) as avg_water," +
+    " AVG(est_kwh) as avg_kwh, AVG(est_cost) as avg_cost" +
     " FROM vaatwasser_cycles",
     [time.cutoff(604800000), time.cutoff(2592000000)],
     function(err, totals) {
       db.all("SELECT program, COUNT(*) as n FROM vaatwasser_cycles WHERE program IS NOT NULL GROUP BY program ORDER BY n DESC", function(err2, programs) {
-        db.all("SELECT finished_at, program, duration_min, energy_pct, water_pct, options FROM vaatwasser_cycles ORDER BY id DESC LIMIT 15", function(err3, recent) {
+        db.all("SELECT finished_at, program, duration_min, energy_pct, water_pct, options, est_kwh, est_cost FROM vaatwasser_cycles ORDER BY id DESC LIMIT 15", function(err3, recent) {
           cb(Object.assign({}, totals || {}, { programs: programs || [], recent: recent || [], extras: EXTRAS }));
         });
       });
@@ -438,4 +509,4 @@ function getStatus() {
   };
 }
 
-module.exports = { start: start, getStatus: getStatus, getStats: getStats, setCredentials: setCredentials, startLink: startLink, unlink: unlink, _apply: apply, _handleEvent: handleEvent };
+module.exports = { start: start, getStatus: getStatus, getStats: getStats, advice: advice, _estimateCycle: estimateCycle, programName: function(p) { return p ? (PROGRAMS[p] || p) : null; }, setCredentials: setCredentials, startLink: startLink, unlink: unlink, _apply: apply, _handleEvent: handleEvent };

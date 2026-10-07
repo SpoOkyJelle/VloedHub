@@ -1578,6 +1578,18 @@ body.kiosk #conn-banner {
   .dish-card .fridge-cell {
   flex-basis:calc(50% - 0.25rem)}
 }
+.dish-best {
+  text-align:center;
+  font-size:0.66rem}
+.dish-best:empty {
+  display:none}
+.dish-best i {
+  color:var(--green);
+  margin-right:0.25rem}
+.dish-best strong {
+  color:var(--text)}
+.dish-best span {
+  color:var(--dim)}
 .dish-toggle {
   display:flex;
   justify-content:space-between;

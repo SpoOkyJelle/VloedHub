@@ -96,6 +96,27 @@ function fetchPrices(callback) {
   });
 }
 
+// Stroomprijs per uur voor vandaag en, zodra bekend (rond 13:00), morgen: { "YYYY-MM-DD HH": prijs }
+var tomorrowCache = { date: null, hours: [], triedAt: 0 };
+function upcoming(callback) {
+  fetchPrices(function(err, p) {
+    var map = {};
+    ((p && p.hours) || []).forEach(function(h) { if (h.elec != null) map[h.hour] = h.elec; });
+    var tomorrow = time.dateAms(86400000);
+    function done() {
+      tomorrowCache.hours.forEach(function(h) { if (h.elec != null) map[h.hour] = h.elec; });
+      callback(map);
+    }
+    if (tomorrowCache.date === tomorrow && (tomorrowCache.hours.length || Date.now() - tomorrowCache.triedAt < 30 * 60 * 1000)) return done();
+    if (parseInt(nowHour().slice(11), 10) < 13) return callback(map);
+    tomorrowCache = { date: tomorrow, hours: [], triedAt: Date.now() };
+    fetchDay(tomorrow, function(e, hours) {
+      if (!e && hours) tomorrowCache.hours = hours.filter(function(h) { return h.hour.slice(0, 10) === tomorrow; });
+      done();
+    });
+  });
+}
+
 // Bewaarde prijzen vanaf een dag: { elec: { "YYYY-MM-DD HH": prijs }, gas: { "YYYY-MM-DD": prijs } }
 // De gasprijs van een dag is die van 12:00 (de gasdag wisselt om 06:00).
 function priceMaps(sinceDay, callback) {
@@ -132,6 +153,7 @@ function backfill() {
 module.exports = {
   fetchPrices: fetchPrices,
   priceMaps: priceMaps,
+  upcoming: upcoming,
   backfill: backfill,
   get priceCache() { return { data: dayCache.hours.length ? dayCache : null, fetchedAt: dayCache.fetchedAt }; }
 };

@@ -377,6 +377,18 @@
             <i class="fa-solid fa-shirt" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Wasmachine klaar</div><div class="palette-node-desc">Wascyclus voltooid</div></div>
           </div>
+          <div class="palette-node" draggable="true" data-node="dish_started" data-tooltip="Triggert zodra de vaatwasser een programma start." ondragstart="drag(event)">
+            <i class="fa-solid fa-sink" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Vaatwasser start</div><div class="palette-node-desc">Programma begint</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="dish_done" data-tooltip="Triggert zodra de vaatwasser klaar is." ondragstart="drag(event)">
+            <i class="fa-solid fa-sink" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Vaatwasser klaar</div><div class="palette-node-desc">Programma voltooid</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="dish_alert" data-tooltip="Triggert als de vaatwasser iets meldt, zoals spoelmiddel of zout bijna op." ondragstart="drag(event)">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Vaatwasser meldt iets</div><div class="palette-node-desc">Spoelmiddel, zout, …</div></div>
+          </div>
           <div class="palette-node" draggable="true" data-node="afval_pickup" data-tooltip="Triggert op een vast tijdstip als er afval wordt opgehaald." ondragstart="drag(event)">
             <i class="fa-solid fa-trash-can" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Afval ophaaldag</div><div class="palette-node-desc">De dag ervoor of op de dag zelf</div></div>
@@ -729,6 +741,15 @@
     wash_done: t('df-node-title--wash','fa-shirt','Wasmachine klaar') +
       b('<div class="df-node-hint">Triggert zodra een wascyclus is voltooid.</div>'),
 
+    dish_started: t('df-node-title--wash-start','fa-sink','Vaatwasser start') +
+      b('<div class="df-node-hint">Triggert zodra de vaatwasser een programma start. {vaatwasser_programma} toont welk.</div>'),
+
+    dish_done: t('df-node-title--wash','fa-sink','Vaatwasser klaar') +
+      b('<div class="df-node-hint">Triggert zodra de vaatwasser klaar is.</div>'),
+
+    dish_alert: t('df-node-title--wash-start','fa-triangle-exclamation','Vaatwasser meldt iets') +
+      b('<div class="df-node-hint">Triggert bij een melding zoals spoelmiddel of zout bijna op. {vaatwasser_melding} toont de tekst.</div>'),
+
     price_below: t('df-node-title--power','fa-tag','Stroomprijs onder') +
       b(f('Drempel (\u20ac/kWh)','<input type="number" df-price min="-1" max="2" step="0.01">') + hint('Triggert \u00e9\u00e9n keer als de prijs van dit uur onder de drempel zakt. {prijs} in een melding toont de prijs.')),
 
@@ -911,6 +932,9 @@
     weather_rain:    { probability: '70' },
     wash_started:    {},
     wash_done:       {},
+    dish_started:    {},
+    dish_done:       {},
+    dish_alert:      {},
     price_below:     { price: '0.20' },
     price_above:     { price: '0.35' },
     afval_pickup:    { when: 'before', time: '21:00', kind: 'all' },
@@ -940,8 +964,8 @@
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1 };
-  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0 };
+  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1 };
+  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));
@@ -1822,6 +1846,9 @@
     { group: 'Triggers — Apparaten', nodes: [
       { type:'wash_started',    icon:'fa-rotate',                   color:'var(--blue)',   name:'Wasmachine start',    desc:'Wascyclus begint' },
       { type:'wash_done',       icon:'fa-shirt',                    color:'var(--green)',  name:'Wasmachine klaar',    desc:'Wascyclus voltooid' },
+      { type:'dish_started',    icon:'fa-sink',                     color:'var(--blue)',   name:'Vaatwasser start',    desc:'Programma begint' },
+      { type:'dish_done',       icon:'fa-sink',                     color:'var(--green)',  name:'Vaatwasser klaar',    desc:'Programma voltooid' },
+      { type:'dish_alert',      icon:'fa-triangle-exclamation',     color:'var(--orange)', name:'Vaatwasser meldt iets', desc:'Spoelmiddel, zout, …' },
       { type:'afval_pickup', icon:'fa-trash-can', color:'var(--green)', name:'Afval ophaaldag', desc:'De dag ervoor of op de dag zelf' },
       { type:'fridge_temp_above', icon:'fa-snowflake', color:'var(--blue)', name:'Koelkast te warm', desc:'Vak warmer dan X°C' },
       { type:'device_offline', icon:'fa-plug-circle-xmark', color:'var(--red)', name:'Apparaat offline', desc:'Sensor of lamp stuurt niets meer' }

@@ -85,12 +85,26 @@ function refreshVaatwasserStats() {
     setEl('dish-month', s.this_month || 0);
     setEl('dish-avg-duration', dishDuration(s.avg_duration));
     setEl('dish-top-program', s.programs.length ? dishProgram(s.programs[0].program) : '—');
-    setEl('dish-avg-forecast', s.avg_energy != null ? 'gem. energie ' + Math.round(s.avg_energy) + '% · water ' + Math.round(s.avg_water) + '%' : '');
+    setEl('dish-avg-forecast', (s.avg_energy != null ? 'gem. energie ' + Math.round(s.avg_energy) + '% · water ' + Math.round(s.avg_water) + '%' : '') +
+      (s.avg_kwh != null ? ' · ±' + num(s.avg_kwh, 2) + ' kWh' + (s.avg_cost != null ? ' (' + eur(s.avg_cost) + ')' : '') + ' per beurt' : ''));
     function pct(v) { return v != null ? Math.round(v) + '%' : '—'; }
     setEl('dish-rows', s.recent.length ? s.recent.map(function(r) {
       var extras = (r.options || '').split(',').filter(Boolean).map(function(x) { return s.extras[x] || x; }).join(', ');
-      return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + dishProgram(r.program) + (extras ? '<span class="esp-sub"> · ' + extras + '</span>' : '') + '</td><td>' + dishDuration(r.duration_min) + '</td><td>' + pct(r.energy_pct) + '</td><td>' + pct(r.water_pct) + '</td></tr>';
-    }).join('') : '<tr><td colspan="5" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen beurten gelogd — vanaf nu wordt elke beurt bijgehouden</td></tr>');
+      return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + dishProgram(r.program) + (extras ? '<span class="esp-sub"> · ' + extras + '</span>' : '') + '</td><td>' + dishDuration(r.duration_min) + '</td><td>' + pct(r.energy_pct) + '</td><td>' + pct(r.water_pct) + '</td><td>' + (r.est_kwh != null ? '±' + num(r.est_kwh, 2) + ' kWh' + (r.est_cost != null ? ' · ' + eur(r.est_cost) : '') : '—') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen beurten gelogd — vanaf nu wordt elke beurt bijgehouden</td></tr>');
+  }).catch(function(){});
+}
+// Goedkoopste moment om te starten, op basis van de uurprijzen en de duur van je meest gedraaide programma
+function refreshVaatwasserAdvies(busy) {
+  if (busy) { setEl('dish-best', ''); return; }
+  fetch('/api/vaatwasser/advies').then(function(r){return r.json();}).then(function(a) {
+    if (a.best_price == null) { setEl('dish-best', ''); return; }
+    var basis = dishDuration(a.duration_min) + (a.measured ? ' ' + dishProgram(a.program) : ', aanname');
+    function cost(p) { return a.kwh != null ? ' ≈ ' + eur(a.kwh * p) : ''; }
+    if (a.best_start === 'now') { setEl('dish-best', '<i class="fa-solid fa-bolt"></i> Nu starten is het goedkoopst · €' + a.best_price.toFixed(2) + '/kWh' + cost(a.best_price) + ' <span>(' + basis + ')</span>'); return; }
+    var save = a.now_price ? Math.round((a.now_price - a.best_price) / a.now_price * 100) : null;
+    setEl('dish-best', '<i class="fa-solid fa-clock"></i> Goedkoopst starten om <strong>' + shortWhen(a.best_start) + '</strong> · €' + a.best_price.toFixed(2) + '/kWh' + cost(a.best_price) +
+      (a.now_price != null ? ' · nu €' + a.now_price.toFixed(2) + (save > 0 ? ', scheelt ' + save + '%' : '') : '') + ' <span>(' + basis + ')</span>');
   }).catch(function(){});
 }
 function toggleDishStats() {
@@ -113,6 +127,7 @@ function refreshVaatwasser() {
     alertsEl.textContent = '';
     (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.textContent = '⚠ ' + a; alertsEl.appendChild(el); });
     var mins = s.finishAt ? Math.max(0, Math.round((s.finishAt - Date.now()) / 60000)) : null;
+    refreshVaatwasserAdvies(!d.linked || s.operation === 'Run' || s.operation === 'Pause');
     setEl('dish-program', dishProgram(s.program));
     setEl('dish-remaining', dishDuration(mins));
     setEl('dish-finish', s.finishAt ? shortWhen(s.finishAt) : '—');

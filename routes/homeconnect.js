@@ -17,6 +17,11 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "GET" && req.url === "/api/vaatwasser/advies") {
+    homeconnect.advice(function(a) { json(res, 200, a); });
+    return true;
+  }
+
   if (req.method === "POST" && req.url === "/api/vaatwasser/config") {
     var body = "";
     req.on("data", function(c) { body += c; });
