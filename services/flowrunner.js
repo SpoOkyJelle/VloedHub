@@ -9,6 +9,8 @@ var afval   = require('./afval');
 var monitor = require('./monitor');
 var modules = require('./modules');
 var scenes  = require('../routes/scenes');
+var costs   = require('../routes/costs');
+var auth    = require('./auth');
 var http    = require('http');
 var https   = require('https');
 
@@ -155,7 +157,7 @@ function executeNode(node, ctx) {
 
   if (node.name === 'notify') {
     var msg = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
-    discord.sendDiscord('\uD83D\uDD14 ' + msg, (node.data.webhook || '').trim());
+    discord.notify('flow', '\uD83D\uDD14 ' + msg, (node.data.webhook || '').trim());
     console.log('[Flow] Melding:', msg);
     return { action: 'notify', message: msg };
   }
@@ -533,10 +535,71 @@ function gatherExtras(ctx, callback) {
         monitor.getStatus(function(list) {
           // null zolang de bewaking na een herstart nog niets kan zeggen
           ctx.offline = monitor.isReady() ? list.filter(function(d) { return !d.online; }) : null;
-          lastCtx = ctx;
-          callback(ctx);
+          costs.overview(function(o) {
+            addCostVars(ctx.vars, o);
+            lastCtx = ctx;
+            callback(ctx);
+          });
         });
       });
+    });
+  });
+}
+
+// Kostenvariabelen voor meldingen: {kosten_maand}, {kosten_verwacht}, {kosten_dag}, {kosten_jaar}, {sluipkosten},
+// en van de afgelopen maand {vorige_maand}, {kosten_vorige_maand}, {stroom_vorige_maand}, {gas_vorige_maand}.
+// Wat (nog) niet te berekenen is wordt een streepje, zodat er geen losse {accolades} in een bericht blijven staan.
+function addCostVars(vars, o) {
+  function eur(v, digits) { return v != null ? '\u20AC' + Number(v).toFixed(digits != null ? digits : 2).replace('.', ',') : '\u2014'; }
+  function total(m) { return m && (m.elec_cost != null || m.gas_cost != null) ? (m.elec_cost || 0) + (m.gas_cost || 0) : null; }
+  o = o || {};
+  var thisMonth = (o.today || '').slice(0, 7);
+  var prev = (o.months || []).filter(function(m) { return m.month < thisMonth; }).pop();
+  vars.kosten_maand = eur(o.month && o.month.total);
+  vars.kosten_verwacht = eur(o.forecast_month);
+  vars.kosten_dag = eur(o.avg_day && o.avg_day.total);
+  vars.kosten_jaar = eur(o.forecast_year, 0);
+  vars.sluipkosten = eur(o.recent && o.recent.standby && o.recent.standby.cost_year, 0);
+  vars.vorige_maand = prev ? new Date(prev.month + '-15T12:00:00Z').toLocaleDateString('nl-NL', { month: 'long', timeZone: 'UTC' }) : '\u2014';
+  vars.kosten_vorige_maand = eur(total(prev));
+  vars.stroom_vorige_maand = eur(prev && prev.elec_cost);
+  vars.gas_vorige_maand = eur(prev && prev.gas_cost);
+}
+
+// ── Standaardflows ─────────────────────────────────────────────────────────
+// Worden één keer aangemaakt; welke er al zijn geweest staat in de configuratie, zodat een flow die je
+// weggooit niet bij de volgende herstart terugkomt.
+var DEFAULT_FLOWS = [{
+  key: 'kostenoverzicht',
+  name: 'Kostenoverzicht (elke maand)',
+  // timer (08:00 op de eerste van de maand) → melding
+  data: { drawflow: { Home: { data: {
+    '1': { id: 1, name: 'timer', data: { time: '08:00', days: 'month_first' }, class: 'timer', html: '', typenode: false,
+           inputs: {}, outputs: { output_1: { connections: [{ node: '2', output: 'input_1' }] } }, pos_x: 80, pos_y: 120 },
+    '2': { id: 2, name: 'notify', data: { webhook: '', message:
+             '**Kostenoverzicht {vorige_maand}**\n' +
+             'Totaal: {kosten_vorige_maand} (stroom {stroom_vorige_maand}, gas {gas_vorige_maand})\n' +
+             'Gemiddeld per dag nu: {kosten_dag}\n' +
+             'Sluipverbruik: {sluipkosten} per jaar\n' +
+             'Op jaarbasis: {kosten_jaar}' },
+           class: 'notify', html: '', typenode: false,
+           inputs: { input_1: { connections: [{ node: '1', input: 'output_1' }] } }, outputs: {}, pos_x: 380, pos_y: 120 }
+  } } } }
+}];
+
+function ensureDefaultFlows(db) {
+  var cfg = auth.readConfig();
+  var done = cfg.defaultFlows || [];
+  var todo = DEFAULT_FLOWS.filter(function(f) { return done.indexOf(f.key) === -1; });
+  if (!todo.length) return;
+  var now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  todo.forEach(function(f) {
+    db.run('INSERT INTO flows (name, enabled, data, created_at) VALUES (?,1,?,?)', [f.name, JSON.stringify(f.data), now], function(err) {
+      if (err) return console.error('[Flow] standaardflow', f.key, err.message);
+      var c = auth.readConfig();
+      c.defaultFlows = (c.defaultFlows || []).concat(f.key);
+      auth.writeConfig(c);
+      console.log('[Flow] standaardflow aangemaakt:', f.name);
     });
   });
 }
@@ -737,6 +800,7 @@ function checkTimerTriggers(rows, dateStr, timeStr, isWeekday) {
         var days = node.data.days || 'all';
         if (days === 'weekdays' && !isWeekday) return;
         if (days === 'weekend'  &&  isWeekday) return;
+        if (days === 'month_first' && dateStr.slice(8, 10) !== '01') return;
 
         var key = flow.id + ':' + dateStr + 'T' + timeStr;
         if (lastFired[key]) return;
@@ -867,6 +931,7 @@ module.exports = {
   runFlow: runFlow,
   triggerWebhook: triggerWebhook,
   start: function(db) {
+    ensureDefaultFlows(db);
     startMqttTriggers(db);
     setInterval(function() { checkAll(db); }, 30000);
     checkAll(db);

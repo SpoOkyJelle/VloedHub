@@ -678,7 +678,8 @@
         f('Dagen','<select df-days>' +
           '<option value="all">Elke dag</option>' +
           '<option value="weekdays">Werkdagen (ma\u2013vr)</option>' +
-          '<option value="weekend">Weekend (za\u2013zo)</option></select>')),
+          '<option value="weekend">Weekend (za\u2013zo)</option>' +
+          '<option value="month_first">Eerste dag van de maand</option></select>')),
 
     sunrise: t('df-node-title--timer','fa-sun','Zonsopgang') +
       b(f('Offset (minuten)','<input type="number" df-offset min="-120" max="120" step="5" placeholder="0" oninput="updateSunEst(this)">') +
@@ -826,7 +827,8 @@
 
     notify: t('df-node-title--notify','fa-bell','Discord melding') +
       b(f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>') +
-        f('Ander kanaal (optioneel)','<input type="text" df-webhook placeholder="Webhook-URL, leeg = standaard">')),
+        f('Ander kanaal (optioneel)','<input type="text" df-webhook placeholder="Webhook-URL, leeg = standaard">') +
+        hint('Komt ook bij de meldingen onder de bel. Kosten: {kosten_maand} {kosten_verwacht} {kosten_dag} {kosten_jaar} {sluipkosten} \u00b7 afgelopen maand: {vorige_maand} {kosten_vorige_maand} {stroom_vorige_maand} {gas_vorige_maand}')),
 
     webhook_trigger: t('df-node-title--timer','fa-globe','Webhook trigger') +
       b(f('Token','<input type="text" df-token placeholder="mijn-geheime-token">') +

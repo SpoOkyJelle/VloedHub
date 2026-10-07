@@ -171,7 +171,7 @@ function checkReminder() {
     auth.writeConfig(cfg);
     var labels = data.pickups.filter(function(p) { return p.days === 1; }).map(function(p) { return p.label; });
     if (!labels.length) return;
-    discord.sendDiscord("🗑️ **Morgen wordt opgehaald: " + labels.join(" en ") + "** — zet het vanavond buiten.");
+    discord.notify("afval", "🗑️ **Morgen wordt opgehaald: " + labels.join(" en ") + "** — zet het vanavond buiten.");
   });
 }
 

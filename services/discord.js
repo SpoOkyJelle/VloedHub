@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var os = require("os");
 var modules = require("./modules");
+var notifications = require("./notifications");
 
 function getLocalIP() {
   var ifaces = os.networkInterfaces();
@@ -71,6 +72,13 @@ function sendDiscord(message, otherWebhook) {
   post(webhook, message);
 }
 
+// Een melding: komt in het meldingenoverzicht van VloedHub en gaat naar Discord (als dat aan staat).
+// category bepaalt het icoon: weer, storing, apparaat, wasmachine, vaatwasser, afval, flow, systeem.
+function notify(category, message, otherWebhook) {
+  notifications.add(category, message);
+  sendDiscord(message, otherWebhook);
+}
+
 // Stuurt een testbericht, ook als de meldingen uit staan. cb(foutmelding of null)
 function sendTest(cb) {
   var webhook = getWebhook();
@@ -102,7 +110,7 @@ function init() {
       if (ip !== WAN_IP) {
         var old = WAN_IP;
         WAN_IP = ip;
-        sendDiscord("\u26a0\ufe0f **WAN IP gewijzigd**\n~~`" + old + "`~~ \u2192 http://" + WAN_IP + ":5000");
+        notify("systeem", "\u26a0\ufe0f **WAN IP gewijzigd**\n~~`" + old + "`~~ \u2192 http://" + WAN_IP + ":5000");
       }
     });
   }, 5 * 60 * 1000);
@@ -110,6 +118,7 @@ function init() {
 
 module.exports = {
   sendDiscord: sendDiscord,
+  notify: notify,
   fetchWanIP: fetchWanIP,
   get LOCAL_IP() { return LOCAL_IP; },
   get WAN_IP() { return WAN_IP; },

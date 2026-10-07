@@ -221,7 +221,7 @@ function setAlert(item) {
   if (active === !!alerts[item.key]) return;
   if (active) {
     alerts[item.key] = item.name || last(item.key);
-    if (modules.isOn("vaatwasser")) discord.sendDiscord("⚠️ **Vaatwasser:** " + alerts[item.key]);
+    if (modules.isOn("vaatwasser")) discord.notify("vaatwasser", "⚠️ **Vaatwasser: " + alerts[item.key] + "**");
   } else delete alerts[item.key];
   cfg.alerts = alerts;
   save(cfg);
@@ -243,7 +243,7 @@ function setOperation(op) {
     cfg.lastFinished = new Date().toISOString();
     save(cfg);
     logCycle();
-    if (modules.isOn("vaatwasser")) discord.sendDiscord("🍽️ **Vaatwasser is klaar!**");
+    if (modules.isOn("vaatwasser")) discord.notify("vaatwasser", "🍽️ **Vaatwasser is klaar!**");
   }
 }
 

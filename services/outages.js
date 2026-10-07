@@ -102,7 +102,7 @@ function check() {
       var key = "outage:" + e.id + (e.planned ? ":gepland" : "");
       if (notified.has(key)) return;
       notified.add(key);
-      discord.sendDiscord(e.planned
+      discord.notify("storing", e.planned
         ? "🔌 **Geplande " + e.kind.toLowerCase() + " op " + s.postcode + "** — " + (e.when || "tijd onbekend") + "\n" + e.url
         : "⚡ **" + e.kind + " op " + s.postcode + "** — " + (e.status || "") + (e.when ? " · " + (e.whenLabel || "tijd") + ": " + e.when : "") + "\n" + e.url);
     });

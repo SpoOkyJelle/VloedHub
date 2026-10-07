@@ -1643,6 +1643,91 @@ body.kiosk #conn-banner {
   gap:0.55rem;
   padding-top:0.7rem;
   padding-bottom:0.7rem}
+/* Meldingen: zelfde regels als storingen, met een kop en het tijdstip rechts */
+.meld-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5rem}
+.meld-actions {
+  display:flex;
+  gap:0.3rem}
+.meld-actions button {
+  background:none;
+  border:1px solid var(--border);
+  border-radius:20px;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:0.6rem;
+  padding:0.15rem 0.55rem;
+  cursor:pointer}
+/* Bel met teller, en het uitklappaneel eronder (telefoon) of naast de zijbalk (breed scherm) */
+.meld-bell {
+  position:relative}
+.meld-badge {
+  display:none;
+  position:absolute;
+  top:-3px;
+  right:-3px;
+  min-width:15px;
+  height:15px;
+  padding:0 4px;
+  border-radius:8px;
+  background:var(--red);
+  color:#fff;
+  font-size:0.55rem;
+  font-weight:700;
+  line-height:15px;
+  text-align:center}
+.meld-badge.show {
+  display:block}
+.nav-item .meld-badge {
+  top:10px;
+  right:14px}
+.meld-panel {
+  position:fixed;
+  top:calc(var(--header-h) + 0.4rem);
+  right:max(0.6rem, env(safe-area-inset-right, 0px));
+  width:min(380px, calc(100vw - 1.2rem));
+  max-height:70vh;
+  overflow-y:auto;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:0.8rem 0.9rem;
+  box-shadow:0 14px 40px rgba(0,0,0,0.55);
+  z-index:240;
+  opacity:0;
+  transform:translateY(-8px) scale(0.98);
+  transform-origin:top right;
+  pointer-events:none;
+  transition:opacity 0.18s,transform 0.18s cubic-bezier(0.4,0,0.2,1)}
+.meld-panel.open {
+  opacity:1;
+  transform:none;
+  pointer-events:auto}
+@media(min-width:720px) {
+  .meld-panel {
+  transform-origin:top left}
+}
+body.kiosk .meld-panel {
+  display:none}
+.outage-line.meld-new .outage-text::after {
+  content:'';
+  display:inline-block;
+  width:6px;
+  height:6px;
+  margin-left:0.4rem;
+  border-radius:50%;
+  background:var(--red);
+  vertical-align:middle}
+.meld-time {
+  font-size:0.6rem;
+  color:var(--dim);
+  white-space:nowrap}
+.meld-sub {
+  white-space:pre-line;
+  overflow-wrap:anywhere}
 .outage-card.has-outage {
   border-color:rgba(248,113,113,0.5)}
 .outage-line {

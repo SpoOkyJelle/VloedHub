@@ -15,6 +15,7 @@ var routes = [
   require("./routes/p1"),
   require("./routes/wasmachine"),
   require("./routes/homeconnect"),
+  require("./routes/meldingen"),
   require("./routes/temperature"),
   require("./routes/gas"),
   require("./routes/costs"),

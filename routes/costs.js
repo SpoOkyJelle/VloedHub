@@ -216,6 +216,19 @@ function dayUsage(date, untilClock, cb) {
   );
 }
 
+// Het overzicht leest een jaar aan metingen; de flows vragen het elke halve minuut, dus hooguit eens per kwartier vers
+var overviewCache = { data: null, at: 0, waiting: null };
+function cachedOverview(cb) {
+  if (overviewCache.data && Date.now() - overviewCache.at < 15 * 60 * 1000) return cb(overviewCache.data);
+  if (overviewCache.waiting) return overviewCache.waiting.push(cb);
+  overviewCache.waiting = [cb];
+  costsOverview(function(o) {
+    var waiting = overviewCache.waiting;
+    overviewCache = { data: o, at: Date.now(), waiting: null };
+    waiting.forEach(function(w) { w(o); });
+  });
+}
+
 module.exports = function(req, res) {
   if (req.method === "GET" && req.url === "/api/costs") {
     prices.fetchPrices(function(err, priceData) {
@@ -327,3 +340,5 @@ module.exports = function(req, res) {
 
   return false;
 };
+
+module.exports.overview = cachedOverview;

@@ -89,10 +89,10 @@ function check() {
       known[d.key] = d.online;
       if (before === d.online) return;
       if (!d.online) {
-        discord.sendDiscord("⚠️ **" + d.name + " is offline** — " +
+        discord.notify("apparaat", "⚠️ **" + d.name + " is offline** — " +
           (d.last_seen ? "laatste bericht om " + d.last_seen.slice(11, 16) : "nog niets ontvangen sinds de server is gestart"));
       } else if (before === false) {
-        discord.sendDiscord("✅ **" + d.name + " is weer online**");
+        discord.notify("apparaat", "✅ **" + d.name + " is weer online**");
       }
     });
   });

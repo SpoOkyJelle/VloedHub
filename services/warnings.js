@@ -85,7 +85,7 @@ function check() {
       var key = "warning:" + w.id;
       if (notified.has(key)) return;
       notified.add(key);
-      discord.sendDiscord("⚠️ **Code " + w.code + " voor " + PROVINCE + ": " + w.type + "**" +
+      discord.notify("weer", "⚠️ **Code " + w.code + " voor " + PROVINCE + ": " + w.type + "**" +
         (w.from ? " — " + when(w.from) + (w.until ? " tot " + when(w.until) : "") : "") +
         (w.description ? "\n" + w.description : ""));
     });
