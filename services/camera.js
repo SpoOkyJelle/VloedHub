@@ -49,8 +49,8 @@ function setConfig(data) {
     return null;
   }
   if (!parseHost(host)) return "Vul het IP-adres van de camera op je thuisnetwerk in (bijv. 192.168.178.50)";
-  var user = String(data.user || "").trim();
-  if (!user) return "Vul de gebruikersnaam van de camera in";
+  // elke Reolink heeft een account "admin"; zonder ingevulde gebruiker proberen we die
+  var user = String(data.user || "").trim() || "admin";
   var old = getConfig();
   var password = String(data.password || "") || (old ? old.password : "");
   var dir = path.dirname(CONFIG_FILE);
