@@ -12,6 +12,14 @@ function readBody(req, cb) {
   });
 }
 
+function clientIp(req) {
+  return String(req.socket.remoteAddress || '').replace('::ffff:', '');
+}
+
+function waitText(seconds) {
+  return 'Te veel pogingen. Probeer het over ' + (seconds >= 90 ? Math.ceil(seconds / 60) + ' minuten' : seconds + ' seconden') + ' opnieuw';
+}
+
 module.exports = function(req, res) {
 
   // ── PIN entry page ──────────────────────────────────────────────────────
@@ -29,7 +37,15 @@ module.exports = function(req, res) {
         res.end(JSON.stringify({ ok: false, error: 'Ongeldige aanvraag' }));
         return;
       }
+      var ip = clientIp(req);
+      var wait = auth.loginWait(ip);
+      if (wait > 0) {
+        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': String(wait) });
+        res.end(JSON.stringify({ ok: false, error: waitText(wait) }));
+        return;
+      }
       if (auth.pinIsCorrect(body.pin)) {
+        auth.loginSucceeded(ip);
         var token = auth.createSession();
         res.writeHead(200, {
           'Content-Type': 'application/json',
@@ -37,6 +53,7 @@ module.exports = function(req, res) {
         });
         res.end(JSON.stringify({ ok: true }));
       } else {
+        auth.loginFailed(ip);
         res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: 'Verkeerde pincode' }));
       }
@@ -73,7 +90,14 @@ module.exports = function(req, res) {
           res.end(JSON.stringify({ ok: false, error: 'Niet ingelogd' }));
           return;
         }
+        var ipC = clientIp(req), waitC = auth.loginWait(ipC);
+        if (waitC > 0) {
+          res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': String(waitC) });
+          res.end(JSON.stringify({ ok: false, error: waitText(waitC) }));
+          return;
+        }
         if (!auth.pinIsCorrect(body.current)) {
+          auth.loginFailed(ipC);
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: false, error: 'Huidige pincode onjuist' }));
           return;

@@ -270,8 +270,8 @@ function refreshSettingsNames() {
         var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name);
         return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
           '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid fa-microchip" style="color:var(--blue);width:1rem;text-align:center"></i>' +
-          '<div><span id="sne-' + dEnc + '-' + sEnc + '" style="font-size:0.9rem;font-weight:600">' + r.display_name + '</span>' +
-          '<div style="font-size:0.65rem;color:var(--dim)">' + r.sensor_name + (r.host ? ' · <span style="font-family:monospace">' + r.host + '</span>' : '') + '</div></div></div>' +
+          '<div><span id="sne-' + dEnc + '-' + sEnc + '" style="font-size:0.9rem;font-weight:600">' + escHtml(r.display_name) + '</span>' +
+          '<div style="font-size:0.65rem;color:var(--dim)">' + escHtml(r.sensor_name) + (r.host ? ' · <span style="font-family:monospace">' + escHtml(r.host) + '</span>' : '') + '</div></div></div>' +
           '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="esphomeRenameSettings(\'' + dEnc + '\',\'' + sEnc + '\')"></i></div>';
       }).join('') + '</div></div>';
   }).catch(function(){});

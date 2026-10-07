@@ -15,11 +15,11 @@ function esphomeCards(rows, editable) {
     var newest = Math.max.apply(null, list.map(function(r) { return new Date(r.received_at).getTime(); }));
     var age = Math.round((Date.now() - newest) / 60000);
     var ageText = isNaN(age) ? '' : age < 60 ? age + ' min geleden' : Math.round(age / 60) + ' uur geleden';
-    return '<div class="esp-card"><div class="esp-head"><i class="fa-solid fa-microchip"></i><span>' + device + '</span><span class="esp-age">' + ageText + '</span></div>' +
+    return '<div class="esp-card"><div class="esp-head"><i class="fa-solid fa-microchip"></i><span>' + escHtml(device) + '</span><span class="esp-age">' + ageText + '</span></div>' +
       list.map(function(r) {
-        var valStr = r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—');
+        var valStr = escHtml(r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'));
         var pen = editable ? '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"></i>' : '';
-        return '<div class="esp-row"><span class="esp-name">' + r.display_name + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
+        return '<div class="esp-row"><span class="esp-name">' + escHtml(r.display_name) + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
       }).join('') + '</div>';
   }).join('');
 }

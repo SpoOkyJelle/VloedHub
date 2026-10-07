@@ -359,8 +359,9 @@
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.ok) {
         updateDots('success');
+        // alleen terug naar een pagina van VloedHub zelf: geen andere site en geen javascript:-adres
         var dest = new URLSearchParams(location.search).get('next') || '/';
-        window.location.href = dest;
+        window.location.href = /^\/(?![\/\\])/.test(dest) ? dest : '/';
       } else {
         showError(d.error || 'Verkeerde pincode');
       }
