@@ -48,6 +48,8 @@ function isPublic(url) {
   for (var i = 0; i < PUBLIC_API_PREFIXES.length; i++) {
     if (urlPath.startsWith(PUBLIC_API_PREFIXES[i])) return true;
   }
+  // de code van het dashboard zelf blijft achter de PIN, net als toen die nog in de pagina stond
+  if (urlPath.indexOf("/js/") === 0) return false;
   var ext = path.extname(urlPath);
   return ext && PUBLIC_EXTS.indexOf(ext) !== -1;
 }
