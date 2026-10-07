@@ -152,6 +152,14 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "POST" && req.url === "/api/debug/fridge-test") {
+    require("../services/fridge").testConnection(function(result) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(result));
+    });
+    return true;
+  }
+
   if (req.method === "GET" && req.url === "/debug") {
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(DEBUG_HTML);

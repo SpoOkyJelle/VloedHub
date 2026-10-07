@@ -102,4 +102,50 @@ function fetchStatus(cb) {
   }).catch(fail);
 }
 
-module.exports = { fetchStatus: fetchStatus, getConfig: getConfig, shape: shape };
+// Verbindingstest voor de debugpagina: eigen verbinding (niet de gedeelde pool, geen cache), stap voor stap,
+// met de echte foutmelding van de database erbij. Het wachtwoord komt nergens in het antwoord voor.
+function testConnection(cb) {
+  var file = {};
+  try { file = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch (e) {}
+  var raw = {
+    server:   process.env.FRIDGE_SQL_SERVER   || file.server || DEFAULT_SERVER,
+    database: process.env.FRIDGE_SQL_DATABASE || file.database,
+    user:     process.env.FRIDGE_SQL_USER     || file.user,
+    password: process.env.FRIDGE_SQL_PASSWORD || file.password
+  };
+  var missing = ["database", "user", "password"].filter(function(k) { return !raw[k]; });
+  var out = { server: raw.server, database: raw.database || null, user: raw.user || null, steps: [] };
+  function step(name, ok, started, detail) { out.steps.push({ name: name, ok: ok, ms: started ? Date.now() - started : null, detail: detail || null }); }
+  function message(err) { return (err && (err.code ? err.code + ": " : "") + (err.message || String(err))) || "onbekende fout"; }
+
+  step("Instellingen", !missing.length, null, missing.length ? "Ontbreekt: " + missing.join(", ") + " (data/fridge.json of FRIDGE_SQL_*)" : "compleet");
+  if (missing.length) return cb(out);
+
+  var sql;
+  try { sql = require("mssql"); }
+  catch (e) { step("Pakket mssql", false, null, "ontbreekt, voer npm install uit"); return cb(out); }
+
+  var t = Date.now();
+  var testPool = new sql.ConnectionPool({
+    server: raw.server, database: raw.database, user: raw.user, password: raw.password,
+    options: { encrypt: true, trustServerCertificate: false },
+    connectionTimeout: 15000, requestTimeout: 15000,
+    pool: { max: 1, min: 0 }
+  });
+  function finish() { try { testPool.close(); } catch (e) {} cb(out); }
+  testPool.connect().then(function() {
+    step("Verbinden en inloggen", true, t);
+    t = Date.now();
+    return testPool.request().query("SELECT 1 AS ok").then(function() {
+      step("SELECT 1", true, t);
+      t = Date.now();
+      return testPool.request().query("SELECT TOP 1 LoadTimestampUtc, model_type FROM ingest.fridge_status ORDER BY LoadTimestampUtc DESC").then(function(result) {
+        var row = result.recordset && result.recordset[0];
+        var ms = row ? toMs(row.LoadTimestampUtc) : null;
+        step("Laatste rij uit ingest.fridge_status", true, t, row ? "meting van " + (ms ? new Date(ms).toISOString() : "onbekende tijd") + (row.model_type ? " · " + row.model_type : "") : "tabel is leeg");
+      }, function(err) { step("Laatste rij uit ingest.fridge_status", false, t, message(err)); });
+    }, function(err) { step("SELECT 1", false, t, message(err)); });
+  }, function(err) { step("Verbinden en inloggen", false, t, message(err)); }).then(finish, finish);
+}
+
+module.exports = { fetchStatus: fetchStatus, getConfig: getConfig, shape: shape, testConnection: testConnection };
