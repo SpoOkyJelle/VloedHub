@@ -1548,8 +1548,17 @@ body.kiosk #conn-banner {
 .dish-alerts {
   display:flex;
   flex-wrap:wrap;
-  justify-content:center;
-  gap:0.3rem}
+  justify-content:flex-end;
+  gap:0.3rem;
+  margin-left:auto}
+.dish-card {
+  cursor:pointer}
+.dish-toggle {
+  display:flex;
+  justify-content:space-between;
+  gap:0.5rem;
+  font-size:0.62rem;
+  color:var(--muted)}
 .dish-alerts:empty {
   display:none}
 .hc-form {
