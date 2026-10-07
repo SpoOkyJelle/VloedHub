@@ -1376,6 +1376,7 @@ to {
 .mod-off-temperature [data-module~='temperature'],
 .mod-off-esphome [data-module~='esphome'],
 .mod-off-wasmachine [data-module~='wasmachine'],
+.mod-off-vaatwasser [data-module~='vaatwasser'],
 .mod-off-thuis [data-module~='thuis'] {
   display:none !important}
 .mod-switch {
@@ -1544,6 +1545,28 @@ body.kiosk .screen {
   padding-bottom:calc(1rem + env(safe-area-inset-bottom, 0px))}
 body.kiosk #conn-banner {
   top:calc(0.5rem + env(safe-area-inset-top, 0px))}
+.dish-alerts {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:0.3rem}
+.dish-alerts:empty {
+  display:none}
+.hc-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;
+  gap:0.4rem}
+.hc-pending {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:0.6rem}
+.hc-pending:empty {
+  display:none}
+@media(max-width:480px) {
+  .hc-form {
+  grid-template-columns:1fr 1fr}
+}
 .discord-form {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto auto;

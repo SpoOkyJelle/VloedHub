@@ -35,7 +35,7 @@ var KIOSK = (function() {
 })();
 if (KIOSK) document.body.classList.add('kiosk');
 // de Thuis-pagina verdwijnt als alles wat erop staat uit is
-if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) document.body.classList.add('mod-off-thuis');
+if (!['lights','fridge','esphome','temperature','wasmachine','vaatwasser'].some(moduleOn)) document.body.classList.add('mod-off-thuis');
 </script>
 <header class='app-header'>
   <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot'></span></div>
@@ -293,6 +293,9 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
 <div data-module='esphome' class='esp-grid' id='esphome-grid'></div>
 <div data-module='temperature' class='section-title'>Temperatuur</div>
 <div data-module='temperature' class='esp-grid' id='temp-grid'></div><div data-module='temperature' class='chart-card'><div class='chart-header'><span class='chart-title'>Temperatuurverloop</span><div class='tab-bar'><button class='tab active' data-temprange='day' onclick='loadTempChart("day",this)'>Dag</button><button class='tab' data-temprange='week' onclick='loadTempChart("week",this)'>Week</button><button class='tab' data-temprange='month' onclick='loadTempChart("month",this)'>Maand</button></div></div><div class='chart-wrap'><canvas id='chart-temp'></canvas></div></div>
+<div data-module='vaatwasser' class='section-title'>Vaatwasser</div>
+<div data-module='vaatwasser' class='card wash-card'><div class='chart-header'><div class='wash-status-pill idle' id='dish-status-pill'><i class='fa-solid fa-moon' id='dish-status-icon'></i><span id='dish-status-text'>Laden…</span></div><span class='power-sub' id='dish-last'></span></div><div class='dish-alerts' id='dish-alerts'></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Programma</div><div class='fridge-temp' id='dish-program'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Resterend</div><div class='fridge-temp' id='dish-remaining'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Klaar om</div><div class='fridge-temp' id='dish-finish'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Deur</div><div class='fridge-temp' id='dish-door'>—</div></div></div><div class='phase-bar-track'><div class='phase-bar-fill' id='dish-progress' style='width:0%'></div></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' id='dish-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' id='dish-month'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Gem. duur</div><div class='fridge-temp' id='dish-avg-duration'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Meest gebruikt</div><div class='fridge-temp' id='dish-top-program'>—</div></div></div></div>
+<div data-module='vaatwasser' class='log-card'><div class='log-header'><span class='section-title'>Recente vaatwasbeurten</span><span class='power-sub' id='dish-avg-forecast'></span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Klaar</th><th>Programma</th><th>Duur</th><th>Energie</th><th>Water</th></tr></thead><tbody id='dish-rows'></tbody></table></div></div>
 <div data-module='wasmachine' class='section-title'>Wasmachine</div>
 <div data-module='wasmachine' class='card wash-card'><div class='chart-header'><div class='wash-status-pill idle' id='wash-status-pill'><i class='fa-solid fa-moon' id='wash-status-icon'></i><span id='wash-status-text'>Laden…</span></div><span class='power-sub' id='wash-last'>Laatste: —</span></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Totaal</div><div class='fridge-temp' id='wash-total'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Vandaag</div><div class='fridge-temp' style='color:var(--text)' id='wash-today'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' style='color:var(--text)' id='wash-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' style='color:var(--text)' id='wash-month'>—</div></div></div></div><div data-module='wasmachine' class='chart-card'><div class='chart-header'><span class='chart-title'>Wasbeurten per weekdag</span></div><div class='chart-wrap'><canvas id='chart-wash-weekday'></canvas></div></div><div data-module='wasmachine' class='log-card'><div class='log-header'><span class='section-title'>Recente wasbeurten</span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Tijd</th><th>Apparaat</th></tr></thead><tbody id='wash-rows'></tbody></table></div></div>
 </div>
@@ -345,6 +348,20 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
       <input class='field' id='discord-webhook' type='password' autocomplete='off' placeholder='https://discord.com/api/webhooks/…'>
       <button class='btn btn-primary' onclick='saveDiscordWebhook()'>Opslaan</button>
       <button class='btn btn-ghost' onclick='testDiscordWebhook(this)'>Test</button>
+    </div>
+  </div>
+</div>
+
+<div class='section-title' data-module='vaatwasser'>Vaatwasser (Home Connect)</div>
+<div class='power-hero' data-module='vaatwasser'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div><div class='power-label'>Koppeling</div><div style='font-size:0.72rem;color:var(--dim)' id='hc-status'>Laden…</div></div>
+    <div class='hc-pending' id='hc-pending'></div>
+    <div class='hc-form'>
+      <input class='field' id='hc-client-id' type='password' autocomplete='off' placeholder='Client-ID'>
+      <input class='field' id='hc-client-secret' type='password' autocomplete='off' placeholder='Client secret (optioneel)'>
+      <button class='btn btn-primary' onclick='saveHcConfig()'>Opslaan</button>
+      <button class='btn btn-ghost' id='hc-link-btn' onclick='linkHc()' disabled>Koppelen</button>
     </div>
   </div>
 </div>
@@ -481,7 +498,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {
@@ -489,7 +506,7 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
-    if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+    if (n === 4) { refreshVaatwasser(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
     if (n === 5) { refreshSettingsNames(); }
   }
 }
@@ -1340,6 +1357,90 @@ function testDiscordWebhook(btn) {
   }).catch(function() { btn.disabled = false; discordError('Verbindingsfout'); });
 }
 
+// ── Vaatwasser (Home Connect) ──
+var DISH_PROGRAMS = { Eco50:'Eco 50°', Auto2:'Auto 45–65°', Auto1:'Auto 35–45°', Auto3:'Auto 65–75°', Intensiv70:'Intensief 70°', Quick45:'Snel 45°', Quick65:'Snel 65°', Kurz60:'Express 60°', Glas40:'Glas 40°', NightWash:'Stil 50', PreRinse:'Voorspoelen', MachineCare:'Machinereiniging', Super60:'Super 60°' };
+var DISH_STATES = { Run:['running','fa-rotate','Bezig'], Finished:['done','fa-circle-check','Klaar, nog uitruimen'], Pause:['running','fa-pause','Gepauzeerd'], DelayedStart:['idle','fa-clock','Uitgestelde start'], ActionRequired:['running','fa-triangle-exclamation','Actie nodig'], Error:['idle','fa-triangle-exclamation','Storing'], Aborting:['idle','fa-xmark','Wordt afgebroken'], Ready:['idle','fa-power-off','Aan'], Inactive:['idle','fa-moon','Uit'] };
+function dishProgram(p) { return p ? (DISH_PROGRAMS[p] || p) : '—'; }
+function dishDuration(m) { if (m == null) return '—'; m = Math.round(m); return m >= 60 ? Math.floor(m / 60) + ' u ' + (m % 60) + ' min' : m + ' min'; }
+function refreshVaatwasserStats() {
+  fetch('/api/vaatwasser/stats').then(function(r){return r.json();}).then(function(s) {
+    setEl('dish-week', s.this_week || 0);
+    setEl('dish-month', s.this_month || 0);
+    setEl('dish-avg-duration', dishDuration(s.avg_duration));
+    setEl('dish-top-program', s.programs.length ? dishProgram(s.programs[0].program) : '—');
+    setEl('dish-avg-forecast', s.avg_energy != null ? 'gem. energie ' + Math.round(s.avg_energy) + '% · water ' + Math.round(s.avg_water) + '%' : '');
+    function pct(v) { return v != null ? Math.round(v) + '%' : '—'; }
+    setEl('dish-rows', s.recent.length ? s.recent.map(function(r) {
+      var extras = (r.options || '').split(',').filter(Boolean).map(function(x) { return s.extras[x] || x; }).join(', ');
+      return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + dishProgram(r.program) + (extras ? '<span class="esp-sub"> · ' + extras + '</span>' : '') + '</td><td>' + dishDuration(r.duration_min) + '</td><td>' + pct(r.energy_pct) + '</td><td>' + pct(r.water_pct) + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen beurten gelogd — vanaf nu wordt elke beurt bijgehouden</td></tr>');
+  }).catch(function(){});
+}
+function refreshVaatwasser() {
+  refreshVaatwasserStats();
+  fetch('/api/vaatwasser').then(function(r){return r.json();}).then(function(d) {
+    var pill = document.getElementById('dish-status-pill');
+    if (!pill) return;
+    var s = d.state || {};
+    var view = !d.linked ? ['idle','fa-link-slash','Niet gekoppeld'] : s.reachable === false ? ['idle','fa-plug-circle-xmark','Offline'] : DISH_STATES[s.operation] || ['idle','fa-moon', s.operation || 'Onbekend'];
+    pill.className = 'wash-status-pill ' + view[0];
+    document.getElementById('dish-status-icon').className = 'fa-solid ' + view[1];
+    document.getElementById('dish-status-text').textContent = view[2];
+    setEl('dish-last', !d.linked ? 'Koppel bij Instellingen' : d.lastFinished ? 'Laatste: ' + shortWhen(d.lastFinished) : '');
+    var alertsEl = document.getElementById('dish-alerts');
+    alertsEl.textContent = '';
+    (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.textContent = '⚠ ' + a; alertsEl.appendChild(el); });
+    var mins = s.finishAt ? Math.max(0, Math.round((s.finishAt - Date.now()) / 60000)) : null;
+    setEl('dish-program', dishProgram(s.program));
+    setEl('dish-remaining', dishDuration(mins));
+    setEl('dish-finish', s.finishAt ? shortWhen(s.finishAt) : '—');
+    setEl('dish-door', { Open:'Open', Closed:'Dicht', Locked:'Vergrendeld' }[s.door] || '—');
+    var bar = document.getElementById('dish-progress');
+    bar.style.width = (s.operation === 'Finished' ? 100 : s.progress || 0) + '%';
+  }).catch(function(){});
+}
+var hcPollTimer = null;
+function showHcStatus(d, note) {
+  var el = document.getElementById('hc-status'), pend = document.getElementById('hc-pending');
+  el.style.color = d.error ? 'var(--red)' : d.linked ? 'var(--green)' : 'var(--dim)';
+  el.textContent = d.error ? d.error
+    : d.linked ? 'Gekoppeld' + (d.name ? ' met ' + d.name : '')
+    : d.pending ? 'Wacht op goedkeuring…'
+    : d.configured ? (note ? note + ' · ' : '') + 'Client-ID eindigt op …' + d.clientHint + ', nog niet gekoppeld'
+    : 'Vul het client-ID van je Home Connect-applicatie in';
+  pend.textContent = '';
+  if (d.pending) {
+    var a = document.createElement('a');
+    a.href = d.pending.url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'btn btn-primary'; a.style.textDecoration = 'none';
+    a.textContent = 'Open Home Connect';
+    var code = document.createElement('span');
+    code.className = 'power-sub';
+    code.textContent = 'Log in en keur de koppeling goed. Code: ' + d.pending.user_code;
+    pend.appendChild(a); pend.appendChild(code);
+  }
+  var btn = document.getElementById('hc-link-btn');
+  btn.textContent = d.linked ? 'Ontkoppelen' : 'Koppelen';
+  btn.onclick = d.linked ? unlinkHc : linkHc;
+  btn.disabled = !d.configured || !!d.pending;
+  clearTimeout(hcPollTimer);
+  if (d.pending) hcPollTimer = setTimeout(loadHcStatus, 3000);
+}
+function loadHcStatus() {
+  fetch('/api/vaatwasser').then(function(r){return r.json();}).then(function(d) { showHcStatus(d); }).catch(function(){});
+}
+function hcPost(path, body, note) {
+  fetch('/api/vaatwasser/' + path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body || {})})
+    .then(function(r){return r.json();}).then(function(d) { showHcStatus(d, d.ok ? note : null); refreshVaatwasser(); })
+    .catch(function() { showHcStatus({ error: 'Verbindingsfout', configured: true }); });
+}
+function saveHcConfig() {
+  var id = document.getElementById('hc-client-id'), secret = document.getElementById('hc-client-secret');
+  hcPost('config', { clientId: id.value, clientSecret: secret.value }, 'Opgeslagen');
+  id.value = ''; secret.value = '';
+}
+function linkHc() { hcPost('link'); }
+function unlinkHc() { hcPost('unlink'); }
+
 // ── Modules ──
 function loadModules() {
   fetch('/api/modules').then(function(r){return r.json();}).then(function(list) {
@@ -1357,7 +1458,7 @@ function loadModules() {
 // Past de modules toe op de open pagina: klassen op body, Home-blokken en de kostengrafiek
 function applyModules() {
   Object.keys(MODULES).forEach(function(k) { document.body.classList.toggle('mod-off-' + k, !moduleOn(k)); });
-  document.body.classList.toggle('mod-off-thuis', !['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn));
+  document.body.classList.toggle('mod-off-thuis', !['lights','fridge','esphome','temperature','wasmachine','vaatwasser'].some(moduleOn));
   applyLayout(0);
   if (screenLoaded[1]) loadCostsDaily();
 }
@@ -2031,7 +2132,7 @@ function loadGasMonthly() {
 setInterval(function() {
   if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshComparison(); refreshSafety(); }
   if (currentScreen === 2) { refreshGasStats(); loadGasDaily(); }
-  if (currentScreen === 4) { refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+  if (currentScreen === 4) { refreshVaatwasser(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
   if (currentScreen === 5) { refreshSettingsNames(); }
 }, 60000);
 setInterval(function() {

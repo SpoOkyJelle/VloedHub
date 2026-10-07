@@ -13,6 +13,7 @@ var MODULES = [
   { key: "temperature", label: "Temperatuursensoren",    hint: "Kamertemperaturen en temperatuurverloop" },
   { key: "esphome",     label: "ESPHome-sensoren",       hint: "Sensorkaart op Thuis" },
   { key: "wasmachine",  label: "Wasmachine",             hint: "Wasmachinekaart en de melding dat de was klaar is" },
+  { key: "vaatwasser",  label: "Vaatwasser",             hint: "Vaatwasserkaart (Home Connect) en de melding dat de vaat klaar is" },
   { key: "discord",     label: "Discord-meldingen",      hint: "Alle berichten naar Discord: herinneringen, offline-meldingen en flows" }
 ];
 

@@ -2,4 +2,6 @@ node_modules/
 p1_data.db
 data/fridge.json
 data/discord.json
+data/homeconnect.json
+data/homeconnect-keys.json
 data/notified.json
