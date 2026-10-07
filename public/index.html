@@ -41,7 +41,7 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
   <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot'></span></div>
   <div class='header-right'>
     <span class='updated-text' id='updated'>Wachten op data…</span>
-    <button class='icon-link' title='Instellingen' onclick='showScreen(4,null)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
+    <button class='icon-link' title='Instellingen' onclick='showScreen(5,null)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
   </div>
 </header>
 <div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'>✕</button></div>
@@ -163,23 +163,6 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
     <div class='chart-wrap'><canvas id='chart'></canvas></div>
   </div>
 
-  <div class='section-title'>Kosten</div>
-  <div class='card'>
-    <div class='section-title'>Goedkoopste uren vandaag</div>
-    <div class='cheap-hours-grid' id='cheap-hours-grid'></div>
-  </div>
-  <div class='card'>
-    <div class='section-title' style='margin-bottom:0.5rem'>Geschatte kosten <span style='color:var(--dim);font-size:0.55rem;font-weight:400'>(stroom per uurprijs<span data-module='gas'> · gas per dagprijs</span>)</span></div>
-    <table class='cost-table'>
-      <thead><tr><th>Periode</th><th class='num'>kWh</th><th class='num'>Stroom €</th><th class='num' data-module='gas'>m³</th><th class='num' data-module='gas'>Gas €</th></tr></thead>
-      <tbody id='cost-rows'><tr><td colspan='5' style='color:var(--dim);padding:0.3rem 0.5rem'>Laden…</td></tr></tbody>
-    </table>
-  </div>
-  <div class='chart-card'>
-    <div class='chart-header'><span class='chart-title'>Kosten per dag (30 dgn)</span></div>
-    <div class='chart-wrap'><canvas id='chart-costs-daily'></canvas></div>
-  </div>
-
   <div class='section-title'>Patronen</div>
   <div class='chart-card'>
     <div class='chart-header'><span class='chart-title'>Piekuren (gem. per uur)</span></div>
@@ -237,8 +220,66 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
 
 </div>
 
-<!-- SCREEN 3: THUIS -->
+<!-- SCREEN 3: KOSTEN -->
 <div class='screen' id='screen-3'>
+
+  <div class='section-title'>Overzicht</div>
+  <div class='safety-grid'>
+    <div class='stat-card'><div class='stat-label'>Deze maand tot nu toe</div><div class='stat-value' style='color:var(--yellow)' id='kost-month'>—</div><div class='power-sub' id='kost-month-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Verwacht deze maand</div><div class='stat-value' id='kost-fc-month'>—</div><div class='power-sub' id='kost-fc-month-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Gemiddeld per dag</div><div class='stat-value' id='kost-avg-day'>—</div><div class='power-sub' id='kost-avg-day-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Verwacht per jaar</div><div class='stat-value' id='kost-fc-year'>—</div><div class='power-sub' id='kost-fc-year-sub'></div></div>
+  </div>
+  <div class='card'>
+    <div class='section-title' style='margin-bottom:0.5rem'>Geschatte kosten <span style='color:var(--dim);font-size:0.55rem;font-weight:400'>(stroom per uurprijs<span data-module='gas'> · gas per dagprijs</span>, zonder vaste kosten)</span></div>
+    <table class='cost-table'>
+      <thead><tr><th>Periode</th><th class='num'>kWh</th><th class='num'>Stroom €</th><th class='num' data-module='gas'>m³</th><th class='num' data-module='gas'>Gas €</th></tr></thead>
+      <tbody id='cost-rows'><tr><td colspan='5' style='color:var(--dim);padding:0.3rem 0.5rem'>Laden…</td></tr></tbody>
+    </table>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Kosten per dag (30 dgn)</span></div>
+    <div class='chart-wrap'><canvas id='chart-costs-daily'></canvas></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Kosten per maand</span><span class='power-sub' id='kost-monthly-note'></span></div>
+    <div class='chart-wrap'><canvas id='chart-costs-monthly'></canvas></div>
+  </div>
+
+  <div class='section-title'>Waar gaat het heen (laatste 30 dagen)</div>
+  <div class='safety-grid'>
+    <div class='stat-card'><div class='stat-label'>Sluipverbruik per jaar</div><div class='stat-value' style='color:var(--red)' id='kost-standby'>—</div><div class='power-sub' id='kost-standby-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Zwaarste fase</div><div class='stat-value voltage' id='kost-top-phase'>—</div><div class='power-sub' id='kost-top-phase-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Betaald per kWh</div><div class='stat-value' id='kost-paid'>—</div><div class='power-sub' id='kost-paid-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Duurste dag</div><div class='stat-value' id='kost-priciest'>—</div><div class='power-sub' id='kost-priciest-sub'></div></div>
+  </div>
+  <div class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Sluipverbruik per nacht (00–06 uur)</span><span class='power-sub' id='kost-night-last'></span></div>
+    <div class='chart-wrap'><canvas id='chart-standby-nights'></canvas></div>
+  </div>
+  <div class='card'>
+    <div class='section-title'>Verdeling</div>
+    <div id='kost-split'></div>
+  </div>
+  <div class='card'>
+    <div class='section-title'>Stroomkosten per fase</div>
+    <div id='kost-phases'></div>
+  </div>
+  <div class='card'>
+    <div class='section-title'>Stroomkosten per dagdeel</div>
+    <div id='kost-parts'></div>
+  </div>
+
+  <div class='section-title'>Prijzen</div>
+  <div class='card'>
+    <div class='section-title'>Goedkoopste uren vandaag</div>
+    <div class='cheap-hours-grid' id='cheap-hours-grid'></div>
+  </div>
+
+</div>
+
+<!-- SCREEN 4: THUIS -->
+<div class='screen' id='screen-4'>
 <div data-module='lights' class='section-title'>Verlichting</div>
 <div data-module='lights' class='lamp-grid'>
 <div class='lamp-block'><span id='sname-led-default' hidden>LED Strip</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-default' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-default'>LED Strip</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::default","LED Strip",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led-onoff' onclick='ledToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("default",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div></div><div id='led-panel-default' class='lamp-panel' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led-brightness' oninput='ledBrightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led-brightness-val'>180</span></div></div><div id='led-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led-color' value='#ffffff' oninput='ledSetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led-btn-0' onclick='ledSetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led-btn-1' onclick='ledSetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led-btn-2' onclick='ledSetEffect(2)' class='effect-btn'>Rainbow</button><button id='led-btn-3' onclick='ledSetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led-btn-4' onclick='ledSetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led-btn-5' onclick='ledSetEffect(5)' class='effect-btn'>Confetti</button><button id='led-btn-6' onclick='ledSetEffect(6)' class='effect-btn'>Vuur</button><button id='led-btn-7' onclick='ledSetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led-btn-8' onclick='ledSetEffect(8)' class='effect-btn'>Twinkle</button><button id='led-btn-9' onclick='ledSetEffect(9)' class='effect-btn'>Politielichten</button><button id='led-btn-10' onclick='ledSetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
@@ -255,8 +296,8 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
 <div data-module='wasmachine' class='section-title'>Wasmachine</div>
 <div data-module='wasmachine' class='card wash-card'><div class='chart-header'><div class='wash-status-pill idle' id='wash-status-pill'><i class='fa-solid fa-moon' id='wash-status-icon'></i><span id='wash-status-text'>Laden…</span></div><span class='power-sub' id='wash-last'>Laatste: —</span></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Totaal</div><div class='fridge-temp' id='wash-total'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Vandaag</div><div class='fridge-temp' style='color:var(--text)' id='wash-today'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' style='color:var(--text)' id='wash-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' style='color:var(--text)' id='wash-month'>—</div></div></div></div><div data-module='wasmachine' class='chart-card'><div class='chart-header'><span class='chart-title'>Wasbeurten per weekdag</span></div><div class='chart-wrap'><canvas id='chart-wash-weekday'></canvas></div></div><div data-module='wasmachine' class='log-card'><div class='log-header'><span class='section-title'>Recente wasbeurten</span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Tijd</th><th>Apparaat</th></tr></thead><tbody id='wash-rows'></tbody></table></div></div>
 </div>
-<!-- SCREEN 4: INSTELLINGEN -->
-<div class='screen' id='screen-4'>
+<!-- SCREEN 5: INSTELLINGEN -->
+<div class='screen' id='screen-5'>
 <div class='section-title'>Beveiliging</div>
 <div class='power-hero'>
   <div style='display:flex;flex-direction:column;gap:0.75rem'>
@@ -353,10 +394,13 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
   <button class='nav-item' data-module='gas' data-screen='2' onclick='showScreen(2,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-2 1-5 1-9z'/></svg></span><span class='nav-label'>Gas</span>
   </button>
-  <button class='nav-item' data-module='thuis' data-screen='3' onclick='showScreen(3,this)'>
+  <button class='nav-item' data-screen='3' onclick='showScreen(3,this)'>
+    <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M18 7a6 6 0 1 0 0 10M4 10h9M4 14h9'/></svg></span><span class='nav-label'>Kosten</span>
+  </button>
+  <button class='nav-item' data-module='thuis' data-screen='4' onclick='showScreen(4,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3M3 13a2 2 0 0 1 4 0v3h10v-3a2 2 0 0 1 4 0v5H3zM6 18v2M18 18v2'/></svg></span><span class='nav-label'>Thuis</span>
   </button>
-  <button class='nav-item nav-item--desktop-only' data-screen='4' onclick='showScreen(4,this)'>
+  <button class='nav-item nav-item--desktop-only' data-screen='5' onclick='showScreen(5,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></span><span class='nav-label'>Instellingen</span>
   </button>
 </nav>
@@ -417,14 +461,14 @@ if (!['lights','fridge','esphome','temperature','wasmachine'].some(moduleOn)) do
 // ── Screen navigation ──
 var currentScreen = 0;
 var screenTrack = document.getElementById('screens-track');
-var screenLoaded = [true, false, false, false, false];
+var screenLoaded = [true, false, false, false, false, false];
 
 function showScreen(n, btn, fromSwipe) {
   currentScreen = n;
   screenTrack.style.transition = fromSwipe
     ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
     : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
-  screenTrack.style.transform = 'translateX(calc(-' + (100/5) + '% * ' + n + '))';
+  screenTrack.style.transform = 'translateX(calc(-' + (100/6) + '% * ' + n + '))';
   document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
   if (btn) {
     btn.classList.add('active');
@@ -437,22 +481,23 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
   }
-  if (n === 4) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); }
-  if (n === 3) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); }
+  if (n === 4) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
   if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
-    if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshCosts(); refreshComparison(); loadCostsDaily(); refreshCheapHours(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
+    if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
-    if (n === 3) { refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
-    if (n === 4) { refreshSettingsNames(); }
+    if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
+    if (n === 4) { refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+    if (n === 5) { refreshSettingsNames(); }
   }
 }
 
 // Schermen van uitgezette modules worden overgeslagen
-function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 3 && document.body.classList.contains('mod-off-thuis')); }
+function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')); }
 function nextScreen(dir) {
-  for (var n = currentScreen + dir; n >= 0 && n <= 4; n += dir) { if (!screenHidden(n)) return n; }
+  for (var n = currentScreen + dir; n >= 0 && n <= 5; n += dir) { if (!screenHidden(n)) return n; }
   return currentScreen;
 }
 
@@ -470,8 +515,8 @@ outerEl.addEventListener('touchmove', function(e) {
   var dy = e.touches[0].clientY - touchY0;
   if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }
   if (isSwiping) {
-    var pct = (currentScreen * (100/5)) - (dx / window.innerWidth * (100/5));
-    pct = Math.max(0, Math.min(400/5, pct));
+    var pct = (currentScreen * (100/6)) - (dx / window.innerWidth * (100/6));
+    pct = Math.max(0, Math.min(500/6, pct));
     screenTrack.style.transition = 'none';
     screenTrack.style.transform = 'translateX(-' + pct + '%)';
   }
@@ -1356,7 +1401,7 @@ function loadAfval() {
     var el = document.getElementById('blk-afval');
     if (!el) return;
     if (d.error) { el.innerHTML = '<div class="afval-empty">Afvalkalender niet bereikbaar</div>'; return; }
-    if (!d.configured) { el.innerHTML = '<div class="afval-empty">Nog geen adres ingesteld<button class="btn btn-ghost" onclick="showScreen(4,null)">Adres instellen</button></div>'; return; }
+    if (!d.configured) { el.innerHTML = '<div class="afval-empty">Nog geen adres ingesteld<button class="btn btn-ghost" onclick="showScreen(5,null)">Adres instellen</button></div>'; return; }
     var rows = d.pickups.slice(0, 4);
     if (!rows.length) { el.innerHTML = '<div class="afval-empty">Geen ophaaldagen bekend</div>'; return; }
     el.innerHTML = rows.map(function(p) {
@@ -1867,6 +1912,87 @@ function loadCostsDaily() {
   }).catch(function(){});
 }
 
+// ── Kosten-pagina ──
+// Balkjes met bedrag en aandeel; regels zonder bedrag (bv. gas uit) vallen weg
+function shareBars(id, items) {
+  items = items.filter(function(i) { return i.cost != null; });
+  var total = items.reduce(function(t, i) { return t + i.cost; }, 0);
+  setEl(id, items.map(function(i) {
+    var pct = total > 0 ? i.cost / total * 100 : 0;
+    return '<div class="share-row"><div class="share-head"><span>' + i.label + (i.sub ? '<small>' + i.sub + '</small>' : '') + '</span><span>' + eur(i.cost) + ' · ' + pct.toFixed(0) + '%</span></div>' +
+      '<div class="phase-bar-track"><div class="phase-bar-fill" style="width:' + pct.toFixed(1) + '%' + (i.color ? ';background:' + i.color : '') + '"></div></div></div>';
+  }).join('') || '<div class="power-sub">Nog geen gegevens</div>');
+}
+var chartCostsMonthly = null, chartStandbyNights = null;
+function loadCostsOverview() {
+  fetch('/api/costs-overview').then(function(r){return r.json();}).then(function(o) {
+    var r = o.recent, a = o.avg_day;
+    function nlDate(d, opts) { return new Date(d + 'T12:00:00').toLocaleDateString('nl-NL', opts); }
+
+    setEl('kost-month', eur(o.month.total));
+    setEl('kost-month-sub', 'stroom ' + eur(o.month.elec) + (o.month.gas != null ? ' · gas ' + eur(o.month.gas) : ''));
+    var left = o.month.days_in_month - parseInt(o.today.slice(8), 10);
+    setEl('kost-fc-month', eur(o.forecast_month));
+    setEl('kost-fc-month-sub', a ? 'nog ' + left + (left === 1 ? ' dag' : ' dagen') + ' te gaan' : 'na één volle dag meten');
+    setEl('kost-avg-day', a ? eur(a.total) : '—');
+    setEl('kost-avg-day-sub', a ? 'over ' + a.days + (a.days === 1 ? ' dag' : ' dagen') : '');
+    setEl('kost-fc-year', o.forecast_year != null ? '€' + o.forecast_year.toFixed(0) : '—');
+    setEl('kost-fc-year-sub', a ? 'als elke dag zo is als nu' : '');
+
+    var sb = r.standby;
+    setEl('kost-standby', sb && sb.cost_year != null ? '€' + sb.cost_year.toFixed(0) : '—');
+    setEl('kost-standby-sub', sb ? (sb.kw * 1000).toFixed(0) + ' W continu' + (r.elec_cost ? ' · ' + (sb.cost / r.elec_cost * 100).toFixed(0) + '% van je stroom' : '') : '');
+    var phases = r.phases.filter(function(p) { return p.kwh > 0; });
+    var phaseKwh = phases.reduce(function(t, p) { return t + p.kwh; }, 0);
+    var top = phases.slice().sort(function(x, y) { return y.kwh - x.kwh; })[0];
+    setEl('kost-top-phase', top ? top.label : '—');
+    setEl('kost-top-phase-sub', top ? (top.kwh / phaseKwh * 100).toFixed(0) + '% van je stroom' : '');
+    setEl('kost-paid', r.paid_per_kwh != null ? '€' + r.paid_per_kwh.toFixed(3) + '<span class="stat-unit">/kWh</span>' : '—');
+    if (r.paid_per_kwh != null && r.avg_price) {
+      var diff = (r.paid_per_kwh - r.avg_price) / r.avg_price * 100;
+      setEl('kost-paid-sub', Math.abs(diff) < 0.5 ? 'gelijk aan de gem. uurprijs' : Math.abs(diff).toFixed(0) + '% ' + (diff < 0 ? 'onder' : 'boven') + ' de gem. uurprijs');
+    }
+    setEl('kost-priciest', o.priciest_day ? eur(o.priciest_day.cost) : '—');
+    setEl('kost-priciest-sub', o.priciest_day ? nlDate(o.priciest_day.day, {weekday:'short', day:'numeric', month:'short'}) : '');
+
+    var hasSb = sb && r.elec_cost != null;
+    shareBars('kost-split', [
+      { label: 'Sluipverbruik', sub: 'staat altijd aan', cost: hasSb ? sb.cost : null, color: '#F87171' },
+      { label: hasSb ? 'Overige stroom' : 'Stroom', cost: r.elec_cost != null ? r.elec_cost - (hasSb ? sb.cost : 0) : null },
+      { label: 'Gas', cost: r.gas_cost, color: '#F97316' }
+    ]);
+    var phaseColors = { L1: '#8DB255', L2: '#38BDF8', L3: '#F97316' };
+    shareBars('kost-phases', phases.map(function(p) { return { label: p.label, sub: num(p.kwh, 1) + ' kWh', cost: p.cost, color: phaseColors[p.label] }; }));
+    shareBars('kost-parts', r.parts.map(function(p) {
+      return { label: p.label, sub: ('0' + p.from).slice(-2) + '–' + ('0' + p.to).slice(-2) + ' u · ' + num(p.kwh, 1) + ' kWh', cost: p.cost };
+    }));
+
+    var nights = r.nights.filter(function(n) { return n.kw != null; });
+    var lastNight = nights[nights.length - 1];
+    setEl('kost-night-last', lastNight ? (lastNight.day === o.today ? 'afgelopen nacht' : nlDate(lastNight.day, {weekday:'short', day:'numeric'})) + ': ' + (lastNight.kw * 1000).toFixed(0) + ' W' + (lastNight.cost != null ? ' · ' + eur(lastNight.cost) : '') : '');
+    if (chartStandbyNights) chartStandbyNights.destroy();
+    chartStandbyNights = new Chart(document.getElementById('chart-standby-nights'), {
+      type: 'bar',
+      data: { labels: nights.map(function(n) { return nlDate(n.day, {weekday:'short', day:'numeric'}); }), datasets: [
+        { label: 'Gem. vermogen (W)', data: nights.map(function(n) { return (n.kw * 1000).toFixed(0); }), backgroundColor: 'rgba(248,113,113,0.45)', borderColor: '#F87171', borderWidth: 1, borderRadius: 3 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.parsed.y + ' W gemiddeld'; }, afterLabel: function(c) { var n = nights[c.dataIndex]; return num(n.kwh, 2) + ' kWh' + (n.cost != null ? ' · ' + eur(n.cost) : ''); } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+    });
+
+    var partial = o.months.length && o.months[0].first_day.slice(8) !== '01';
+    setEl('kost-monthly-note', partial ? '* gemeten vanaf ' + nlDate(o.months[0].first_day, {day:'numeric', month:'long'}) : '');
+    if (chartCostsMonthly) chartCostsMonthly.destroy();
+    chartCostsMonthly = new Chart(document.getElementById('chart-costs-monthly'), {
+      type: 'bar',
+      data: { labels: o.months.map(function(m, i) { return nlDate(m.month + '-01', {month:'short'}) + (i === 0 && partial ? '*' : ''); }), datasets: [
+        { label: 'Stroom (€)', data: o.months.map(function(m) { return m.elec_cost != null ? m.elec_cost.toFixed(2) : 0; }), backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
+        { label: 'Gas (€)',    data: o.months.map(function(m) { return m.gas_cost != null ? m.gas_cost.toFixed(2) : 0; }),  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
+      ].filter(function(ds, i) { return i === 0 || moduleOn('gas'); })},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+    });
+  }).catch(function(){});
+}
+
 // ── Gas cijfers ──
 function refreshGasStats() {
   Promise.all([
@@ -1903,15 +2029,16 @@ function loadGasMonthly() {
 
 // ── Periodic refresh for non-active screens ──
 setInterval(function() {
-  if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshCosts(); refreshComparison(); refreshSafety(); }
+  if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshComparison(); refreshSafety(); }
   if (currentScreen === 2) { refreshGasStats(); loadGasDaily(); }
-  if (currentScreen === 3) { refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
-  if (currentScreen === 4) { refreshSettingsNames(); }
+  if (currentScreen === 4) { refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+  if (currentScreen === 5) { refreshSettingsNames(); }
 }, 60000);
 setInterval(function() {
-  if (currentScreen === 1) { loadPeaks(); loadWeekdayChart(); loadPhaseChart(); loadCostsDaily(); var hb = document.querySelector('[data-hm].active'); loadHeatmap(hb ? hb.dataset.hm : 'alltime', hb || null); }
+  if (currentScreen === 1) { loadPeaks(); loadWeekdayChart(); loadPhaseChart(); var hb = document.querySelector('[data-hm].active'); loadHeatmap(hb ? hb.dataset.hm : 'alltime', hb || null); }
   if (currentScreen === 2) { loadGasMonthly(); }
-  if (currentScreen === 3) { loadWashWeekdayChart(); }
+  if (currentScreen === 3) { loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
+  if (currentScreen === 4) { loadWashWeekdayChart(); }
 }, 300000);
 // ── LED Strip ──
 var LED_EFFECTS = ['Warm Wit','Ijs Wit','Rainbow','Rainbow Wave','Fade Aan/Uit','Confetti','Vuur','Meteor Regen','Twinkle','Politielichten','Eigen kleur'];

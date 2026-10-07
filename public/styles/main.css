@@ -85,7 +85,7 @@ body {
   position:relative}
 .screens-track {
   display:flex;
-  width:500%;
+  width:600%;
   height:100%;
   transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);
   will-change:transform}
@@ -587,6 +587,27 @@ to {
   padding:0.15rem 0.5rem;
   font-size:0.62rem;
   font-weight:600}
+/* Kosten: regel met bedrag, aandeel en een balkje */
+.share-row {
+  margin-top:0.6rem}
+.share-head {
+  display:flex;
+  justify-content:space-between;
+  gap:0.5rem;
+  font-size:0.71rem;
+  color:#94A3B8;
+  font-variant-numeric:tabular-nums}
+.share-head small {
+  color:var(--dim);
+  font-size:0.6rem;
+  margin-left:0.4rem}
+.share-row .phase-bar-track {
+  height:5px;
+  border-radius:3px;
+  margin-top:0.25rem}
+.stat-card .power-sub {
+  font-size:0.6rem;
+  margin-top:0.15rem}
 .ip-badge {
   font-size:0.58rem;
   color:var(--dim);
@@ -1341,9 +1362,9 @@ to {
 .wash-card .chart-header {
   flex-wrap:wrap}
 /* op Thuis staat de naam al als kopje boven de kaart */
-#screen-3 .fridge-card .chart-title {
+#screen-4 .fridge-card .chart-title {
   display:none}
-#screen-3 .fridge-card .chart-header {
+#screen-4 .fridge-card .chart-header {
   justify-content:flex-end}
 /* Modules: wat bij een uitgezette module hoort, verdwijnt */
 .mod-off-storingen [data-module~='storingen'],
