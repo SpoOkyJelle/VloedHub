@@ -39,6 +39,7 @@ var routes = [
   require("./routes/insights"),
   require("./routes/scenes"),
   require("./routes/monitor"),
+  require("./routes/internet"),
   require("./routes/fridge"),
   require("./routes/modules"),
   require("./routes/discord"),

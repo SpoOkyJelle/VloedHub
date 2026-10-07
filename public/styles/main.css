@@ -1096,6 +1096,12 @@ to {
   display:flex;
   flex-direction:column;
   gap:0.6rem}
+.inet-values {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0.5rem}
+.inet-values .info-value {
+  font-variant-numeric:tabular-nums}
 .scene-row {
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -1370,6 +1376,7 @@ to {
 .mod-off-storingen [data-module~='storingen'],
 .mod-off-gas [data-module~='gas'],
 .mod-off-weather [data-module~='weather'],
+.mod-off-internet [data-module~='internet'],
 .mod-off-afval [data-module~='afval'],
 .mod-off-lights [data-module~='lights'],
 .mod-off-fridge [data-module~='fridge'],

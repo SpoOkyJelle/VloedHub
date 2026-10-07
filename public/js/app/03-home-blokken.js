@@ -29,7 +29,7 @@ var layoutConfig = {};
 var layoutEditMode = false;
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', internet:'internet',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -110,6 +110,10 @@ var BLOCKS = {
     render:function(el){el.innerHTML='<div class="card outage-card" id="blk-outages"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
     refresh:function(){loadOutages();}
   },
+  'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap" style="min-height:0;height:60px"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},
+    refresh:function(){loadInternet();}
+  },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
     refresh:function(){loadAfval();}
@@ -181,6 +185,41 @@ function loadTodayVsNormal() {
     var dayNames = ['zondagen','maandagen','dinsdagen','woensdagen','donderdagen','vrijdagen','zaterdagen'];
     setEl('blk-tvn-sub', 'Normaal ' + nlNum(d.normal_kwh, 2) + ' kWh op dit tijdstip · gemiddelde van ' + d.samples + ' ' + (d.basis === 'weekday' ? dayNames[new Date().getDay()] : 'dagen'));
   }).catch(function() { setEl('blk-tvn-value', '—'); });
+}
+// ── Internetsnelheid ──
+var inetPoll = null;
+function loadInternet() {
+  Promise.all([
+    fetch('/api/internet').then(function(r){return r.json();}),
+    fetch('/api/internet/history?days=7').then(function(r){return r.json();}).catch(function(){return [];})
+  ]).then(function(res) {
+    var s = res[0], rows = res[1], l = s.latest;
+    var btn = document.getElementById('blk-inet-run');
+    if (!btn) return;
+    btn.disabled = s.running;
+    btn.textContent = s.running ? 'Bezig…' : 'Nu meten';
+    // een test duurt een halve minuut; tot die klaar is blijven kijken
+    clearTimeout(inetPoll);
+    if (s.running) inetPoll = setTimeout(loadInternet, 5000);
+    function val(label, v, d, unit, color) {
+      return '<div><div class="info-label">' + label + '</div><div class="info-value" style="color:' + color + '">' + (v != null ? nlNum(v, d) : '—') + '<span class="card-unit">' + unit + '</span></div></div>';
+    }
+    setEl('blk-inet-values', val('Download', l && l.download_mbps, 0, 'Mbit/s', 'var(--accent-l)') + val('Upload', l && l.upload_mbps, 0, 'Mbit/s', 'var(--blue)') + val('Ping', l && l.ping_ms, 0, 'ms', 'var(--text)'));
+    var sub = l ? 'Gemeten ' + shortWhen(l.measured_at) + (l.isp ? ' · ' + escHtml(l.isp) : '') : 'Nog geen meting';
+    setEl('blk-inet-sub', s.error ? '<span style="color:var(--red)">' + escHtml(s.error) + '</span>' + (l ? ' · laatste meting ' + shortWhen(l.measured_at) : '') : sub);
+    var ctx = document.getElementById('blk-chart-inet');
+    if (!ctx) return;
+    if (window._blkChartInet) window._blkChartInet.destroy();
+    window._blkChartInet = new Chart(ctx, {type:'line', data:{labels:rows.map(function(r){return shortWhen(r.measured_at);}), datasets:[
+      {label:'Download (Mbit/s)', data:rows.map(function(r){return r.download_mbps;}), borderColor:'#8DB255', backgroundColor:accentGradient, borderWidth:1.5, pointRadius:0, tension:0.3, fill:true},
+      {label:'Upload (Mbit/s)', data:rows.map(function(r){return r.upload_mbps;}), borderColor:'#38BDF8', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false}
+    ]}, options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false, beginAtZero:true}}}});
+  }).catch(function(){});
+}
+function runInternetTest() {
+  var btn = document.getElementById('blk-inet-run');
+  if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
+  fetch('/api/internet/run', {method:'POST'}).then(loadInternet).catch(loadInternet);
 }
 // ── Verbinding ──
 // Twee mislukte verzoeken achter elkaar (ruim 6 s) tonen een balkje; het eerste dat weer lukt haalt het weg.
