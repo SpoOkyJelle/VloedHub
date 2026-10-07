@@ -123,7 +123,11 @@ function testConnection(cb) {
 
   var sql;
   try { sql = require("mssql"); }
-  catch (e) { step("Pakket mssql", false, null, "ontbreekt, voer npm install uit"); return cb(out); }
+  catch (e) {
+    // de echte reden erbij: "niet gevonden" is iets anders dan "laadt niet onder deze Node-versie"
+    step("Pakket mssql laden", false, null, message(e).split("\n")[0] + " — Node " + process.version + ", map " + path.join(__dirname, ".."));
+    return cb(out);
+  }
 
   var t = Date.now();
   var testPool = new sql.ConnectionPool({
