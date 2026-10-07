@@ -536,7 +536,7 @@ function gatherExtras(ctx, callback) {
         ctx.afvalTomorrow = (a && a.configured && a.pickups) ? a.pickups.filter(function(x) { return x.days === 1; }).map(function(x) { return x.label; }) : [];
         monitor.getStatus(function(list) {
           // null zolang de bewaking na een herstart nog niets kan zeggen
-          ctx.offline = monitor.isReady() ? list.filter(function(d) { return !d.online; }) : null;
+          ctx.offline = monitor.isReady() ? list.filter(function(d) { return !d.online && d.notify; }) : null;
           if (modules.isOn('vaatwasser')) {
             var hc = homeconnect.getStatus();
             ctx.dish = { operation: hc.state.operation, alerts: hc.alerts };

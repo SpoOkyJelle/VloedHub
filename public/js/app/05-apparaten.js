@@ -226,9 +226,16 @@ function loadDeviceStatus() {
       return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;' + border + '">' +
         '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + color + '"></span>' +
         '<div style="min-width:0"><div style="font-size:0.85rem;font-weight:600">' + d.name + '</div>' +
-        '<div style="font-size:0.65rem;color:var(--dim)">Laatste bericht: ' + when + ' · melding na ' + d.limit_min + ' min stilte</div></div></div>' +
-        '<span style="font-size:0.72rem;font-weight:600;color:' + color + '">' + (d.online ? 'Online' : 'Offline') + '</span></div>';
+        '<div style="font-size:0.65rem;color:var(--dim)">Laatste bericht: ' + when + ' · ' + (d.notify ? 'melding na ' + d.limit_min + ' min stilte' : 'geen melding') + '</div></div></div>' +
+        '<div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0"><span style="font-size:0.72rem;font-weight:600;color:' + color + '">' + (d.online ? 'Online' : 'Offline') + '</span>' +
+        '<button class="mod-switch' + (d.notify ? ' on' : '') + '" role="switch" aria-checked="' + d.notify + '" aria-label="Melding als ' + escHtml(d.name) + ' offline gaat" title="Melding bij offline" data-key="' + escHtml(d.key) + '" onclick="toggleDeviceNotify(this)"></button></div></div>';
     }).join('') + '</div></div>';
   }).catch(function(){});
+}
+function toggleDeviceNotify(btn) {
+  var on = !btn.classList.contains('on');
+  btn.disabled = true;
+  fetch('/api/monitor/notify', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: btn.dataset.key, notify: on})})
+    .then(loadDeviceStatus).catch(loadDeviceStatus);
 }
 

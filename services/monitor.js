@@ -5,6 +5,7 @@ var state = require("../utils/state");
 var discord = require("./discord");
 var fridge = require("./fridge");
 var modules = require("./modules");
+var auth = require("./auth");
 
 // Bewaakt of apparaten nog berichten sturen en meldt via Discord als er één wegvalt of terugkomt.
 var CHECK_INTERVAL = 60 * 1000;
@@ -17,8 +18,13 @@ var LIMITS = {
   temperature: 10 * 60 * 1000, // stuurt elke 60 s
   esphome:     15 * 60 * 1000,
   polling:     2 * 60 * 1000,  // ledstrips en relais vragen elke halve seconde hun stand op
-  fridge:      30 * 60 * 1000  // hoe vaak de koelkast een meting wegschrijft is niet bekend; ruim genomen
+  fridge:      90 * 60 * 1000  // schrijft maar eens per 30 tot 60 minuten een meting weg
 };
+
+// Apparaten waarvan stilte niets zegt: de koelkast meldt zich te onregelmatig en de ledstrip in de keuken
+// gaat met de wandschakelaar van de stroom af. Ze staan wel in de lijst, maar geven geen melding.
+// Per apparaat om te zetten bij Instellingen > Apparaatstatus (bewaard in data/config.json).
+var QUIET_BY_DEFAULT = { "fridge": true, "led::keuken": true };
 
 var DEFAULT_NAMES = { "led::default": "LED Strip", "led::keuken": "Ledstrip Keuken", "led::gang": "Ledstrip Gang", "relay::gang": "Lamp Gang" };
 var NAMES_FILE = path.join(__dirname, "../data/device-names.json");
@@ -40,11 +46,23 @@ function seen(key) {
   polled[key] = Date.now();
 }
 
+function notifies(key) {
+  var saved = auth.readConfig().monitorNotify || {};
+  return saved[key] != null ? !!saved[key] : !QUIET_BY_DEFAULT[key];
+}
+
+function setNotify(key, on) {
+  var cfg = auth.readConfig();
+  if (!cfg.monitorNotify) cfg.monitorNotify = {};
+  cfg.monitorNotify[key] = !!on;
+  auth.writeConfig(cfg);
+}
+
 function deviceNames() {
   try { return JSON.parse(fs.readFileSync(NAMES_FILE, "utf8")); } catch (e) { return {}; }
 }
 
-// cb(lijst van { key, name, last_seen, limit, online })
+// cb(lijst van { key, name, last_seen, limit_min, online, notify })
 function getStatus(cb) {
   var list = [];
   var names = deviceNames();
@@ -53,7 +71,7 @@ function getStatus(cb) {
     if (module && !modules.isOn(module)) return;
     var age = lastSeen ? ageMs(lastSeen) : null;
     if (age != null && age > FORGET_AFTER) return;
-    list.push({ key: key, name: name, last_seen: lastSeen, limit_min: limit / 60000, online: age != null && age <= limit });
+    list.push({ key: key, name: name, last_seen: lastSeen, limit_min: limit / 60000, online: age != null && age <= limit, notify: notifies(key) });
   }
 
   // Ledstrips en relais: alleen apparaten die zich ooit gemeld hebben (dan is hun ip bewaard)
@@ -87,7 +105,7 @@ function check() {
     list.forEach(function(d) {
       var before = known[d.key];
       known[d.key] = d.online;
-      if (before === d.online) return;
+      if (before === d.online || !d.notify) return;
       if (!d.online) {
         discord.notify("apparaat", "⚠️ **" + d.name + " is offline** — " +
           (d.last_seen ? "laatste bericht om " + d.last_seen.slice(11, 16) : "nog niets ontvangen sinds de server is gestart"));
@@ -105,4 +123,4 @@ function start() {
 // Vlak na een herstart is nog niet te zeggen wie er offline is
 function isReady() { return Date.now() - startedAt >= STARTUP_GRACE; }
 
-module.exports = { start: start, seen: seen, getStatus: getStatus, check: check, isReady: isReady };
+module.exports = { start: start, seen: seen, getStatus: getStatus, setNotify: setNotify, check: check, isReady: isReady };
