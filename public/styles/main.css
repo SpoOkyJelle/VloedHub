@@ -1553,6 +1553,31 @@ body.kiosk #conn-banner {
   margin-left:auto}
 .dish-card {
   cursor:pointer}
+/* Uitklapdeel: hoogte loopt mee via de rijhoogte van een grid; de negatieve marge heft de tussenruimte op zolang het dicht is */
+.dish-collapse {
+  display:grid;
+  grid-template-rows:0fr;
+  overflow:hidden;
+  margin-top:-0.6rem;
+  opacity:0;
+  transition:grid-template-rows 0.3s cubic-bezier(0.4,0,0.2,1),margin-top 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.25s}
+.dish-collapse.open {
+  grid-template-rows:1fr;
+  margin-top:0;
+  opacity:1}
+.dish-collapse > * {
+  min-height:0;
+  overflow:hidden}
+#dish-chevron {
+  transition:transform 0.3s}
+.dish-card .fridge-temp {
+  font-size:1.05rem}
+@media(max-width:480px) {
+  .dish-card .fridge-row {
+  flex-wrap:wrap}
+  .dish-card .fridge-cell {
+  flex-basis:calc(50% - 0.25rem)}
+}
 .dish-toggle {
   display:flex;
   justify-content:space-between;
