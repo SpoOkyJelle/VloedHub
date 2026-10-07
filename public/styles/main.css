@@ -85,7 +85,7 @@ body {
   position:relative}
 .screens-track {
   display:flex;
-  width:600%;
+  width:500%;
   height:100%;
   transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);
   will-change:transform}
@@ -1341,9 +1341,9 @@ to {
 .wash-card .chart-header {
   flex-wrap:wrap}
 /* op Thuis staat de naam al als kopje boven de kaart */
-#screen-4 .fridge-card .chart-title {
+#screen-3 .fridge-card .chart-title {
   display:none}
-#screen-4 .fridge-card .chart-header {
+#screen-3 .fridge-card .chart-header {
   justify-content:flex-end}
 /* Modules: wat bij een uitgezette module hoort, verdwijnt */
 .mod-off-storingen [data-module~='storingen'],
