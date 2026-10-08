@@ -43,6 +43,17 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Een apparaat uit de scan negeren, weer tonen of als persoon bijhouden
+  if (req.method === "POST" && req.url === "/api/presence/device") {
+    readBody(req, res, function(data) {
+      presence.setDevice(data.mac, data.action, data.name, function(err) {
+        if (err) return json(res, 400, { ok: false, error: err });
+        json(res, 200, Object.assign({ ok: true, devices: presence.getLastScan() }, presence.getStatus(req)));
+      });
+    });
+    return true;
+  }
+
   if (req.method === "POST" && req.url === "/api/presence/remove") {
     readBody(req, res, function(data) {
       presence.remove(data.id);

@@ -37,24 +37,69 @@ function claimPresence(btn) {
       showPresence(d);
     }).catch(function() { btn.disabled = false; });
 }
-// Laat zien wat er nu op het thuisnetwerk antwoordt, om te controleren of de server de telefoons kan vinden
+// ── Netwerkscan ──
+// Laat zien wat er nu op het thuisnetwerk antwoordt. Elk apparaat is af te vinken: negeren (een bekend apparaat
+// zoals een ESP32, komt dan niet meer in de lijst) of bijhouden als persoon (alleen een telefoon). Elk apparaat
+// kan ook een eigen naam krijgen en gewoon in de lijst blijven staan.
+var presenceDevices = [], presenceShowIgnored = false, presenceForm = null; // presenceForm: { mac, action } van het open invulveld
+function presenceTitle(x) {
+  return x.name || x.label || (x.router ? 'Modem' : x.camera ? 'Deurbelcamera' : x.hostname || x.visited_as || x.vendor || (x.private_mac ? 'Telefoon, tablet of laptop' : 'Onbekend apparaat'));
+}
+function renderPresenceScan(error) {
+  var out = document.getElementById('presence-scan');
+  if (!out) return;
+  var hidden = presenceDevices.filter(function(x) { return x.ignored; }).length;
+  var shown = presenceDevices.filter(function(x) { return presenceShowIgnored || !x.ignored; });
+  var html = '<div class="outage-sub">' + (presenceDevices.length - hidden) + ' apparaten' + (hidden ? ' · ' + hidden + ' genegeerd <button class="presence-remove" onclick="presenceShowIgnored=!presenceShowIgnored;renderPresenceScan()">' + (presenceShowIgnored ? 'Verbergen' : 'Tonen') + '</button>' : '') +
+    '. Een telefoon in slaapstand kan ontbreken.</div>' + (error ? '<div class="outage-sub" style="color:var(--red)">' + escHtml(error) + '</div>' : '');
+  html += shown.map(function(x) {
+    // de beste aanwijzing als titel, de rest eronder
+    var title = presenceTitle(x);
+    var hints = [x.label && !x.ignored ? presenceTitle(Object.assign({}, x, { label: null })) : '', x.hostname, x.visited_as ? 'opende VloedHub als ' + x.visited_as : '', x.vendor, x.private_mac ? 'privé-wifi-adres' : ''].filter(function(h) { return h && h !== title; });
+    var phone = x.visited_as === 'iPhone' || x.visited_as === 'Android-telefoon';
+    var icon = x.name ? 'fa-house-user' : x.ignored ? 'fa-check' : x.router ? 'fa-wifi' : x.camera ? 'fa-video' : phone || x.private_mac ? 'fa-mobile-screen' : /ESP|Espressif/.test(title + ' ' + (x.vendor || '')) ? 'fa-microchip' : 'fa-circle-question';
+    var form = presenceForm && presenceForm.mac === x.mac ? presenceForm : null;
+    var actions = x.name ? '<span class="presence-type">Bijgehouden</span>' :
+      x.ignored ? '<button class="presence-remove" onclick="presenceDevice(\'' + x.mac + '\',\'unignore\')">Weer tonen</button>' :
+      form ? '' :
+      (phone ? '<button class="presence-remove track" onclick="presenceAsk(\'' + x.mac + '\',\'track\')">Bijhouden</button>' : '') +
+      '<button class="presence-remove" onclick="presenceAsk(\'' + x.mac + '\',\'name\')">' + (x.label ? 'Naam wijzigen' : 'Naam geven') + '</button>' +
+      '<button class="presence-remove" onclick="presenceAsk(\'' + x.mac + '\',\'ignore\')">Negeren</button>';
+    return '<div class="presence-row' + (x.name ? ' home' : '') + (x.ignored ? ' ignored' : '') + '"><i class="fa-solid ' + icon + '"></i>' +
+      '<div><div class="outage-text">' + escHtml(title) + '</div>' + (hints.length ? '<div class="outage-sub">' + escHtml(hints.join(' · ')) + '</div>' : '') +
+      '<div class="outage-sub presence-addr">' + x.ip + ' · ' + x.mac + '</div>' +
+      (form ? '<div class="presence-form presence-inline"><input class="field" id="presence-device-name" maxlength="30" autocomplete="off" placeholder="' + (form.action === 'track' ? 'Naam van de persoon' : form.action === 'name' ? 'Naam, bijv. Pc zolder' : 'Naam, bijv. Ledstrip keuken') + '" value="' + escHtml(form.action === 'name' ? x.label || '' : form.action === 'ignore' && title !== 'Onbekend apparaat' ? title.slice(0, 30) : '') + '">' +
+        '<button class="btn btn-primary" onclick="presenceDevice(\'' + x.mac + '\',\'' + form.action + '\')">' + (form.action === 'track' ? 'Bijhouden' : form.action === 'name' ? 'Opslaan' : 'Negeren') + '</button></div>' : '') +
+      '</div>' + actions + '</div>';
+  }).join('');
+  out.innerHTML = html;
+  var input = document.getElementById('presence-device-name');
+  if (input) { input.focus(); input.onkeydown = function(e) { if (e.key === 'Enter') presenceDevice(presenceForm.mac, presenceForm.action); if (e.key === 'Escape') { presenceForm = null; renderPresenceScan(); } }; }
+}
+// Negeren en bijhouden vragen eerst om een naam, in de regel zelf
+function presenceAsk(mac, action) { presenceForm = { mac: mac, action: action }; renderPresenceScan(); }
+function presenceDevice(mac, action) {
+  var input = document.getElementById('presence-device-name');
+  fetch('/api/presence/device', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mac: mac, action: action, name: input ? input.value : '' })})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (!d.ok) { renderPresenceScan(d.error || 'Opslaan mislukt'); return; }
+      presenceForm = null;
+      presenceDevices = d.devices;
+      showPresence(d);
+      renderPresenceScan();
+    }).catch(function() { renderPresenceScan('Verbindingsfout'); });
+}
 function scanPresence(btn) {
   var out = document.getElementById('presence-scan');
   btn.disabled = true;
+  presenceForm = null;
   out.innerHTML = '<div class="outage-sub">Netwerk afzoeken en apparaten opzoeken, dit kan een halve minuut duren…</div>';
   fetch('/api/presence/scan', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
     btn.disabled = false;
     if (!d.ok) { out.innerHTML = '<div class="outage-sub" style="color:var(--red)">' + escHtml(d.error || 'Scan mislukt') + '</div>'; return; }
+    presenceDevices = d.devices;
     showPresence(d);
-    out.innerHTML = '<div class="outage-sub">' + d.devices.length + ' apparaten gevonden. Een telefoon in slaapstand kan ontbreken.</div>' + d.devices.map(function(x) {
-      // de beste aanwijzing als titel, de rest eronder
-      var title = x.name || (x.router ? 'Modem' : x.camera ? 'Deurbelcamera' : x.hostname || x.visited_as || x.vendor || (x.private_mac ? 'Telefoon, tablet of laptop' : 'Onbekend apparaat'));
-      var hints = [x.hostname, x.visited_as ? 'opende VloedHub als ' + x.visited_as : '', x.vendor, x.private_mac ? 'privé-wifi-adres' : ''].filter(function(h) { return h && h !== title; });
-      var icon = x.name ? 'fa-mobile-screen' : x.router ? 'fa-wifi' : x.camera ? 'fa-video' : /telefoon|iPhone/i.test(title) || x.private_mac ? 'fa-mobile-screen' : /ESP/.test(title) ? 'fa-microchip' : 'fa-circle-question';
-      return '<div class="presence-row' + (x.name ? ' home' : '') + '"><i class="fa-solid ' + icon + '"></i>' +
-        '<div><div class="outage-text">' + escHtml(title) + '</div>' + (hints.length ? '<div class="outage-sub">' + escHtml(hints.join(' · ')) + '</div>' : '') +
-        '<div class="outage-sub presence-addr">' + x.ip + ' · ' + x.mac + '</div></div></div>';
-    }).join('');
+    renderPresenceScan();
   }).catch(function() { btn.disabled = false; out.innerHTML = '<div class="outage-sub" style="color:var(--red)">Verbindingsfout</div>'; });
 }
 // Verwijderen vraagt een tweede tik ter bevestiging
@@ -70,4 +115,4 @@ function removePresence(id, btn) {
     .then(function(r){return r.json();}).then(function(d) { if (d.ok) showPresence(d); }).catch(function(){});
 }
 // alleen bijwerken zolang Instellingen open staat
-setInterval(function() { if (currentScreen === 5 && !document.hidden && presenceRemoveArmed === null) loadPresence(); }, 30000);
+setInterval(function() { if (currentScreen === 5 && !document.hidden && presenceRemoveArmed === null && !presenceForm) loadPresence(); }, 30000);

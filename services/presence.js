@@ -22,21 +22,27 @@ var MAX_PEOPLE = 10;
 var WINDOWS = process.platform === "win32";
 
 var startedAt = Date.now();
-var people = load();   // [{ id, name, mac, ip, home, since, lastSeen }]
+var stored = load();
+var people = stored.people;     // [{ id, name, type, mac, ip, home, since, lastSeen }]
+var ignored = stored.ignored;   // [{ mac, label }]: bekende apparaten die niet in de scan hoeven, zoals de ESP32's
+var names = stored.names;       // { mac: naam }: zelf gegeven namen, voor apparaten die wel in de scan blijven staan
+var lastScan = [];              // wat de laatste scan vond, om een apparaat daaruit te kunnen bijhouden
 var busy = false, lastSweep = 0;
 var visitors = {};   // ip -> { label, at }: met wat voor browser of apparaat dat adres VloedHub het laatst bezocht
 var vendors = {};    // eerste helft van een MAC-adres -> fabrikant (of "" als die onbekend is)
 
 function load() {
-  try { var list = JSON.parse(fs.readFileSync(FILE, "utf8")).people; return Array.isArray(list) ? list : []; }
-  catch (e) { return []; }
+  var data = {};
+  try { data = JSON.parse(fs.readFileSync(FILE, "utf8")) || {}; } catch (e) {}
+  return { people: Array.isArray(data.people) ? data.people : [], ignored: Array.isArray(data.ignored) ? data.ignored : [],
+    names: data.names && typeof data.names === "object" ? data.names : {} };
 }
 
 function save() {
   try {
     var dir = path.dirname(FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(FILE, JSON.stringify({ people: people }, null, 2));
+    fs.writeFileSync(FILE, JSON.stringify({ people: people, ignored: ignored, names: names }, null, 2));
   } catch (e) { console.error("[aanwezigheid]", e.message); }
 }
 
@@ -266,7 +272,7 @@ function describe(list, cb) {
 }
 
 // Zoekt het hele thuisnetwerk af en geeft terug wat er nu op antwoordt, met wat er over elk apparaat bekend is:
-// cb(fout, [{ ip, mac, name, router, camera, hostname, vendor, private_mac, visited_as }]).
+// cb(fout, [{ ip, mac, name, router, ignored, label, camera, hostname, vendor, private_mac, visited_as }]).
 // Een telefoon in slaapstand kan ontbreken. De aangemelde telefoons worden meteen bijgewerkt.
 function scan(cb) {
   if (busy) return cb("Er loopt al een controle, probeer het zo nog eens");
@@ -278,13 +284,61 @@ function scan(cb) {
         locate(table, answered);
         var list = Object.keys(table).filter(function(ip) { return answered[ip] || table[ip].fresh; }).map(function(ip) {
           var p = people.filter(function(x) { return x.mac === table[ip].mac; })[0];
-          return { ip: ip, mac: table[ip].mac, name: p ? p.name : null, router: ip === gw };
+          var skip = ignored.filter(function(x) { return x.mac === table[ip].mac; })[0];
+          return { ip: ip, mac: table[ip].mac, name: p ? p.name : null, router: ip === gw, ignored: !!skip, label: skip ? skip.label : names[table[ip].mac] || null };
         });
         list.sort(function(a, b) { return +a.ip.split(".")[3] - +b.ip.split(".")[3]; });
-        describe(list, function() { busy = false; cb(null, list); });
+        // over een genegeerd apparaat hoeft niets meer opgezocht te worden
+        describe(list.filter(function(d) { return !d.ignored; }), function() { busy = false; lastScan = list; cb(null, list); });
       });
     });
   });
+}
+
+// Een apparaat uit de scan afvinken. cb(foutmelding of null)
+//  - name:     een eigen naam geven (leeg haalt hem weg); het apparaat blijft in de scan staan
+//  - ignore:   bekend apparaat (met een eigen naam), komt niet meer in de scan
+//  - unignore: weer gewoon tonen
+//  - track:    als persoon bijhouden; kan alleen als dat apparaat VloedHub als telefoon heeft geopend
+function setDevice(mac, action, name, cb) {
+  mac = String(mac || "").toLowerCase();
+  name = String(name || "").trim().slice(0, 30);
+  if (!/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/.test(mac)) return cb("Onbekend apparaat");
+  var found = lastScan.filter(function(d) { return d.mac === mac; })[0];
+  if (action === "name") {
+    if (name) {
+      if (!names[mac] && Object.keys(names).length >= 300) return cb("Er zijn al te veel namen opgeslagen");
+      names[mac] = name;
+    } else delete names[mac];
+  } else if (action === "unignore") {
+    // de naam blijft bewaard, het apparaat komt terug in de lijst
+    var was = ignored.filter(function(x) { return x.mac === mac; })[0];
+    if (was && was.label !== "Bekend apparaat") names[mac] = was.label;
+    ignored = ignored.filter(function(x) { return x.mac !== mac; });
+  } else if (action === "ignore") {
+    if (people.some(function(x) { return x.mac === mac; })) return cb("Dit apparaat wordt bijgehouden; verwijder het eerst bij Wie is thuis");
+    ignored = ignored.filter(function(x) { return x.mac !== mac; });
+    if (ignored.length >= 200) return cb("Er zijn al te veel apparaten genegeerd");
+    ignored.push({ mac: mac, label: name || names[mac] || "Bekend apparaat" });
+  } else if (action === "track") {
+    if (!name) return cb("Vul een naam in");
+    if (!found) return cb("Scan eerst opnieuw");
+    var type = found.visited_as === "iPhone" ? "iPhone" : found.visited_as === "Android-telefoon" ? "Android" : null;
+    if (!type) return cb("Open VloedHub eerst op deze telefoon, zodat zeker is dat het een telefoon is");
+    if (people.some(function(x) { return x.mac === mac; })) return cb("Dit apparaat wordt al bijgehouden");
+    if (people.length >= MAX_PEOPLE) return cb("Er zijn al " + MAX_PEOPLE + " telefoons aangemeld");
+    var p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, type: type, mac: mac, ip: found.ip, home: false, since: null, lastSeen: 0 };
+    people.push(p);
+    markSeen(p);
+  } else return cb("Onbekende actie");
+  if (found) {
+    var skip = ignored.filter(function(x) { return x.mac === mac; })[0];
+    found.ignored = !!skip;
+    found.label = skip ? skip.label : names[mac] || null;
+    if (action === "track") found.name = name;
+  }
+  save();
+  cb(null);
 }
 
 // Meldt de telefoon aan die deze aanvraag doet, of geeft hem een andere naam. cb(foutmelding of null)
@@ -340,4 +394,4 @@ function start() {
   setInterval(check, CHECK_INTERVAL);
 }
 
-module.exports = { getStatus: getStatus, claim: claim, remove: remove, sawRequest: sawRequest, scan: scan, check: check, start: start, parseNeighbors: parseNeighbors };
+module.exports = { getStatus: getStatus, claim: claim, remove: remove, sawRequest: sawRequest, scan: scan, setDevice: setDevice, getLastScan: function() { return lastScan; }, check: check, start: start, parseNeighbors: parseNeighbors };

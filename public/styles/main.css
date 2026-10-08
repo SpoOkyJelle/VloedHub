@@ -2017,6 +2017,20 @@ body.kiosk .meld-panel {
   font-variant-numeric:tabular-nums}
 .presence-list:empty {
   display:none}
+.presence-row.ignored {
+  opacity:0.55}
+.presence-row .presence-remove {
+  flex-shrink:0}
+.presence-row {
+  flex-wrap:wrap;
+  padding:0.3rem 0}
+.presence-row > div {
+  flex-basis:9rem}
+.presence-remove.track {
+  border-color:rgba(141,178,85,0.5);
+  color:var(--accent-l)}
+.presence-inline {
+  margin-top:0.4rem}
 .presence-form {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
