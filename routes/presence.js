@@ -34,7 +34,7 @@ module.exports = function(req, res) {
     return true;
   }
 
-  // Zoekt het thuisnetwerk af: wat is er nu verbonden. Duurt een seconde of tien.
+  // Zoekt het thuisnetwerk af: wat is er nu verbonden. Kan een halve minuut duren.
   if (req.method === "POST" && req.url === "/api/presence/scan") {
     presence.scan(function(err, devices) {
       if (err) return json(res, 409, { ok: false, error: err });

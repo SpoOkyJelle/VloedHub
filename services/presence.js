@@ -1,7 +1,10 @@
 var fs = require("fs");
 var os = require("os");
 var path = require("path");
+var dns = require("dns");
 var execFile = require("child_process").execFile;
+var httpget = require("../utils/httpget");
+var camera = require("./camera");
 var modules = require("./modules");
 
 // Wie is thuis: elke telefoon die is aangemeld wordt om de halve minuut op het thuisnetwerk gezocht.
@@ -21,6 +24,8 @@ var WINDOWS = process.platform === "win32";
 var startedAt = Date.now();
 var people = load();   // [{ id, name, mac, ip, home, since, lastSeen }]
 var busy = false, lastSweep = 0;
+var visitors = {};   // ip -> { label, at }: met wat voor browser of apparaat dat adres VloedHub het laatst bezocht
+var vendors = {};    // eerste helft van een MAC-adres -> fabrikant (of "" als die onbekend is)
 
 function load() {
   try { var list = JSON.parse(fs.readFileSync(FILE, "utf8")).people; return Array.isArray(list) ? list : []; }
@@ -171,14 +176,97 @@ function check() {
   });
 }
 
-// Een aanvraag vanaf het adres van een aangemelde telefoon, met de browser van zo'n telefoon, bewijst dat die thuis is
+// Wat voor apparaat een aanvraag doet, voor zover de browser dat zegt
+function visitorLabel(req) {
+  var ua = String((req.headers && req.headers["user-agent"]) || "");
+  if (!ua) return null;
+  if (/ESP32|ESP8266|ESPHome|esp-idf/i.test(ua)) return "ESP-apparaat van VloedHub";
+  if (/iPhone|iPod/.test(ua)) return "iPhone";
+  if (/iPad/.test(ua)) return "iPad";
+  if (/Android/.test(ua)) return /Mobile/.test(ua) ? "Android-telefoon" : "Android-tablet";
+  if (/Windows/.test(ua)) return "Windows-computer";
+  if (/Macintosh/.test(ua)) return "Mac of iPad";
+  if (/Linux|X11/.test(ua)) return "Linux-computer";
+  return ua.split(/[\/ ]/)[0].slice(0, 30);
+}
+
+// Een aanvraag vanaf het adres van een aangemelde telefoon, met de browser van zo'n telefoon, bewijst dat die thuis is.
+// Van elk adres op het thuisnetwerk wordt ook onthouden wat voor apparaat het was, voor de netwerkscan.
 function sawRequest(req) {
-  if (!people.length) return;
-  var ip = cleanIp(req.socket.remoteAddress), type = phoneType(req);
+  var ip = lanIp(req.socket.remoteAddress), label = ip && visitorLabel(req);
+  if (label && (visitors[ip] || Object.keys(visitors).length < 300)) visitors[ip] = { label: label, at: Date.now() };
+  if (!ip || !people.length) return;
+  var type = phoneType(req);
   people.forEach(function(p) { if (p.ip === ip && type && type === p.type && markSeen(p)) save(); });
 }
 
-// Zoekt het hele thuisnetwerk af en geeft terug wat er nu op antwoordt: cb([{ ip, mac, name, router }]).
+// Telefoons, tablets en laptops gebruiken op wifi meestal een zelfverzonnen (privé) MAC-adres in plaats van dat
+// van de fabrikant; dat is te zien aan het tweede teken
+function privateMac(mac) {
+  return /^.[26ae]/i.test(mac);
+}
+
+// De naam die het apparaat zelf aan het modem heeft opgegeven, als het modem die doorgeeft
+function hostname(ip, cb) {
+  var done = false, resolver = new dns.Resolver({ timeout: 1500, tries: 1 });
+  function finish(name) { if (done) return; done = true; cb(name); }
+  setTimeout(function() { finish(null); }, 2500);
+  try { resolver.reverse(ip, function(err, names) { finish(!err && names && names[0] && names[0] !== ip ? names[0] : null); }); }
+  catch (e) { finish(null); }
+}
+
+// De fabrikant bij een MAC-adres. Eerst uit een lijst die op de server kan staan (van nmap, arp-scan of
+// ieee-data); anders wordt de eerste helft van het adres nagevraagd bij macvendors.com. Dat deel zegt alleen
+// welke fabrikant het is, niet welk apparaat.
+var OUI_FILES = ["/usr/share/nmap/nmap-mac-prefixes", "/usr/share/arp-scan/ieee-oui.txt", "/usr/share/ieee-data/oui.txt"];
+var ouiList = null;
+function loadOui() {
+  ouiList = {};
+  OUI_FILES.some(function(file) {
+    var text;
+    try { text = fs.readFileSync(file, "utf8"); } catch (e) { return false; }
+    text.split(/\r?\n/).forEach(function(line) {
+      var m = line.match(/^([0-9A-F]{6})\s+(?:\(base 16\)\s+)?(\S.*)$/i);
+      if (m) ouiList[m[1].toLowerCase()] = m[2].trim();
+    });
+    return Object.keys(ouiList).length > 0;
+  });
+}
+
+function vendor(mac, cb) {
+  if (privateMac(mac)) return cb(null);
+  var prefix = mac.replace(/:/g, "").slice(0, 6);
+  if (!ouiList) loadOui();
+  if (ouiList[prefix]) return cb(ouiList[prefix]);
+  if (vendors[prefix] !== undefined) return cb(vendors[prefix] || null);
+  httpget.get("https://api.macvendors.com/" + prefix, function(err, text) {
+    // een onbekende fabrikant geeft een fout; bij te veel vragen achter elkaar ook, dus dan niets onthouden
+    var busyNow = err && /429/.test(err.message);
+    if (!busyNow) vendors[prefix] = err ? "" : String(text).trim().slice(0, 60);
+    // de dienst staat één vraag per seconde toe
+    setTimeout(function() { cb(vendors[prefix] || null); }, 1100);
+  });
+}
+
+// Vult per gevonden apparaat aan wat er over te achterhalen is: een voor een, om de fabrikantendienst niet te overvragen
+function describe(list, cb) {
+  var cam = camera.parseHost(camera.getStatus().host || "");
+  var i = 0;
+  (function next() {
+    var d = list[i++];
+    if (!d) return cb(list);
+    d.private_mac = privateMac(d.mac);
+    d.camera = !!cam && cam.hostname === d.ip;
+    d.visited_as = visitors[d.ip] ? visitors[d.ip].label : null;
+    hostname(d.ip, function(name) {
+      d.hostname = name;
+      vendor(d.mac, function(v) { d.vendor = v; next(); });
+    });
+  })();
+}
+
+// Zoekt het hele thuisnetwerk af en geeft terug wat er nu op antwoordt, met wat er over elk apparaat bekend is:
+// cb(fout, [{ ip, mac, name, router, camera, hostname, vendor, private_mac, visited_as }]).
 // Een telefoon in slaapstand kan ontbreken. De aangemelde telefoons worden meteen bijgewerkt.
 function scan(cb) {
   if (busy) return cb("Er loopt al een controle, probeer het zo nog eens");
@@ -188,13 +276,12 @@ function scan(cb) {
     neighbors(function(table) {
       gateway(function(gw) {
         locate(table, answered);
-        busy = false;
         var list = Object.keys(table).filter(function(ip) { return answered[ip] || table[ip].fresh; }).map(function(ip) {
           var p = people.filter(function(x) { return x.mac === table[ip].mac; })[0];
           return { ip: ip, mac: table[ip].mac, name: p ? p.name : null, router: ip === gw };
         });
         list.sort(function(a, b) { return +a.ip.split(".")[3] - +b.ip.split(".")[3]; });
-        cb(null, list);
+        describe(list, function() { busy = false; cb(null, list); });
       });
     });
   });

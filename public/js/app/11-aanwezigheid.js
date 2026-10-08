@@ -41,14 +41,19 @@ function claimPresence(btn) {
 function scanPresence(btn) {
   var out = document.getElementById('presence-scan');
   btn.disabled = true;
-  out.innerHTML = '<div class="outage-sub">Netwerk afzoeken, dit duurt een seconde of tien…</div>';
+  out.innerHTML = '<div class="outage-sub">Netwerk afzoeken en apparaten opzoeken, dit kan een halve minuut duren…</div>';
   fetch('/api/presence/scan', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
     btn.disabled = false;
     if (!d.ok) { out.innerHTML = '<div class="outage-sub" style="color:var(--red)">' + escHtml(d.error || 'Scan mislukt') + '</div>'; return; }
     showPresence(d);
     out.innerHTML = '<div class="outage-sub">' + d.devices.length + ' apparaten gevonden. Een telefoon in slaapstand kan ontbreken.</div>' + d.devices.map(function(x) {
-      return '<div class="presence-row' + (x.name ? ' home' : '') + '"><i class="fa-solid ' + (x.name ? 'fa-mobile-screen' : x.router ? 'fa-wifi' : 'fa-circle-question') + '"></i>' +
-        '<div><div class="outage-text">' + (x.name ? escHtml(x.name) : x.router ? 'Modem' : 'Onbekend apparaat') + '</div><div class="outage-sub presence-addr">' + x.ip + ' · ' + x.mac + '</div></div></div>';
+      // de beste aanwijzing als titel, de rest eronder
+      var title = x.name || (x.router ? 'Modem' : x.camera ? 'Deurbelcamera' : x.hostname || x.visited_as || x.vendor || (x.private_mac ? 'Telefoon, tablet of laptop' : 'Onbekend apparaat'));
+      var hints = [x.hostname, x.visited_as ? 'opende VloedHub als ' + x.visited_as : '', x.vendor, x.private_mac ? 'privé-wifi-adres' : ''].filter(function(h) { return h && h !== title; });
+      var icon = x.name ? 'fa-mobile-screen' : x.router ? 'fa-wifi' : x.camera ? 'fa-video' : /telefoon|iPhone/i.test(title) || x.private_mac ? 'fa-mobile-screen' : /ESP/.test(title) ? 'fa-microchip' : 'fa-circle-question';
+      return '<div class="presence-row' + (x.name ? ' home' : '') + '"><i class="fa-solid ' + icon + '"></i>' +
+        '<div><div class="outage-text">' + escHtml(title) + '</div>' + (hints.length ? '<div class="outage-sub">' + escHtml(hints.join(' · ')) + '</div>' : '') +
+        '<div class="outage-sub presence-addr">' + x.ip + ' · ' + x.mac + '</div></div></div>';
     }).join('');
   }).catch(function() { btn.disabled = false; out.innerHTML = '<div class="outage-sub" style="color:var(--red)">Verbindingsfout</div>'; });
 }
