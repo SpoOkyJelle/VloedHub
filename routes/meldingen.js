@@ -3,6 +3,7 @@ var modules = require("../services/modules");
 var homeconnect = require("../services/homeconnect");
 var warnings = require("../services/warnings");
 var outages = require("../services/outages");
+var nlalert = require("../services/nlalert");
 
 function json(res, data) {
   res.writeHead(200, { "Content-Type": "application/json" });
@@ -24,7 +25,12 @@ function active(cb) {
       ((o && o.ok && o.mine) || []).forEach(function(e) {
         list.push({ category: "storing", title: (e.planned ? "Geplande " + String(e.kind).toLowerCase() : e.kind) + " op " + o.postcode, sub: e.planned ? (e.when || "") : (e.status || ""), url: e.url || null });
       });
-      cb(list);
+      (modules.isOn("nlalert") ? nlalert.fetchAlerts : function(done) { done(null, null); })(function(err3, n) {
+        ((n && n.ok && n.alerts) || []).forEach(function(a) {
+          list.push({ category: "nlalert", title: "NL-Alert " + (a.home ? "voor jouw adres" : "op " + a.km + " km"), sub: a.message });
+        });
+        cb(list);
+      });
     });
   });
 }

@@ -1971,6 +1971,43 @@ body.kiosk .meld-panel {
 .outage-sub {
   font-size:0.64rem;
   color:var(--muted)}
+/* Omgeving: regen, files en 112-meldingen gebruiken dezelfde regels als storingen */
+.outage-line.rain > i { color:var(--blue) }
+.rain-bars {
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  height:2.6rem;
+  padding-top:0.2rem;
+  border-bottom:1px solid var(--border)}
+.rain-bars span {
+  flex:1;
+  height:100%;
+  display:flex;
+  align-items:flex-end}
+.rain-bars i {
+  width:100%;
+  border-radius:2px 2px 0 0;
+  background:linear-gradient(to top,rgba(56,189,248,0.45),var(--blue))}
+.rain-axis {
+  display:flex;
+  justify-content:space-between;
+  font-size:0.58rem;
+  color:var(--dim);
+  font-variant-numeric:tabular-nums}
+.road-nr {
+  display:inline-block;
+  min-width:2.1rem;
+  margin-right:0.45rem;
+  padding:0.05rem 0.3rem;
+  border-radius:4px;
+  background:rgba(248,113,113,0.16);
+  color:var(--red);
+  font-size:0.66rem;
+  font-weight:700;
+  text-align:center}
+.env-more {
+  padding-left:1.75rem}
 .outage-link {
   color:var(--muted);
   font-size:0.75rem;

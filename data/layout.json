@@ -33,6 +33,18 @@
       "size": "4"
     },
     {
+      "type": "rain",
+      "size": "2"
+    },
+    {
+      "type": "traffic",
+      "size": "2"
+    },
+    {
+      "type": "p2000",
+      "size": "2"
+    },
+    {
       "type": "scenes",
       "size": "4"
     },

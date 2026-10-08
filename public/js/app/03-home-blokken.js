@@ -29,7 +29,7 @@ var layoutConfig = {};
 var layoutEditMode = false;
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -109,6 +109,18 @@ var BLOCKS = {
   'outages': {label:'Stroomstoringen',icon:'fa-plug-circle-bolt',dynamic:true,
     render:function(el){el.innerHTML='<div class="card outage-card" id="blk-outages"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
     refresh:function(){loadOutages();}
+  },
+  'rain': {label:'Regen komende 2 uur',icon:'fa-cloud-rain',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-rain"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    refresh:function(){loadRain();}
+  },
+  'traffic': {label:'Files',icon:'fa-car-side',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-traffic"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    refresh:function(){loadTraffic();}
+  },
+  'p2000': {label:'112-meldingen',icon:'fa-truck-medical',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-p2000"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    refresh:function(){loadP2000();}
   },
   'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,
     render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap" style="min-height:0;height:60px"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},
