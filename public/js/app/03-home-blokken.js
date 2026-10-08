@@ -129,7 +129,7 @@ var BLOCKS = {
     refresh:function(){loadZiggo();}
   },
   'status': {label:'Status omgeving',icon:'fa-list-check',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card" id="blk-status"><div class="status-chips"><span class="skel-line" style="flex:1"></span></div><div class="status-detail"></div></div>';},
+    render:function(el){el.innerHTML='<div class="card insight-card" id="blk-status"><div class="status-chips"><span class="skel-line" style="flex:1"></span></div><div class="fold"><div class="status-detail"></div></div></div>';},
     refresh:function(){loadStatus();}
   },
   'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,

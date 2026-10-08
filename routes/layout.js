@@ -7,7 +7,8 @@ var LAYOUT_FILE = path.join(__dirname, "../data/layout.json");
 var DEFAULT_LAYOUT = {
   "0": [
     {type:"weather",size:"2"},
-    {type:"rain",size:"2"},
+    {type:"power_live",size:"1"},
+    {type:"afval",size:"1"},
     {type:"led_default",size:"1"},
     {type:"led_keuken",size:"1"},
     {type:"led_gang",size:"1"},
@@ -15,30 +16,23 @@ var DEFAULT_LAYOUT = {
     {type:"scenes",size:"4"},
     {type:"status",size:"2"},
     {type:"camera",size:"2"},
-    {type:"power_live",size:"1"},
-    {type:"afval",size:"1"},
     {type:"today_vs_normal",size:"2"},
-    {type:"fridge",size:"2"},
     {type:"internet",size:"2"},
     {type:"chart_power",size:"2"},
-    {type:"phases",size:"2"},
-    {type:"phase_load",size:"2"},
     {type:"month_forecast",size:"1"},
     {type:"standby",size:"1"}
   ],
   "kiosk": [
     {type:"weather",size:"2"},
-    {type:"rain",size:"1"},
     {type:"afval",size:"1"},
+    {type:"power_live",size:"1"},
     {type:"led_default",size:"1"},
     {type:"led_keuken",size:"1"},
     {type:"led_gang",size:"1"},
     {type:"relay_gang",size:"1"},
     {type:"scenes",size:"4"},
     {type:"camera",size:"2"},
-    {type:"status",size:"2"},
-    {type:"power_live",size:"2"},
-    {type:"today_vs_normal",size:"2"}
+    {type:"status",size:"2"}
   ]
 };
 

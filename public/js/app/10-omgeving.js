@@ -13,34 +13,51 @@ function envHead(title, right) {
 // Staafjes per vijf minuten; de hoogte loopt af naar boven toe, zodat motregen zichtbaar blijft naast een bui
 var RAIN_FULL = 10; // mm per uur waarbij een staafje vol is
 function rainStrength(mm) { return mm >= 5 ? 'Zware regen' : mm >= 1 ? 'Regen' : 'Lichte regen'; }
+// Wat er over de regen te zeggen valt: een regel tekst en de staafjes
+function rainView(d) {
+  var last = d.points[d.points.length - 1].time, v = {};
+  if (d.raining) {
+    v.icon = 'fa-cloud-showers-heavy'; v.cls = 'rain';
+    v.text = d.until ? 'Het regent tot ' + d.until : 'Het blijft regenen';
+    v.sub = d.until ? '' : 'Tot minstens ' + last;
+  } else if (d.from) {
+    v.icon = 'fa-cloud-rain'; v.cls = d.in_min <= 30 ? 'warn' : 'rain';
+    v.text = rainStrength(d.max_mm) + ' vanaf ' + d.from;
+    v.sub = 'Over ' + d.in_min + ' minuten';
+  } else {
+    v.icon = 'fa-sun'; v.cls = 'good';
+    v.text = 'Droog tot minstens ' + last;
+    v.sub = '';
+  }
+  v.bars = '<div class="rain-bars">' + d.points.map(function(p) {
+    var h = p.mm > 0 ? Math.max(8, Math.min(100, Math.sqrt(p.mm / RAIN_FULL) * 100)) : 0;
+    return '<span title="' + p.time + ' · ' + nlNum(p.mm, 1) + ' mm/u"><i style="height:' + h + '%"></i></span>';
+  }).join('') + '</div>' +
+    '<div class="rain-axis"><span>' + d.points[0].time + '</span><span>' + d.points[Math.floor(d.points.length / 2)].time + '</span><span>' + last + '</span></div>';
+  return v;
+}
+// De verwachting staat als uitklapdeel in de weerkaart, en in het losse blok als dat op Home is gezet
 function loadRain() {
+  if (!moduleOn('regen')) return;
   fetch('/api/rain').then(function(r){return r.json();}).then(function(d) {
-    var el = document.getElementById('blk-rain');
-    if (!el) return;
-    if (!d.ok) { el.innerHTML = envHead('Regen') + envLine('fa-cloud-rain', escHtml(d.error || 'Regenverwachting niet beschikbaar'), '', 'muted'); return; }
-    var last = d.points[d.points.length - 1].time, icon, text, sub, cls;
-    if (d.raining) {
-      icon = 'fa-cloud-showers-heavy'; cls = 'rain';
-      text = d.until ? 'Het regent tot ' + d.until : 'Het blijft regenen';
-      sub = d.until ? '' : 'Tot minstens ' + last;
-    } else if (d.from) {
-      icon = 'fa-cloud-rain'; cls = d.in_min <= 30 ? 'warn' : 'rain';
-      text = rainStrength(d.max_mm) + ' vanaf ' + d.from;
-      sub = 'Over ' + d.in_min + ' minuten';
-    } else {
-      icon = 'fa-sun'; cls = 'good';
-      text = 'Droog tot minstens ' + last;
-      sub = '';
-    }
-    var bars = d.points.map(function(p) {
-      var h = p.mm > 0 ? Math.max(8, Math.min(100, Math.sqrt(p.mm / RAIN_FULL) * 100)) : 0;
-      return '<span title="' + p.time + ' · ' + nlNum(p.mm, 1) + ' mm/u"><i style="height:' + h + '%"></i></span>';
-    }).join('');
-    el.innerHTML = envHead('Regen', 'Buienradar') + envLine(icon, text, sub, cls) +
-      '<div class="rain-bars">' + bars + '</div>' +
-      '<div class="rain-axis"><span>' + d.points[0].time + '</span><span>' + d.points[Math.floor(d.points.length / 2)].time + '</span><span>' + last + '</span></div>';
+    var el = document.getElementById('blk-rain'), v = d.ok ? rainView(d) : null;
+    if (el) el.innerHTML = v ? envHead('Regen', 'Buienradar') + envLine(v.icon, v.text, v.sub, v.cls) + v.bars :
+      envHead('Regen') + envLine('fa-cloud-rain', escHtml(d.error || 'Regenverwachting niet beschikbaar'), '', 'muted');
+    var icon = document.getElementById('wx-rain-icon');
+    if (!icon) return;
+    icon.className = 'fa-solid ' + (v ? v.icon + ' ' + v.cls : 'fa-cloud-rain');
+    setEl('wx-rain-summary', v ? v.text + (v.sub ? ' · ' + v.sub.toLowerCase() : '') : escHtml(d.error || 'Regenverwachting niet beschikbaar'));
+    setEl('wx-rain-detail', v ? v.bars + '<div class="rain-source">Buienradar · neerslag per vijf minuten</div>' : '');
   }).catch(function(){});
 }
+function toggleWeatherRain() {
+  var open = document.getElementById('wx-rain-fold').classList.toggle('open');
+  var btn = document.querySelector('.wx-rain-toggle');
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+}
+loadRain();
+setInterval(loadRain, 5 * 60 * 1000);
 
 // ── Files ──
 var TRAFFIC_MAX = 5;
@@ -149,13 +166,17 @@ function loadStatus() {
     if (statusOpen && BLOCKS[statusOpen]) BLOCKS[statusOpen].refresh();
   });
 }
+var statusCloseTimer = null;
 function toggleStatus(key) {
   var detail = document.querySelector('#blk-status .status-detail');
   if (!detail || layoutEditMode) return;
   statusOpen = statusOpen === key ? null : key;
-  detail.innerHTML = '';
   document.querySelectorAll('#blk-status .status-chip').forEach(function(c) { c.classList.toggle('open', c.dataset.status === statusOpen); });
-  if (!statusOpen) return;
+  clearTimeout(statusCloseTimer);
+  detail.parentNode.classList.toggle('open', !!statusOpen);
+  // bij het sluiten blijft de inhoud staan tot het dichtklappen klaar is
+  if (!statusOpen) { statusCloseTimer = setTimeout(function() { detail.innerHTML = ''; }, 320); return; }
+  detail.innerHTML = '';
   BLOCKS[key].render(detail);
   BLOCKS[key].refresh();
 }

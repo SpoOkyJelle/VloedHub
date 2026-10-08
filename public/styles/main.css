@@ -1379,6 +1379,7 @@ to {
 .mod-off-internet [data-module~='internet'],
 .mod-off-camera [data-module~='camera'],
 .mod-off-afval [data-module~='afval'],
+.mod-off-regen [data-module~='regen'],
 .mod-off-lights [data-module~='lights'],
 .mod-off-fridge [data-module~='fridge'],
 .mod-off-temperature [data-module~='temperature'],
@@ -2019,8 +2020,85 @@ body.kiosk .meld-panel {
 .status-chip.open {
   border-color:rgba(141,178,85,0.6);
   background:rgba(141,178,85,0.08)}
-.status-detail:empty {
-  display:none}
+/* Uitklapdeel: de hoogte loopt mee via de rijhoogte van een grid; de negatieve marge heft de tussenruimte van de kaart op zolang het dicht is */
+.fold {
+  display:grid;
+  grid-template-rows:0fr;
+  overflow:hidden;
+  margin-top:calc(-1 * var(--fold-gap,0.6rem));
+  opacity:0;
+  transition:grid-template-rows 0.3s cubic-bezier(0.4,0,0.2,1),margin-top 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.25s}
+.fold.open {
+  grid-template-rows:1fr;
+  margin-top:0;
+  opacity:1}
+.fold > * {
+  min-height:0;
+  overflow:hidden}
+/* de regels van een uitgeklapt blok komen een voor een binnen */
+.status-detail .outage-line,.status-detail .meld-head,.status-detail .env-more {
+  animation:fold-in 0.3s cubic-bezier(0.2,0.8,0.2,1) both}
+.status-detail .outage-line:nth-child(2) { animation-delay:0.04s }
+.status-detail .outage-line:nth-child(3) { animation-delay:0.08s }
+.status-detail .outage-line:nth-child(4) { animation-delay:0.12s }
+.status-detail .outage-line:nth-child(5) { animation-delay:0.16s }
+.status-detail .outage-line:nth-child(n+6) { animation-delay:0.2s }
+@keyframes fold-in {
+  from {
+  opacity:0;
+  transform:translateY(-6px)}
+}
+.status-chip {
+  transition:border-color 0.2s,background 0.2s,transform 0.12s}
+.status-chip:active {
+  transform:scale(0.97)}
+/* Regenverwachting in de weerkaart */
+.weather-card {
+  --fold-gap:0.75rem}
+.wx-rain-toggle {
+  display:flex;
+  align-items:center;
+  gap:0.55rem;
+  width:100%;
+  padding:0.5rem 0.7rem;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(255,255,255,0.03);
+  color:var(--text);
+  font-family:inherit;
+  font-size:0.74rem;
+  font-weight:600;
+  text-align:left;
+  cursor:pointer;
+  transition:background 0.2s}
+.wx-rain-toggle.open {
+  background:rgba(255,255,255,0.06)}
+.wx-rain-toggle > span {
+  flex:1;
+  min-width:0}
+.wx-rain-toggle > i:first-child {
+  width:1.1rem;
+  text-align:center;
+  color:var(--muted)}
+.wx-rain-toggle > i.rain { color:var(--blue) }
+.wx-rain-toggle > i.warn { color:var(--yellow) }
+.wx-rain-toggle > i.good { color:var(--yellow) }
+#wx-rain-chevron {
+  font-size:0.6rem;
+  color:var(--muted);
+  transition:transform 0.3s}
+.wx-rain-toggle.open #wx-rain-chevron {
+  transform:rotate(180deg)}
+.rain-source {
+  margin-top:0.3rem;
+  font-size:0.58rem;
+  color:var(--dim)}
+@media (prefers-reduced-motion:reduce) {
+  .fold,.status-chip,#wx-rain-chevron {
+  transition:none}
+  .status-detail .outage-line,.status-detail .meld-head,.status-detail .env-more {
+  animation:none}
+}
 .status-detail > .card {
   padding:0.2rem 0 0;
   border:none;
