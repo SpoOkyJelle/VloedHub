@@ -137,8 +137,8 @@ var BLOCKS = {
     refresh:function(){loadInternet();}
   },
   'camera': {label:'Deurbelcamera',icon:'fa-video',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div></div>';},
-    refresh:function(){loadCamera();}
+    render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div><div class="cam-visits" id="blk-cam-visits"></div></div>';},
+    refresh:function(){loadCamera();loadRings();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
@@ -296,6 +296,8 @@ function camOverlayTick() {
 // ring: geopend doordat er wordt aangebeld; dan staat dat erbij en sluit de laag na een minuut vanzelf
 function openCamOverlay(ring) {
   var ov = document.getElementById('cam-overlay'), img = document.getElementById('blk-cam-img');
+  // stond er een foto van een eerder bezoek open, dan maakt die plaats voor het beeld van nu
+  if (ov && ov.dataset.still) { ov.remove(); ov = null; }
   if (!ov) {
     ov = document.createElement('div');
     ov.id = 'cam-overlay';
@@ -328,6 +330,33 @@ function closeCamOverlay() {
     if (camOvUrl) { URL.revokeObjectURL(camOvUrl); camOvUrl = null; }
   }, 280);
 }
+// ── Bezoekers ──
+// Bij elke keer aanbellen bewaart de server een foto; de laatste staan onder het beeld en zijn groot te bekijken
+var CAM_VISITS = 4;
+function loadRings() {
+  var el = document.getElementById('blk-cam-visits');
+  if (!el) return;
+  fetch('/api/camera/rings').then(function(r){return r.json();}).then(function(list) {
+    el.innerHTML = list.slice(0, CAM_VISITS).map(function(at) {
+      return '<button class="cam-visit" onclick="openCamStill(' + at + ')" aria-label="Foto van ' + shortWhen(at) + '"><img loading="lazy" alt="" src="/api/camera/rings/' + at + '.jpg"><span>' + shortWhen(at) + '</span></button>';
+    }).join('');
+  }).catch(function(){});
+}
+function openCamStill(at) {
+  if (layoutEditMode || document.getElementById('cam-overlay')) return;
+  var ov = document.createElement('div');
+  ov.id = 'cam-overlay';
+  ov.className = 'cam-overlay';
+  ov.dataset.still = '1';
+  ov.onclick = closeCamOverlay;
+  ov.innerHTML = '<img alt="Foto van de deurbel" src="/api/camera/rings/' + at + '.jpg"><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>' +
+    '<div class="cam-ring still"><i class="fa-solid fa-bell"></i>Aangebeld ' + shortWhen(at) + '</div>';
+  camShrink(ov.firstChild);
+  document.body.appendChild(ov);
+  ov.offsetWidth;
+  ov.classList.add('open');
+  ov.firstChild.style.transform = '';
+}
 function toggleCamFull() {
   var img = document.getElementById('blk-cam-img');
   if (img && !img.hidden && !layoutEditMode) openCamOverlay(false);
@@ -346,6 +375,8 @@ function checkBell() {
     if (d.age_ms > BELL_FRESH) return;
     openCamOverlay(true);
     loadMeldingen();
+    // de foto wordt direct na het aanbellen gemaakt en is er een paar tellen later
+    setTimeout(loadRings, 4000);
   }).catch(function(){});
 }
 setInterval(checkBell, BELL_POLL);

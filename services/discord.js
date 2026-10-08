@@ -79,6 +79,29 @@ function notify(category, message, otherWebhook) {
   sendDiscord(message, otherWebhook);
 }
 
+// Een melding met een foto erbij (bijv. van de deurbel). Het meldingenoverzicht krijgt alleen de tekst.
+function notifyWithImage(category, message, image, filename) {
+  notifications.add(category, message);
+  var webhook = modules.isOn("discord") && getWebhook();
+  if (!webhook) return;
+  var boundary = "vloedhub" + Date.now().toString(16);
+  var body = Buffer.concat([
+    Buffer.from("--" + boundary + "\r\nContent-Disposition: form-data; name=\"payload_json\"\r\nContent-Type: application/json\r\n\r\n" +
+      JSON.stringify({ content: message }) + "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"files[0]\"; filename=\"" + filename + "\"\r\nContent-Type: image/jpeg\r\n\r\n"),
+    image,
+    Buffer.from("\r\n--" + boundary + "--\r\n")
+  ]);
+  var url = new URL(webhook);
+  var req = https.request({
+    hostname: url.hostname,
+    path: url.pathname,
+    method: "POST",
+    headers: { "Content-Type": "multipart/form-data; boundary=" + boundary, "Content-Length": body.length }
+  }, function(res) { res.resume(); });
+  req.on("error", function() {});
+  req.end(body);
+}
+
 // Stuurt een testbericht, ook als de meldingen uit staan. cb(foutmelding of null)
 function sendTest(cb) {
   var webhook = getWebhook();
@@ -119,6 +142,7 @@ function init() {
 module.exports = {
   sendDiscord: sendDiscord,
   notify: notify,
+  notifyWithImage: notifyWithImage,
   fetchWanIP: fetchWanIP,
   get LOCAL_IP() { return LOCAL_IP; },
   get WAN_IP() { return WAN_IP; },

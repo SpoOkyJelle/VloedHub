@@ -35,6 +35,23 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // De momenten waarop is aangebeld waarvan een foto bewaard is, nieuwste eerst
+  if (req.method === "GET" && req.url === "/api/camera/rings") {
+    json(res, 200, camera.listRings());
+    return true;
+  }
+
+  var ring = req.method === "GET" && req.url.match(/^\/api\/camera\/rings\/(\d{13})\.jpg$/);
+  if (ring) {
+    camera.ringImage(ring[1], function(err, image) {
+      if (err) return json(res, 404, { error: err });
+      // een foto verandert nooit meer, dus de browser mag hem bewaren
+      res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": image.length, "Cache-Control": "private, max-age=604800, immutable" });
+      res.end(image);
+    });
+    return true;
+  }
+
   if (req.method === "GET" && req.url.split("?")[0] === "/api/camera/snapshot") {
     camera.snapshot(function(err, image) {
       if (err) return json(res, 502, { error: err });

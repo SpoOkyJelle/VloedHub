@@ -122,6 +122,8 @@ function snapshot(cb) {
 // Dat gaat met GetEvents; cb(fout, true/false), of cb(null, null) als de camera dat commando of de bel niet kent.
 var BELL_INTERVAL = 1000;
 var BELL_QUIET = 20000;   // een tweede druk binnen deze tijd is dezelfde bezoeker
+var RINGS_DIR = path.join(__dirname, "../data/deurbel");   // een foto per keer dat er is aangebeld (niet in git)
+var RINGS_KEEP = 50;
 var BELL_RETRY = 60;      // kent de camera het niet, dan nog maar eens per zoveel rondes proberen
 
 function fetchVisitor(cb) {
@@ -166,8 +168,35 @@ function checkBell() {
     bell.pressed = !!pressed;
     if (!rising || (bell.ringAt && Date.now() - bell.ringAt < BELL_QUIET)) return;
     bell.ringAt = Date.now();
-    discord.notify("deurbel", "🔔 **Er wordt aangebeld**");
+    var at = bell.ringAt, message = "🔔 **Er wordt aangebeld**";
+    // meteen een nieuwe opname, niet die van een eerdere kijker; lukt dat niet, dan gaat de melding zonder foto weg
+    fetchSnapshot(function(snapErr, image) {
+      if (snapErr) return discord.notify("deurbel", message);
+      saveRing(at, image);
+      discord.notifyWithImage("deurbel", message, image, "deurbel.jpg");
+    });
   });
+}
+
+// De foto's heten naar het moment van aanbellen (milliseconden); alleen de nieuwste blijven bewaard
+function listRings() {
+  var files;
+  try { files = fs.readdirSync(RINGS_DIR); } catch (e) { return []; }
+  return files.filter(function(f) { return /^\d{13}\.jpg$/.test(f); }).map(function(f) { return +f.slice(0, 13); }).sort(function(a, b) { return b - a; });
+}
+
+function saveRing(at, image) {
+  try {
+    if (!fs.existsSync(RINGS_DIR)) fs.mkdirSync(RINGS_DIR, { recursive: true });
+    fs.writeFileSync(path.join(RINGS_DIR, at + ".jpg"), image);
+    listRings().slice(RINGS_KEEP).forEach(function(old) { try { fs.unlinkSync(path.join(RINGS_DIR, old + ".jpg")); } catch (e) {} });
+  } catch (e) { console.error("[deurbel]", e.message); }
+}
+
+// cb(foutmelding of null, JPEG als Buffer)
+function ringImage(id, cb) {
+  if (!/^\d{13}$/.test(String(id))) return cb("Onbekende foto");
+  fs.readFile(path.join(RINGS_DIR, id + ".jpg"), function(err, image) { cb(err ? "Foto niet gevonden" : null, image); });
 }
 
 // Voor de browser: wanneer er voor het laatst is aangebeld en hoe lang dat geleden is
@@ -179,4 +208,4 @@ function start() {
   setInterval(checkBell, BELL_INTERVAL);
 }
 
-module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost, getBell: getBell, start: start };
+module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost, getBell: getBell, listRings: listRings, ringImage: ringImage, start: start };

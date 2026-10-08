@@ -1551,6 +1551,45 @@ to {
 .cam-ring i {
   transform-origin:50% 0;
   animation:cam-ring 1s ease-in-out infinite}
+.cam-ring.still {
+  background:rgba(12,15,29,0.8);
+  color:#fff}
+.cam-ring.still i {
+  animation:none}
+/* Foto's van wie er aanbelde, onder het beeld */
+.cam-visits {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0.4rem}
+.cam-visits:empty {
+  display:none}
+.cam-visit {
+  position:relative;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  background:#0B0D18;
+  aspect-ratio:4 / 3;
+  cursor:zoom-in}
+.cam-visit img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover}
+.cam-visit span {
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:0.6rem 0.25rem 0.15rem;
+  background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);
+  color:#fff;
+  font-family:inherit;
+  font-size:0.52rem;
+  font-weight:600;
+  text-align:center;
+  white-space:nowrap}
 @keyframes cam-ring {
   0%,50%,100% {
   transform:rotate(0)}
