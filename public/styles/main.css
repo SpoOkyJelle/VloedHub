@@ -2006,6 +2006,17 @@ body.kiosk .meld-panel {
   padding:0.2rem 0.6rem;
   cursor:pointer;
   white-space:nowrap}
+.presence-type {
+  margin-left:0.45rem;
+  font-size:0.58rem;
+  font-weight:600;
+  color:var(--dim);
+  text-transform:uppercase;
+  letter-spacing:0.06em}
+.presence-addr {
+  font-variant-numeric:tabular-nums}
+.presence-list:empty {
+  display:none}
 .presence-form {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;

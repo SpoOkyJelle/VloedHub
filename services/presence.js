@@ -7,6 +7,7 @@ var modules = require("./modules");
 // Wie is thuis: elke telefoon die is aangemeld wordt om de halve minuut op het thuisnetwerk gezocht.
 // Een telefoon wordt herkend aan zijn MAC-adres; het IP-adres kan wisselen en wordt dan teruggezocht.
 // Aanmelden gaat door VloedHub thuis op de wifi te openen: de server ziet dan vanaf welk adres dat gebeurt.
+// Dat kan alleen vanaf een telefoon (te zien aan de browser), zodat een tablet of computer niet als persoon telt.
 // De gegevens staan in data/presence.json (niet in git).
 var FILE = path.join(__dirname, "../data/presence.json");
 var CHECK_INTERVAL = 30 * 1000;
@@ -44,6 +45,15 @@ function lanIp(addr) {
   if (!m || [m[1], m[2], m[3], m[4]].some(function(n) { return +n > 255; })) return null;
   var a = +m[1], b = +m[2];
   return (a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31)) ? m[0] : null;
+}
+
+// "iPhone" of "Android" als de browser zich als telefoon meldt, anders null. Een Android-tablet mist het woord
+// Mobile, en een iPad doet zich voor als Mac; die vallen dus allebei af.
+function phoneType(req) {
+  var ua = String((req.headers && req.headers["user-agent"]) || "");
+  if (/iPhone|iPod/.test(ua)) return "iPhone";
+  if (/Android/.test(ua) && /Mobile/.test(ua)) return "Android";
+  return null;
 }
 
 function run(cmd, args, cb) {
@@ -161,17 +171,41 @@ function check() {
   });
 }
 
-// Elke aanvraag vanaf het adres van een aangemelde telefoon bewijst dat die thuis is
+// Een aanvraag vanaf het adres van een aangemelde telefoon, met de browser van zo'n telefoon, bewijst dat die thuis is
 function sawRequest(req) {
   if (!people.length) return;
-  var ip = cleanIp(req.socket.remoteAddress);
-  people.forEach(function(p) { if (p.ip === ip && markSeen(p)) save(); });
+  var ip = cleanIp(req.socket.remoteAddress), type = phoneType(req);
+  people.forEach(function(p) { if (p.ip === ip && type && type === p.type && markSeen(p)) save(); });
+}
+
+// Zoekt het hele thuisnetwerk af en geeft terug wat er nu op antwoordt: cb([{ ip, mac, name, router }]).
+// Een telefoon in slaapstand kan ontbreken. De aangemelde telefoons worden meteen bijgewerkt.
+function scan(cb) {
+  if (busy) return cb("Er loopt al een controle, probeer het zo nog eens");
+  busy = true;
+  lastSweep = Date.now();
+  pingAll(sweepIps(), function(answered) {
+    neighbors(function(table) {
+      gateway(function(gw) {
+        locate(table, answered);
+        busy = false;
+        var list = Object.keys(table).filter(function(ip) { return answered[ip] || table[ip].fresh; }).map(function(ip) {
+          var p = people.filter(function(x) { return x.mac === table[ip].mac; })[0];
+          return { ip: ip, mac: table[ip].mac, name: p ? p.name : null, router: ip === gw };
+        });
+        list.sort(function(a, b) { return +a.ip.split(".")[3] - +b.ip.split(".")[3]; });
+        cb(null, list);
+      });
+    });
+  });
 }
 
 // Meldt de telefoon aan die deze aanvraag doet, of geeft hem een andere naam. cb(foutmelding of null)
 function claim(req, name, cb) {
   name = String(name || "").trim().slice(0, 30);
   if (!name) return cb("Vul een naam in");
+  var type = phoneType(req);
+  if (!type) return cb("Aanmelden kan alleen vanaf een telefoon (iPhone of Android)");
   var ip = lanIp(req.socket.remoteAddress);
   if (!ip || ownIps().indexOf(ip) !== -1) return cb("Open VloedHub op de telefoon zelf, verbonden met de wifi thuis");
   gateway(function(gw) {
@@ -187,6 +221,7 @@ function claim(req, name, cb) {
           people.push(p);
         }
         p.name = name;
+        p.type = type;
         p.ip = ip;
         markSeen(p);
         save();
@@ -207,8 +242,8 @@ function getStatus(req) {
   var ip = cleanIp(req.socket.remoteAddress);
   var me = people.filter(function(p) { return p.ip === ip; })[0];
   return {
-    people: people.map(function(p) { return { id: p.id, name: p.name, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null }; }),
-    me: { local: !!lanIp(ip) && ownIps().indexOf(ip) === -1, id: me ? me.id : null },
+    people: people.map(function(p) { return { id: p.id, name: p.name, type: p.type || null, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null }; }),
+    me: { local: !!lanIp(ip) && ownIps().indexOf(ip) === -1, phone: !!phoneType(req), id: me ? me.id : null },
     away_after_min: AWAY_AFTER / 60000
   };
 }
@@ -218,4 +253,4 @@ function start() {
   setInterval(check, CHECK_INTERVAL);
 }
 
-module.exports = { getStatus: getStatus, claim: claim, remove: remove, sawRequest: sawRequest, check: check, start: start, parseNeighbors: parseNeighbors };
+module.exports = { getStatus: getStatus, claim: claim, remove: remove, sawRequest: sawRequest, scan: scan, check: check, start: start, parseNeighbors: parseNeighbors };

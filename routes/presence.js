@@ -34,6 +34,15 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Zoekt het thuisnetwerk af: wat is er nu verbonden. Duurt een seconde of tien.
+  if (req.method === "POST" && req.url === "/api/presence/scan") {
+    presence.scan(function(err, devices) {
+      if (err) return json(res, 409, { ok: false, error: err });
+      json(res, 200, Object.assign({ ok: true, devices: devices }, presence.getStatus(req)));
+    });
+    return true;
+  }
+
   if (req.method === "POST" && req.url === "/api/presence/remove") {
     readBody(req, res, function(data) {
       presence.remove(data.id);
