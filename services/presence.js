@@ -414,11 +414,16 @@ function getSources() {
 function getStatus(req) {
   var ip = cleanIp(req.socket.remoteAddress);
   var me = people.filter(function(p) { return p.ip === ip; })[0];
+  var localIp = ownIps()[0];
+  var host = req.headers && req.headers.host;
+  var port = host && host.split(":")[1] ? ":" + host.split(":")[1] : "";
+  var local_url = localIp ? "http://" + localIp + port : null;
   return {
     people: people.map(function(p) { return { id: p.id, name: p.name, type: p.type || null, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null }; }),
     me: { local: !!lanIp(ip) && ownIps().indexOf(ip) === -1, phone: !!phoneType(req), id: me ? me.id : null },
     sources: getSources(),
-    away_after_min: AWAY_AFTER / 60000
+    away_after_min: AWAY_AFTER / 60000,
+    local_url: local_url
   };
 }
 

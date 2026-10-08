@@ -47,5 +47,11 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "POST" && req.url === "/api/vaatwasser/alerts/clear") {
+    homeconnect.clearAlerts();
+    json(res, 200, Object.assign({ ok: true }, homeconnect.getStatus()));
+    return true;
+  }
+
   return false;
 };

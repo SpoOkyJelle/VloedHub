@@ -22,11 +22,12 @@ function showPresence(d, error) {
       '<div class="outage-sub presence-addr">' + x.ip + ' · ' + presenceAgo(x.at).replace('gezien', 'ontvangen') + '</div></div></div>';
   }).join('') : '<div class="outage-sub">Nog niets ontvangen sinds de server is gestart.</div>';
   var me = d.people.filter(function(p) { return p.id === d.me.id; })[0];
-  status.style.color = error ? 'var(--red)' : 'var(--dim)';
+  var blocked = !error && (!d.me.local || !d.me.phone);
+  status.style.color = error ? 'var(--red)' : blocked ? 'var(--text)' : 'var(--dim)';
   status.textContent = error || (me ? 'Dit apparaat is aangemeld als ' + me.name + '. Met een andere naam opslaan past de naam aan.' :
-    d.me.local && !d.me.phone ? 'Dit apparaat is geen telefoon. Aanmelden kan alleen vanaf een iPhone of Android-telefoon, zodat een tablet of computer niet als persoon telt.' :
+    d.me.local && !d.me.phone ? 'Dit apparaat is geen telefoon — open VloedHub op je telefoon (verbonden met de wifi thuis) om hem aan te melden.' :
     d.me.local ? 'Dit apparaat is nog niet aangemeld. Het telt als weg na ' + d.away_after_min + ' minuten niet gevonden te zijn op de wifi.' :
-    'Aanmelden kan alleen thuis op de wifi, via ' + d.local_url);
+    'Aanmelden kan alleen thuis op de wifi. Open VloedHub op je telefoon via: ' + (d.local_url || 'het lokale adres'));
   var name = document.getElementById('presence-name');
   if (me && !name.value) name.value = me.name;
   document.getElementById('presence-claim').disabled = !d.me.local || !d.me.phone;
@@ -42,7 +43,7 @@ function claimPresence(btn) {
       btn.disabled = false;
       if (!d.ok) { var s = document.getElementById('presence-me-status'); s.style.color = 'var(--red)'; s.textContent = d.error || 'Aanmelden mislukt'; return; }
       showPresence(d);
-    }).catch(function() { btn.disabled = false; });
+    }).catch(function() { btn.disabled = false; var s = document.getElementById('presence-me-status'); s.style.color = 'var(--red)'; s.textContent = 'Aanmelden mislukt, probeer opnieuw.'; });
 }
 // ── Netwerkscan ──
 // Laat zien wat er nu op het thuisnetwerk antwoordt. Elk apparaat is af te vinken: negeren (een bekend apparaat

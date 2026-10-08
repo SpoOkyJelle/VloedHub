@@ -509,4 +509,10 @@ function getStatus() {
   };
 }
 
-module.exports = { start: start, getStatus: getStatus, getStats: getStats, advice: advice, _estimateCycle: estimateCycle, programName: function(p) { return p ? (PROGRAMS[p] || p) : null; }, setCredentials: setCredentials, startLink: startLink, unlink: unlink, _apply: apply, _handleEvent: handleEvent };
+function clearAlerts() {
+  var cfg = load();
+  cfg.alerts = {};
+  save(cfg);
+}
+
+module.exports = { start: start, getStatus: getStatus, getStats: getStats, advice: advice, _estimateCycle: estimateCycle, programName: function(p) { return p ? (PROGRAMS[p] || p) : null; }, setCredentials: setCredentials, startLink: startLink, unlink: unlink, clearAlerts: clearAlerts, _apply: apply, _handleEvent: handleEvent };

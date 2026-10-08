@@ -155,6 +155,17 @@ function refreshVaatwasser() {
     var alertsEl = document.getElementById('dish-alerts');
     alertsEl.textContent = '';
     (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.textContent = '⚠ ' + a; alertsEl.appendChild(el); });
+    if ((d.alerts || []).length > 0) {
+      var btn = document.createElement('button');
+      btn.className = 'small-btn';
+      btn.style.cssText = 'margin-left:0.4rem;font-size:0.65rem;padding:0.1rem 0.4rem;opacity:0.7';
+      btn.title = 'Meldingen wissen (probleem is verholpen)';
+      btn.textContent = '✓ wissen';
+      btn.onclick = function() {
+        fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); });
+      };
+      alertsEl.appendChild(btn);
+    }
     var mins = s.finishAt ? Math.max(0, Math.round((s.finishAt - Date.now()) / 60000)) : null;
     refreshVaatwasserAdvies(!d.linked || s.operation === 'Run' || s.operation === 'Pause');
     setEl('dish-program', dishProgram(s.program));
