@@ -2,6 +2,8 @@ var http = require("http");
 var https = require("https");
 var fs = require("fs");
 var path = require("path");
+var discord = require("./discord");
+var modules = require("./modules");
 
 // Beeld van de Reolink-deurbel: een momentopname (JPEG) via de HTTP-API van de camera.
 // Het adres en de inloggegevens staan in data/camera.json (niet in git) en zijn in te stellen bij
@@ -13,6 +15,8 @@ var TIMEOUT   = 8000;
 var MAX_BYTES = 8 * 1024 * 1024;
 
 var cache = { image: null, fetchedAt: 0 };
+// supported: null zolang onbekend, false als de camera het aanbellen niet via de API meldt
+var bell = { ringAt: null, pressed: false, supported: null, busy: false, skip: 0 };
 var waiting = null;   // callbacks die op dezelfde lopende aanvraag wachten
 
 function getConfig() {
@@ -24,7 +28,7 @@ function getConfig() {
 
 function getStatus() {
   var c = getConfig();
-  return { configured: !!c, host: c ? c.host : null, user: c ? c.user : null };
+  return { configured: !!c, host: c ? c.host : null, user: c ? c.user : null, bell: c ? bell.supported : null };
 }
 
 // Alleen een adres op het thuisnetwerk, eventueel met https:// ervoor en een poort erachter.
@@ -57,6 +61,7 @@ function setConfig(data) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(CONFIG_FILE, JSON.stringify({ host: host, user: user, password: password }, null, 2));
   cache = { image: null, fetchedAt: 0 };
+  bell.supported = null;
   return null;
 }
 
@@ -112,4 +117,66 @@ function snapshot(cb) {
   });
 }
 
-module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost };
+// ── Aanbellen ──
+// De camera heeft geen manier om VloedHub te waarschuwen, dus wordt elke seconde gevraagd of de bel is ingedrukt.
+// Dat gaat met GetEvents; cb(fout, true/false), of cb(null, null) als de camera dat commando of de bel niet kent.
+var BELL_INTERVAL = 1000;
+var BELL_QUIET = 20000;   // een tweede druk binnen deze tijd is dezelfde bezoeker
+var BELL_RETRY = 60;      // kent de camera het niet, dan nog maar eens per zoveel rondes proberen
+
+function fetchVisitor(cb) {
+  var c = getConfig();
+  var target = c && parseHost(c.host);
+  if (!target) return cb("Camera niet ingesteld");
+  var body = JSON.stringify([{ cmd: "GetEvents", action: 0, param: { channel: 0 } }]);
+  var done = false;
+  function finish(err, pressed) { if (done) return; done = true; cb(err, pressed); }
+  var req = (target.secure ? https : http).request({
+    method: "POST", hostname: target.hostname, port: target.port, timeout: 4000, rejectUnauthorized: false,
+    path: "/cgi-bin/api.cgi?cmd=GetEvents&user=" + encodeURIComponent(c.user) + "&password=" + encodeURIComponent(c.password || ""),
+    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+  }, function(res) {
+    var text = "";
+    res.setEncoding("utf8");
+    res.on("data", function(chunk) { if (text.length < 20000) text += chunk; });
+    res.on("end", function() {
+      var r;
+      try { r = JSON.parse(text)[0]; } catch (e) { return finish("Onleesbaar antwoord"); }
+      var visitor = r && r.code === 0 && r.value && r.value.visitor;
+      if (!visitor || visitor.support === 0) return finish(null, null);
+      finish(null, visitor.alarm_state === 1);
+    });
+    res.on("error", function() { finish("Verbinding viel weg"); });
+  });
+  req.on("timeout", function() { req.destroy(); finish("Camera reageert niet"); });
+  req.on("error", function() { finish("Camera niet bereikbaar"); });
+  req.end(body);
+}
+
+function checkBell() {
+  if (bell.busy || !modules.isOn("camera") || !getConfig()) return;
+  if (bell.supported === false && ++bell.skip % BELL_RETRY) return;
+  bell.busy = true;
+  fetchVisitor(function(err, pressed) {
+    bell.busy = false;
+    if (err) return;
+    bell.supported = pressed !== null;
+    // alleen het moment van indrukken telt, niet zolang de camera de bel als ingedrukt blijft melden
+    var rising = pressed && !bell.pressed;
+    bell.pressed = !!pressed;
+    if (!rising || (bell.ringAt && Date.now() - bell.ringAt < BELL_QUIET)) return;
+    bell.ringAt = Date.now();
+    discord.notify("deurbel", "🔔 **Er wordt aangebeld**");
+  });
+}
+
+// Voor de browser: wanneer er voor het laatst is aangebeld en hoe lang dat geleden is
+function getBell() {
+  return { ring_at: bell.ringAt, age_ms: bell.ringAt ? Date.now() - bell.ringAt : null, supported: bell.supported };
+}
+
+function start() {
+  setInterval(checkBell, BELL_INTERVAL);
+}
+
+module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost, getBell: getBell, start: start };

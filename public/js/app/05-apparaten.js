@@ -80,6 +80,7 @@ function showCameraStatus(d, note, error) {
   if (!el) return;
   el.style.color = error ? 'var(--red)' : note ? 'var(--green)' : 'var(--dim)';
   var text = d.configured ? 'Ingesteld op ' + d.host + ' (gebruiker ' + d.user + ')' : 'Nog niet ingesteld. Zet HTTP aan op de camera en maak daar een gebruiker met alleen kijkrechten.';
+  if (d.configured && d.bell === false) text += ' · deze camera meldt het aanbellen niet aan VloedHub';
   el.textContent = error || (note ? note + ' · ' + text : text);
   if (d.configured) { document.getElementById('camera-host').value = d.host; document.getElementById('camera-user').value = d.user; document.getElementById('camera-password').placeholder = 'Wachtwoord (ongewijzigd)'; }
 }

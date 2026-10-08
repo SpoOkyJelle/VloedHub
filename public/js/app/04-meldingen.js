@@ -19,7 +19,7 @@ setInterval(loadWarnings, 15 * 60 * 1000);
 
 // ── Stroomstoringen ──
 // ── Meldingen ──
-var MELDING_ICONS = { weer:'fa-cloud-bolt', storing:'fa-bolt', apparaat:'fa-plug-circle-xmark', wasmachine:'fa-shirt', vaatwasser:'fa-sink', afval:'fa-trash-can', flow:'fa-diagram-project', systeem:'fa-server' };
+var MELDING_ICONS = { weer:'fa-cloud-bolt', storing:'fa-bolt', apparaat:'fa-plug-circle-xmark', wasmachine:'fa-shirt', vaatwasser:'fa-sink', afval:'fa-trash-can', deurbel:'fa-bell', flow:'fa-diagram-project', systeem:'fa-server' };
 var meldingenAll = false, meldingenClearArmed = false;
 // Een bericht is opgemaakt voor Discord ("⚠️ **Titel** — rest"): hier wordt dat een titel, een ondertitel en eventueel een link
 function meldingParts(msg) {

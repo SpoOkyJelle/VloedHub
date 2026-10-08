@@ -242,38 +242,91 @@ function camState(cls, label) {
   var pill = document.getElementById('blk-cam-pill');
   if (pill) { pill.className = 'cam-pill ' + cls; pill.lastChild.textContent = label; }
 }
-// Tik op het beeld voor een schermvullende weergave; die blijft meeverversen. Een eigen laag in plaats van de
-// Fullscreen-API, want die bestaat op de iPhone niet voor gewone elementen.
+// Tik op het beeld voor een schermvullende weergave; bij aanbellen opent die vanzelf, op elk scherm.
+// Een eigen laag in plaats van de Fullscreen-API, want die bestaat op de iPhone niet voor gewone elementen.
+// De laag haalt zelf zijn beeld op, zodat hij ook werkt als het blok niet op Home staat.
+var CAM_OVERLAY_INTERVAL = 1500, CAM_RING_OPEN = 60000;
+var camOvTimer = null, camOvClose = null, camOvUrl = null;
 // Het grote beeld groeit vanuit het blok en krimpt daar bij het sluiten weer naartoe: dit zet het op de plek van het blok
 function camShrink(big) {
   var frame = document.getElementById('blk-cam-frame');
-  if (!frame) return;
-  var r = frame.getBoundingClientRect(), w = window.innerWidth, h = window.innerHeight;
+  var r = frame && currentScreen === 0 ? frame.getBoundingClientRect() : null;
+  if (!r || !r.width) { big.style.transform = 'scale(0.9)'; return; }
+  var w = window.innerWidth, h = window.innerHeight;
   big.style.transform = 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + Math.max(r.width / w, r.height / h) + ')';
 }
-function toggleCamFull() {
-  var ov = document.getElementById('cam-overlay'), img = document.getElementById('blk-cam-img');
-  if (ov) {
-    if (!ov.classList.contains('open')) return;
-    ov.classList.remove('open');
-    camShrink(ov.firstChild);
-    setTimeout(function() { ov.remove(); }, 280);
-    return;
-  }
-  if (!img || img.hidden || layoutEditMode) return;
-  ov = document.createElement('div');
-  ov.id = 'cam-overlay';
-  ov.className = 'cam-overlay';
-  ov.onclick = toggleCamFull;
-  ov.innerHTML = '<img alt="Beeld van de deurbel"><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>';
-  ov.firstChild.src = img.src;
-  camShrink(ov.firstChild);
-  document.body.appendChild(ov);
-  ov.offsetWidth; // beginstand vastleggen, anders slaat de browser de overgang over
-  ov.classList.add('open');
-  ov.firstChild.style.transform = '';
+function camOverlayTick() {
+  var ov = document.getElementById('cam-overlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  function next() { clearTimeout(camOvTimer); camOvTimer = setTimeout(camOverlayTick, CAM_OVERLAY_INTERVAL); }
+  fetch('/api/camera/snapshot?t=' + Date.now()).then(function(r) {
+    if (!r.ok) throw new Error('Geen beeld');
+    return r.blob();
+  }).then(function(blob) {
+    var old = camOvUrl;
+    camOvUrl = URL.createObjectURL(blob);
+    ov.firstChild.src = camOvUrl;
+    ov.firstChild.hidden = false;
+    if (old) URL.revokeObjectURL(old);
+    next();
+  }).catch(next);
 }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && document.getElementById('cam-overlay')) toggleCamFull(); });
+// ring: geopend doordat er wordt aangebeld; dan staat dat erbij en sluit de laag na een minuut vanzelf
+function openCamOverlay(ring) {
+  var ov = document.getElementById('cam-overlay'), img = document.getElementById('blk-cam-img');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'cam-overlay';
+    ov.className = 'cam-overlay';
+    ov.onclick = closeCamOverlay;
+    ov.innerHTML = '<img alt="Beeld van de deurbel" hidden><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>';
+    // het beeld van het blok als begin, tot de eerste eigen opname binnen is
+    if (img && !img.hidden) { ov.firstChild.src = img.src; ov.firstChild.hidden = false; }
+    camShrink(ov.firstChild);
+    document.body.appendChild(ov);
+    ov.offsetWidth; // beginstand vastleggen, anders slaat de browser de overgang over
+    ov.classList.add('open');
+    ov.firstChild.style.transform = '';
+    camOverlayTick();
+  }
+  if (!ring) return;
+  if (!ov.querySelector('.cam-ring')) ov.insertAdjacentHTML('beforeend', '<div class="cam-ring"><i class="fa-solid fa-bell"></i>Er wordt aangebeld</div>');
+  clearTimeout(camOvClose);
+  camOvClose = setTimeout(closeCamOverlay, CAM_RING_OPEN);
+}
+function closeCamOverlay() {
+  var ov = document.getElementById('cam-overlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  clearTimeout(camOvTimer);
+  clearTimeout(camOvClose);
+  ov.classList.remove('open');
+  camShrink(ov.firstChild);
+  setTimeout(function() {
+    ov.remove();
+    if (camOvUrl) { URL.revokeObjectURL(camOvUrl); camOvUrl = null; }
+  }, 280);
+}
+function toggleCamFull() {
+  var img = document.getElementById('blk-cam-img');
+  if (img && !img.hidden && !layoutEditMode) openCamOverlay(false);
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCamOverlay(); });
+// ── Aanbellen ──
+// De server houdt bij wanneer er is aangebeld; hier wordt dat om de paar seconden nagevraagd. Een bel van
+// minder dan drie kwart minuut geleden opent het beeld, ook als de app net pas is geopend.
+var BELL_POLL = 2000, BELL_FRESH = 45000;
+var bellSeen = null;
+function checkBell() {
+  if (document.hidden || !moduleOn('camera')) return;
+  fetch('/api/camera/bell').then(function(r){return r.json();}).then(function(d) {
+    if (!d.ring_at || d.ring_at === bellSeen) return;
+    bellSeen = d.ring_at;
+    if (d.age_ms > BELL_FRESH) return;
+    openCamOverlay(true);
+    loadMeldingen();
+  }).catch(function(){});
+}
+setInterval(checkBell, BELL_POLL);
 function loadCamera() {
   var img = document.getElementById('blk-cam-img');
   if (!img || !blockEnabled('camera') || img.closest('.layout-block').style.display === 'none') { clearTimeout(camTimer); return; }
@@ -287,8 +340,6 @@ function loadCamera() {
   }).then(function(blob) {
     var old = img.src, msg = document.getElementById('blk-cam-msg');
     img.src = URL.createObjectURL(blob);
-    var big = document.querySelector('#cam-overlay img');
-    if (big) big.src = img.src;
     if (old && old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
     img.hidden = false;
     if (msg) msg.hidden = true;

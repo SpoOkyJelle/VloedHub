@@ -30,6 +30,11 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "GET" && req.url.split("?")[0] === "/api/camera/bell") {
+    json(res, 200, camera.getBell());
+    return true;
+  }
+
   if (req.method === "GET" && req.url.split("?")[0] === "/api/camera/snapshot") {
     camera.snapshot(function(err, image) {
       if (err) return json(res, 502, { error: err });

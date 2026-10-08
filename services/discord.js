@@ -73,7 +73,7 @@ function sendDiscord(message, otherWebhook) {
 }
 
 // Een melding: komt in het meldingenoverzicht van VloedHub en gaat naar Discord (als dat aan staat).
-// category bepaalt het icoon: weer, storing, apparaat, wasmachine, vaatwasser, afval, flow, systeem.
+// category bepaalt het icoon: weer, storing, apparaat, wasmachine, vaatwasser, afval, deurbel, flow, systeem.
 function notify(category, message, otherWebhook) {
   notifications.add(category, message);
   sendDiscord(message, otherWebhook);

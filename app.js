@@ -22,6 +22,7 @@ var outages    = require("./services/outages");
 var warnings   = require("./services/warnings");
 var homeconnect = require("./services/homeconnect");
 var internet   = require("./services/internet");
+var camera     = require("./services/camera");
 var db        = require("./db/setup");
 
 var PORT = 5000;
@@ -35,6 +36,7 @@ outages.start();
 warnings.start();
 homeconnect.start();
 internet.start();
+camera.start();
 
 server.listen(PORT, "0.0.0.0", function() {
   console.log("Server listening on http://0.0.0.0:" + PORT);
