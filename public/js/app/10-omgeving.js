@@ -87,3 +87,23 @@ function loadP2000() {
       (html || envLine('fa-circle-check', 'Geen oproepen met een adres', '', 'good'));
   }).catch(function(){});
 }
+
+// ── Internetstoringen (Ziggo) ──
+function loadZiggo() {
+  fetch('/api/ziggo').then(function(r){return r.json();}).then(function(d) {
+    var el = document.getElementById('blk-ziggo');
+    if (!el) return;
+    el.className = 'card outage-card';
+    if (!d.ok) { el.innerHTML = envHead('Internetstoringen') + envLine('fa-wifi', escHtml(d.error || 'Ziggo niet beschikbaar'), '', 'muted'); return; }
+    if (!d.address) { el.innerHTML = envHead('Internetstoringen') + envLine('fa-wifi', 'Ziggo-storingen', 'Vul je adres in bij Instellingen (Afvalkalender) om storingen op je adres te zien', 'muted'); return; }
+    var html = '';
+    d.outages.forEach(function(o) {
+      html += envLine('fa-wifi', 'Storing: ' + escHtml(o.title), escHtml([o.from ? 'Sinds ' + o.from : '', o.expected ? 'verwacht opgelost ' + o.expected : o.status].filter(Boolean).join(' · ')), 'bad');
+    });
+    d.maintenance.forEach(function(m) {
+      html += envLine('fa-screwdriver-wrench', escHtml(m.title), escHtml((m.from || '') + (m.until ? ' tot ' + m.until : '')), 'warn');
+    });
+    if (d.outages.length) el.className += ' has-outage';
+    el.innerHTML = envHead('Internetstoringen', 'Ziggo') + (html || envLine('fa-circle-check', 'Geen storingen op ' + escHtml(d.address), 'Elke 10 minuten bijgewerkt', 'good'));
+  }).catch(function(){});
+}

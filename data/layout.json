@@ -53,6 +53,10 @@
       "size": "2"
     },
     {
+      "type": "ziggo",
+      "size": "2"
+    },
+    {
       "type": "internet",
       "size": "2"
     },

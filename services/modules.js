@@ -11,6 +11,7 @@ var MODULES = [
   { key: "files",       label: "Files",                  hint: "Files en afsluitingen op de rijkswegen rond huis (Rijkswaterstaat), als blok op Home" },
   { key: "nlalert",     label: "NL-Alert",               hint: "Een melding bij een NL-Alert voor je adres of binnen 15 km" },
   { key: "p2000",       label: "112-meldingen",          hint: "Oproepen aan brandweer en ambulance in Breda als blok, en een melding als je straat wordt genoemd" },
+  { key: "ziggo",       label: "Internetstoringen",      hint: "Storingen en gepland onderhoud van Ziggo op je adres, als blok en als melding" },
   { key: "internet",    label: "Internetsnelheid",       hint: "Elk uur een snelheidstest (Speedtest CLI) en het blok op Home" },
   { key: "camera",      label: "Deurbelcamera",          hint: "Beeld van de Reolink-deurbel als blok op Home en een melding als er wordt aangebeld" },
   { key: "afval",       label: "Afvalkalender",          hint: "Blok op Home en de herinnering via Discord" },

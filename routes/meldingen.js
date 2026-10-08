@@ -4,6 +4,7 @@ var homeconnect = require("../services/homeconnect");
 var warnings = require("../services/warnings");
 var outages = require("../services/outages");
 var nlalert = require("../services/nlalert");
+var ziggo = require("../services/ziggo");
 
 function json(res, data) {
   res.writeHead(200, { "Content-Type": "application/json" });
@@ -29,7 +30,12 @@ function active(cb) {
         ((n && n.ok && n.alerts) || []).forEach(function(a) {
           list.push({ category: "nlalert", title: "NL-Alert " + (a.home ? "voor jouw adres" : "op " + a.km + " km"), sub: a.message });
         });
-        cb(list);
+        (modules.isOn("ziggo") ? ziggo.fetchStatus : function(done) { done(null, null); })(function(err4, z) {
+          ((z && z.ok && z.outages) || []).forEach(function(o) {
+            list.push({ category: "ziggo", title: "Ziggo-storing: " + o.title, sub: o.expected ? "Verwacht opgelost " + o.expected : o.status });
+          });
+          cb(list);
+        });
       });
     });
   });

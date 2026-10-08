@@ -25,6 +25,7 @@ var internet   = require("./services/internet");
 var camera     = require("./services/camera");
 var nlalert    = require("./services/nlalert");
 var p2000      = require("./services/p2000");
+var ziggo      = require("./services/ziggo");
 var db        = require("./db/setup");
 
 var PORT = 5000;
@@ -41,6 +42,7 @@ internet.start();
 camera.start();
 nlalert.start();
 p2000.start();
+ziggo.start();
 
 server.listen(PORT, "0.0.0.0", function() {
   console.log("Server listening on http://0.0.0.0:" + PORT);

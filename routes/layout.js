@@ -16,6 +16,7 @@ var DEFAULT_LAYOUT = {
     {type:"rain",size:"2"},
     {type:"traffic",size:"2"},
     {type:"p2000",size:"2"},
+    {type:"ziggo",size:"2"},
     {type:"scenes",size:"4"},
     {type:"fridge",size:"2"},
     {type:"internet",size:"2"},

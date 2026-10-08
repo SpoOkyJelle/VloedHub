@@ -4,6 +4,7 @@ var rain = require("../services/rain");
 var traffic = require("../services/traffic");
 var nlalert = require("../services/nlalert");
 var p2000 = require("../services/p2000");
+var ziggo = require("../services/ziggo");
 
 function json(res, data) {
   res.writeHead(200, { "Content-Type": "application/json" });
@@ -44,6 +45,12 @@ module.exports = function(req, res) {
   // De laatste 112-meldingen (P2000) in de eigen plaats
   if (req.method === "GET" && req.url === "/api/p2000") {
     p2000.fetchCalls(function(err, data) { json(res, data); });
+    return true;
+  }
+
+  // Storingen en onderhoud van Ziggo op het thuisadres
+  if (req.method === "GET" && req.url === "/api/ziggo") {
+    ziggo.fetchStatus(function(err, data) { json(res, data); });
     return true;
   }
 
