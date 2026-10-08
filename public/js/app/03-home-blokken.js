@@ -242,14 +242,21 @@ function camState(cls, label) {
   var pill = document.getElementById('blk-cam-pill');
   if (pill) { pill.className = 'cam-pill ' + cls; pill.lastChild.textContent = label; }
 }
-// Tik op het beeld voor volledig scherm; waar de browser dat niet kan (iPhone) vult het beeld het venster
+// Tik op het beeld voor een schermvullende weergave; die blijft meeverversen. Een eigen laag in plaats van de
+// Fullscreen-API, want die bestaat op de iPhone niet voor gewone elementen.
 function toggleCamFull() {
-  var frame = document.getElementById('blk-cam-frame'), img = document.getElementById('blk-cam-img');
-  if (!frame || !img || img.hidden || layoutEditMode) return;
-  if (document.fullscreenElement) document.exitFullscreen();
-  else if (frame.requestFullscreen) frame.requestFullscreen().catch(function(){});
-  else frame.classList.toggle('cam-full');
+  var ov = document.getElementById('cam-overlay'), img = document.getElementById('blk-cam-img');
+  if (ov) { ov.remove(); return; }
+  if (!img || img.hidden || layoutEditMode) return;
+  ov = document.createElement('div');
+  ov.id = 'cam-overlay';
+  ov.className = 'cam-overlay';
+  ov.onclick = toggleCamFull;
+  ov.innerHTML = '<img alt="Beeld van de deurbel"><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>';
+  ov.firstChild.src = img.src;
+  document.body.appendChild(ov);
 }
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && document.getElementById('cam-overlay')) toggleCamFull(); });
 function loadCamera() {
   var img = document.getElementById('blk-cam-img');
   if (!img || !blockEnabled('camera') || img.closest('.layout-block').style.display === 'none') { clearTimeout(camTimer); return; }
@@ -263,6 +270,8 @@ function loadCamera() {
   }).then(function(blob) {
     var old = img.src, msg = document.getElementById('blk-cam-msg');
     img.src = URL.createObjectURL(blob);
+    var big = document.querySelector('#cam-overlay img');
+    if (big) big.src = img.src;
     if (old && old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
     img.hidden = false;
     if (msg) msg.hidden = true;

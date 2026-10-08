@@ -113,12 +113,6 @@ function loadOutages() {
     }
     if (!d.ok) { el.innerHTML = line('fa-plug-circle-xmark', escHtml(d.error || 'Storingen niet beschikbaar'), '', 'muted'); return; }
     if (!d.postcode) { el.innerHTML = line('fa-plug-circle-bolt', 'Stroomstoringen', 'Vul je adres in bij Instellingen (Afvalkalender) om storingen op je postcode te zien', 'muted'); return; }
-    // Een storing in de buurt treft andere postcodes dan de jouwe: die staan erbij, zodat dat duidelijk is
-    function where(e) {
-      var pc = e.postcodes || [];
-      if (!pc.length) return e.postcodeText || '';
-      return pc.slice(0, 3).join(', ') + (pc.length > 3 ? ' en ' + (pc.length - 3) + ' andere' : '');
-    }
     var html = '';
     d.mine.filter(function(e) { return !e.planned; }).forEach(function(e) {
       html += line('fa-bolt', escHtml(e.kind) + ' op ' + d.postcode, escHtml(e.status || '') + (e.when ? ' · ' + escHtml((e.whenLabel || 'Tijd') + ': ' + e.when) : ''), 'bad', e.url);
@@ -127,7 +121,7 @@ function loadOutages() {
       html += line('fa-calendar-day', 'Geplande ' + escHtml(e.kind.toLowerCase()) + ' op ' + d.postcode, escHtml(e.when || ''), 'warn', e.url);
     });
     d.nearby.forEach(function(e) {
-      html += line(e.planned ? 'fa-calendar-day' : 'fa-bolt', (e.planned ? 'Geplande ' + escHtml(e.kind.toLowerCase()) : escHtml(e.kind)) + ' in de buurt', escHtml([e.planned ? '' : e.status, e.when, where(e), (e.postcodes || []).length ? 'niet op ' + d.postcode : ''].filter(Boolean).join(' · ')), 'muted', e.url);
+      html += line(e.planned ? 'fa-calendar-day' : 'fa-bolt', (e.planned ? 'Geplande ' + escHtml(e.kind.toLowerCase()) : escHtml(e.kind)) + ' in de buurt', escHtml([e.status, e.when, e.postcodeText].filter(Boolean).join(' · ')), 'muted', e.url);
     });
     if (d.mine.some(function(e) { return !e.planned; })) el.className += ' has-outage';
     el.innerHTML = html || line('fa-circle-check', 'Geen storingen op ' + d.postcode, 'Enexis · elke 10 minuten bijgewerkt', 'good');

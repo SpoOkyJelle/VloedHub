@@ -57,16 +57,15 @@ function isOpen(e) {
 
 // Bepaalt wat er voor een postcode speelt.
 //  - mine:   storingen en geplande onderbrekingen met precies deze postcode
-//  - nearby: zelfde viercijferige wijk, of een grote storing waarvan de postcodes niet op de pagina staan
+//  - nearby: een grote storing waarvan de postcodes niet op de pagina staan, en die dus de jouwe kan treffen
 function relevant(entries, postcode) {
   var open = entries.filter(isOpen);
   var result = { mine: [], nearby: [], total_open: open.filter(function(e) { return e.status !== "Gepland"; }).length };
   if (!postcode) return result;
-  var area = postcode.slice(0, 4);
   open.forEach(function(e) {
     var item = { id: e.id, kind: e.kind, planned: e.status === "Gepland", status: e.status, when: e.when, whenLabel: e.whenLabel, url: e.url, postcodes: e.postcodes, postcodeText: e.postcodeText };
     if (e.postcodes.indexOf(postcode) !== -1) result.mine.push(item);
-    else if (e.postcodes.some(function(p) { return p.slice(0, 4) === area; }) || (!e.postcodes.length && !item.planned)) result.nearby.push(item);
+    else if (!e.postcodes.length && !item.planned) result.nearby.push(item);
   });
   return result;
 }
