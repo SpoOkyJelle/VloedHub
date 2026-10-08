@@ -3,36 +3,52 @@ var path = require("path");
 
 var LAYOUT_FILE = path.join(__dirname, "../data/layout.json");
 
+// "0" is Home; "kiosk" is Home in de tabletweergave (/?kiosk=1), met alleen wat je aan de wand wilt zien
 var DEFAULT_LAYOUT = {
   "0": [
     {type:"weather",size:"2"},
+    {type:"rain",size:"2"},
+    {type:"led_default",size:"1"},
+    {type:"led_keuken",size:"1"},
+    {type:"led_gang",size:"1"},
+    {type:"relay_gang",size:"1"},
+    {type:"scenes",size:"4"},
+    {type:"status",size:"2"},
+    {type:"camera",size:"2"},
     {type:"power_live",size:"1"},
+    {type:"afval",size:"1"},
+    {type:"today_vs_normal",size:"2"},
+    {type:"fridge",size:"2"},
+    {type:"internet",size:"2"},
+    {type:"chart_power",size:"2"},
+    {type:"phases",size:"2"},
+    {type:"phase_load",size:"2"},
+    {type:"month_forecast",size:"1"},
+    {type:"standby",size:"1"}
+  ],
+  "kiosk": [
+    {type:"weather",size:"2"},
+    {type:"rain",size:"1"},
     {type:"afval",size:"1"},
     {type:"led_default",size:"1"},
     {type:"led_keuken",size:"1"},
     {type:"led_gang",size:"1"},
     {type:"relay_gang",size:"1"},
-    {type:"outages",size:"4"},
-    {type:"rain",size:"2"},
-    {type:"traffic",size:"2"},
-    {type:"p2000",size:"2"},
-    {type:"ziggo",size:"2"},
     {type:"scenes",size:"4"},
-    {type:"fridge",size:"2"},
-    {type:"internet",size:"2"},
     {type:"camera",size:"2"},
-    {type:"chart_power",size:"2"},
-    {type:"phases",size:"2"},
-    {type:"phase_load",size:"2"},
-    {type:"today_vs_normal",size:"2"},
-    {type:"month_forecast",size:"1"},
-    {type:"standby",size:"1"}
+    {type:"status",size:"2"},
+    {type:"power_live",size:"2"},
+    {type:"today_vs_normal",size:"2"}
   ]
 };
 
+// Een bewaarde indeling van voor de tabletweergave mist dat deel; dat komt dan uit de standaard
 function load() {
-  try { return JSON.parse(fs.readFileSync(LAYOUT_FILE,"utf8")); }
+  var saved;
+  try { saved = JSON.parse(fs.readFileSync(LAYOUT_FILE,"utf8")); }
   catch(e) { return DEFAULT_LAYOUT; }
+  Object.keys(DEFAULT_LAYOUT).forEach(function(k) { if (!Array.isArray(saved[k])) saved[k] = DEFAULT_LAYOUT[k]; });
+  return saved;
 }
 function save(data) {
   var dir = path.dirname(LAYOUT_FILE);

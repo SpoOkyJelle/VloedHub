@@ -29,7 +29,7 @@
   </div>
 </header>
 <div class='meld-panel outage-card' id='meld-panel' role='dialog' aria-label='Meldingen'></div>
-<div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'>✕</button></div>
+<div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><span class='kiosk-buttons'><button onclick="toggleLayoutEdit();this.classList.toggle('on',layoutEditMode)" title='Indeling van de tablet aanpassen' aria-label='Indeling van de tablet aanpassen'><i class='fa-solid fa-pen'></i></button><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'>✕</button></span></div>
 <div id='conn-banner' role='status' hidden><i class='fa-solid fa-triangle-exclamation'></i><span id='conn-text'></span></div>
 <div class='screens-outer' id='screens-outer'>
 <div class='screens-track' id='screens-track'>

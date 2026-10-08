@@ -107,3 +107,55 @@ function loadZiggo() {
     el.innerHTML = envHead('Internetstoringen', 'Ziggo') + (html || envLine('fa-circle-check', 'Geen storingen op ' + escHtml(d.address), 'Elke 10 minuten bijgewerkt', 'good'));
   }).catch(function(){});
 }
+
+// ── Status omgeving ──
+// Eén blok in plaats van vier: per onderdeel een knop met de stand van zaken. Een tik klapt het bijbehorende
+// blok eronder open, met dezelfde inhoud als wanneer het los op Home zou staan.
+var STATUS_ITEMS = [
+  {key:'outages', module:'storingen', label:'Stroom', icon:'fa-bolt', url:'/api/outages', sum:function(d) {
+    if (!d.postcode) return {cls:'muted', text:'Geen adres'};
+    if (d.mine.some(function(e) { return !e.planned; })) return {cls:'bad', text:'Storing'};
+    if (d.nearby.length) return {cls:'warn', text:'Grote storing'};
+    return d.mine.length ? {cls:'warn', text:'Gepland'} : {cls:'good', text:'Geen storing'};
+  }},
+  {key:'ziggo', module:'ziggo', label:'Internet', icon:'fa-wifi', url:'/api/ziggo', sum:function(d) {
+    if (!d.address) return {cls:'muted', text:'Geen adres'};
+    if (d.outages.length) return {cls:'bad', text:'Storing'};
+    return d.maintenance.length ? {cls:'warn', text:'Onderhoud'} : {cls:'good', text:'Geen storing'};
+  }},
+  {key:'traffic', module:'files', label:'Files', icon:'fa-car-side', url:'/api/traffic', sum:function(d) {
+    if (!d.jams.length) return {cls:'good', text:'Geen files'};
+    var max = Math.max.apply(null, d.jams.map(function(j) { return j.delay_min; }));
+    return {cls: max >= 15 ? 'warn' : '', text: d.jams.length + ' · tot +' + max + ' min'};
+  }},
+  {key:'p2000', module:'p2000', label:'112', icon:'fa-truck-medical', url:'/api/p2000', sum:function(d) {
+    var hour = Date.now() - 3600 * 1000;
+    var recent = d.calls.filter(function(c) { return c.at && Date.parse(c.at) > hour && (c.located || c.own_street); });
+    if (recent.some(function(c) { return c.own_street; })) return {cls:'bad', text:'In jouw straat'};
+    return recent.length ? {cls:'', text: recent.length + ' dit uur'} : {cls:'good', text:'Rustig'};
+  }}
+];
+var statusOpen = null;
+function loadStatus() {
+  var items = STATUS_ITEMS.filter(function(it) { return moduleOn(it.module); });
+  Promise.all(items.map(function(it) { return fetch(it.url).then(function(r){return r.json();}).catch(function(){ return null; }); })).then(function(res) {
+    var chips = document.querySelector('#blk-status .status-chips');
+    if (!chips) return;
+    chips.innerHTML = items.map(function(it, n) {
+      var s = res[n] && res[n].ok !== false ? it.sum(res[n]) : {cls:'muted', text:'Onbekend'};
+      return '<button class="status-chip ' + s.cls + (statusOpen === it.key ? ' open' : '') + '" data-status="' + it.key + '" onclick="toggleStatus(\'' + it.key + '\')">' +
+        '<i class="fa-solid ' + it.icon + '"></i><span><span class="status-label">' + it.label + '</span><span class="status-value">' + escHtml(s.text) + '</span></span></button>';
+    }).join('') || '<span class="outage-sub">Zet een module aan bij Instellingen om hier de status te zien</span>';
+    if (statusOpen && BLOCKS[statusOpen]) BLOCKS[statusOpen].refresh();
+  });
+}
+function toggleStatus(key) {
+  var detail = document.querySelector('#blk-status .status-detail');
+  if (!detail || layoutEditMode) return;
+  statusOpen = statusOpen === key ? null : key;
+  detail.innerHTML = '';
+  document.querySelectorAll('#blk-status .status-chip').forEach(function(c) { c.classList.toggle('open', c.dataset.status === statusOpen); });
+  if (!statusOpen) return;
+  BLOCKS[key].render(detail);
+  BLOCKS[key].refresh();
+}

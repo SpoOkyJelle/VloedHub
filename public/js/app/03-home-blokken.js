@@ -27,6 +27,8 @@ function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return
 // ── Layout system ──
 var layoutConfig = {};
 var layoutEditMode = false;
+// Home heeft in de tabletweergave een eigen indeling
+function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
 var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
@@ -125,6 +127,10 @@ var BLOCKS = {
   'ziggo': {label:'Internetstoringen',icon:'fa-wifi',dynamic:true,
     render:function(el){el.innerHTML='<div class="card outage-card" id="blk-ziggo"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
     refresh:function(){loadZiggo();}
+  },
+  'status': {label:'Status omgeving',icon:'fa-list-check',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card insight-card" id="blk-status"><div class="status-chips"><span class="skel-line" style="flex:1"></span></div><div class="status-detail"></div></div>';},
+    refresh:function(){loadStatus();}
   },
   'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,
     render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap" style="min-height:0;height:60px"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},

@@ -1971,6 +1971,67 @@ body.kiosk .meld-panel {
 .outage-sub {
   font-size:0.64rem;
   color:var(--muted)}
+/* Status omgeving: een knop per onderdeel, met het bijbehorende blok uitklapbaar eronder */
+.status-chips {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));
+  gap:0.4rem}
+.status-chip {
+  display:flex;
+  align-items:center;
+  gap:0.55rem;
+  min-width:0;
+  padding:0.5rem 0.65rem;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(255,255,255,0.02);
+  color:var(--text);
+  font-family:inherit;
+  text-align:left;
+  cursor:pointer}
+.status-chip > i {
+  width:1.1rem;
+  text-align:center;
+  color:var(--muted)}
+.status-chip > span {
+  display:flex;
+  flex-direction:column;
+  min-width:0}
+.status-label {
+  font-size:0.56rem;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--dim);
+  font-weight:600}
+.status-value {
+  font-size:0.74rem;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis}
+.status-chip.good > i { color:var(--green) }
+.status-chip.warn > i,.status-chip.warn .status-value { color:var(--yellow) }
+.status-chip.bad {
+  border-color:rgba(248,113,113,0.5);
+  background:rgba(248,113,113,0.08)}
+.status-chip.bad > i,.status-chip.bad .status-value { color:var(--red) }
+.status-chip.muted .status-value { color:var(--muted) }
+.status-chip.open {
+  border-color:rgba(141,178,85,0.6);
+  background:rgba(141,178,85,0.08)}
+.status-detail:empty {
+  display:none}
+.status-detail > .card {
+  padding:0.2rem 0 0;
+  border:none;
+  border-radius:0;
+  background:none}
+.kiosk-buttons {
+  display:flex;
+  gap:0.4rem}
+.kiosk-bar button.on {
+  background:rgba(34,197,94,0.85);
+  color:#0C0F1D}
 /* Omgeving: regen, files en 112-meldingen gebruiken dezelfde regels als storingen */
 .outage-line.rain > i { color:var(--blue) }
 .rain-bars {

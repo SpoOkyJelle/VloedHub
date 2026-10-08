@@ -63,7 +63,7 @@ function applyLayout(screenIdx) {
   if (screenIdx === 0) closeHomeLedPanels();
   var screen = document.getElementById('screen-' + screenIdx);
   if (!screen) return;
-  var cfg = layoutConfig[String(screenIdx)];
+  var cfg = layoutConfig[layoutKey(screenIdx)];
   if (!cfg) return;
 
   // Hide all blocks first
@@ -96,7 +96,7 @@ function applyLayout(screenIdx) {
 
 setInterval(function() {
   if (layoutEditMode) return;
-  (layoutConfig['0'] || []).forEach(function(item) {
+  (layoutConfig[layoutKey(0)] || []).forEach(function(item) {
     var def = BLOCKS[item.type];
     if (def && def.dynamic && def.refresh && blockEnabled(item.type)) def.refresh();
   });
@@ -155,7 +155,7 @@ function removeEditBars(screenIdx) {
 }
 
 function moveBlock(screenIdx, type, dir) {
-  var cfg = layoutConfig[String(screenIdx)];
+  var cfg = layoutConfig[layoutKey(screenIdx)];
   if (!cfg) return;
   var idx = cfg.findIndex(function(b){ return b.type === type; });
   if (idx < 0) return;
@@ -170,7 +170,7 @@ function moveBlock(screenIdx, type, dir) {
 }
 
 function toggleBlockSize(screenIdx, type, btn) {
-  var cfg = layoutConfig[String(screenIdx)];
+  var cfg = layoutConfig[layoutKey(screenIdx)];
   if (!cfg) return;
   var item = cfg.find(function(b){ return b.type === type; });
   if (!item) return;
@@ -183,9 +183,9 @@ function toggleBlockSize(screenIdx, type, btn) {
 }
 
 function removeBlock(screenIdx, type) {
-  var cfg = layoutConfig[String(screenIdx)];
+  var cfg = layoutConfig[layoutKey(screenIdx)];
   if (!cfg) return;
-  layoutConfig[String(screenIdx)] = cfg.filter(function(b){ return b.type !== type; });
+  layoutConfig[layoutKey(screenIdx)] = cfg.filter(function(b){ return b.type !== type; });
   flipAnimate(homeBlocks(), function() {
     removeEditBars(screenIdx);
     applyLayout(screenIdx);
@@ -195,7 +195,7 @@ function removeBlock(screenIdx, type) {
 
 function showBlockPicker() {
   var screenIdx = 0;
-  var cfg = layoutConfig[String(screenIdx)] || [];
+  var cfg = layoutConfig[layoutKey(screenIdx)] || [];
   var used = cfg.map(function(b){ return b.type; });
   var available = Object.keys(BLOCKS).filter(function(k){ return used.indexOf(k) === -1 && blockEnabled(k); });
   var list = document.getElementById('block-picker-list');
@@ -216,8 +216,8 @@ function closeBlockPicker() {
 }
 
 function addBlock(screenIdx, type) {
-  var cfg = layoutConfig[String(screenIdx)];
-  if (!cfg) cfg = layoutConfig[String(screenIdx)] = [];
+  var cfg = layoutConfig[layoutKey(screenIdx)];
+  if (!cfg) cfg = layoutConfig[layoutKey(screenIdx)] = [];
   if (cfg.find(function(b){ return b.type === type; })) return;
   cfg.push({type: type, size: 'full'});
   closeBlockPicker();
