@@ -1,5 +1,6 @@
 var http = require("http");
 var auth = require("./services/auth");
+var presence = require("./services/presence");
 
 // Routes that never require authentication
 var PUBLIC_PATHS = ['/pin', '/api/auth/login', '/api/auth/status', '/api/auth/set-pin'];
@@ -41,6 +42,7 @@ var routes = [
   require("./routes/monitor"),
   require("./routes/internet"),
   require("./routes/camera"),
+  require("./routes/presence"),
   require("./routes/fridge"),
   require("./routes/modules"),
   require("./routes/discord"),
@@ -103,6 +105,8 @@ var server = http.createServer(function(req, res) {
       return;
     }
   }
+
+  presence.sawRequest(req);
 
   // een fout in één aanvraag (bijv. een kapot adres) mag de server niet onderuit halen
   try {

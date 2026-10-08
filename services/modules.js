@@ -14,6 +14,7 @@ var MODULES = [
   { key: "ziggo",       label: "Internetstoringen",      hint: "Storingen en gepland onderhoud van Ziggo op je adres, als blok en als melding" },
   { key: "internet",    label: "Internetsnelheid",       hint: "Elk uur een snelheidstest (Speedtest CLI) en het blok op Home" },
   { key: "camera",      label: "Deurbelcamera",          hint: "Beeld van de Reolink-deurbel als blok op Home en een melding als er wordt aangebeld" },
+  { key: "aanwezigheid", label: "Wie is thuis",         hint: "Zoekt de aangemelde telefoons op het thuisnetwerk; in te stellen bij Instellingen > Wie is thuis" },
   { key: "afval",       label: "Afvalkalender",          hint: "Blok op Home en de herinnering via Discord" },
   { key: "lights",      label: "Verlichting en scènes",  hint: "Ledstrips, lamp en scèneknoppen" },
   { key: "fridge",      label: "Koelkast",               hint: "Koelkastkaart en offline-melding" },

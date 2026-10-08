@@ -290,6 +290,7 @@
   <button class='tab active' data-set='algemeen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-sliders'></i> Algemeen</button>
   <button class='tab' data-set='apparaten' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-microchip'></i> Apparaten</button>
   <button class='tab' data-set='koppelingen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
+  <button class='tab' data-set='aanwezig' data-module='aanwezigheid' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-house-user'></i> Wie is thuis</button>
   <button class='tab' data-set='systeem' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-server'></i> Systeem</button>
 </div>
 <div class='set-group active' data-set='algemeen'>
@@ -378,6 +379,24 @@
       <input class='field' id='afval-huisnummer' placeholder='Nr.' inputmode='numeric' maxlength='5'>
       <input class='field' id='afval-toevoeging' placeholder='Toev.' maxlength='6'>
       <button class='btn btn-primary' onclick='saveAfvalAddress()'>Opslaan</button>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<div class='set-group' data-set='aanwezig'>
+<div class='set-section' data-module='aanwezigheid'>
+<div class='section-title'>Wie is thuis</div>
+<div class='power-hero'><div class='presence-list' id='presence-list'><div class='outage-sub'>Laden…</div></div></div>
+</div>
+<div class='set-section' data-module='aanwezigheid'>
+<div class='section-title'>Deze telefoon aanmelden</div>
+<div class='power-hero'>
+  <div style='display:flex;flex-direction:column;gap:0.75rem'>
+    <div style='font-size:0.72rem;color:var(--dim)' id='presence-me-status'>Laden…</div>
+    <div class='presence-form'>
+      <input class='field' id='presence-name' autocomplete='off' maxlength='30' placeholder='Naam, bijv. Jelle'>
+      <button class='btn btn-primary' id='presence-claim' onclick='claimPresence(this)'>Dit is mijn telefoon</button>
     </div>
   </div>
 </div>

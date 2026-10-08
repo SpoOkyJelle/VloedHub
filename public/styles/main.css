@@ -1379,6 +1379,7 @@ to {
 .mod-off-internet [data-module~='internet'],
 .mod-off-camera [data-module~='camera'],
 .mod-off-afval [data-module~='afval'],
+.mod-off-aanwezigheid [data-module~='aanwezigheid'],
 .mod-off-regen [data-module~='regen'],
 .mod-off-lights [data-module~='lights'],
 .mod-off-fridge [data-module~='fridge'],
@@ -1972,6 +1973,43 @@ body.kiosk .meld-panel {
 .outage-sub {
   font-size:0.64rem;
   color:var(--muted)}
+/* Wie is thuis (Instellingen) */
+.presence-list {
+  display:flex;
+  flex-direction:column}
+.presence-row {
+  display:flex;
+  align-items:center;
+  gap:0.7rem;
+  min-height:2.6rem;
+  border-top:1px solid rgba(255,255,255,0.04)}
+.presence-row:first-child {
+  border-top:none}
+.presence-row > i {
+  width:1.3rem;
+  text-align:center;
+  color:var(--muted)}
+.presence-row.home > i {
+  color:var(--green)}
+.presence-row > div {
+  flex:1;
+  min-width:0}
+.presence-row:not(.home) .outage-text {
+  color:#94A3B8}
+.presence-remove {
+  background:none;
+  border:1px solid var(--border);
+  border-radius:20px;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:0.62rem;
+  padding:0.2rem 0.6rem;
+  cursor:pointer;
+  white-space:nowrap}
+.presence-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:0.4rem}
 /* Status omgeving: een knop per onderdeel, met het bijbehorende blok uitklapbaar eronder */
 .status-chips {
   display:grid;
