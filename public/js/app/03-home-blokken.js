@@ -115,7 +115,7 @@ var BLOCKS = {
     refresh:function(){loadInternet();}
   },
   'camera': {label:'Deurbelcamera',icon:'fa-video',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Deurbel</span><span class="power-sub" id="blk-cam-time"></span></div><div class="cam-frame"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg">Laden…</div></div></div>';},
+    render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div></div>';},
     refresh:function(){loadCamera();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
@@ -233,8 +233,22 @@ function camNext(ms) { clearTimeout(camTimer); camTimer = setTimeout(loadCamera,
 function camMessage(text) {
   var img = document.getElementById('blk-cam-img'), msg = document.getElementById('blk-cam-msg');
   if (!img || !msg) return;
-  img.hidden = true; msg.hidden = false; msg.textContent = text;
+  img.hidden = true; msg.hidden = false;
+  msg.innerHTML = '<i class="fa-solid fa-video-slash"></i><span>' + escHtml(text) + '</span>';
   setEl('blk-cam-time', '');
+  camState('off', 'Geen beeld');
+}
+function camState(cls, label) {
+  var pill = document.getElementById('blk-cam-pill');
+  if (pill) { pill.className = 'cam-pill ' + cls; pill.lastChild.textContent = label; }
+}
+// Tik op het beeld voor volledig scherm; waar de browser dat niet kan (iPhone) vult het beeld het venster
+function toggleCamFull() {
+  var frame = document.getElementById('blk-cam-frame'), img = document.getElementById('blk-cam-img');
+  if (!frame || !img || img.hidden || layoutEditMode) return;
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (frame.requestFullscreen) frame.requestFullscreen().catch(function(){});
+  else frame.classList.toggle('cam-full');
 }
 function loadCamera() {
   var img = document.getElementById('blk-cam-img');
@@ -252,6 +266,7 @@ function loadCamera() {
     if (old && old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
     img.hidden = false;
     if (msg) msg.hidden = true;
+    camState('live', 'Live');
     setEl('blk-cam-time', new Date().toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}));
     camBusy = false;
     camNext(CAM_INTERVAL);

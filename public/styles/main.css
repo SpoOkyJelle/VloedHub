@@ -1418,29 +1418,110 @@ to {
   opacity:0.45;
   cursor:default}
 /* Deurbelcamera */
+.cam-card .chart-title i {
+  margin-right:0.45rem;
+  color:var(--accent-l);
+  font-size:0.68rem}
+.cam-pill {
+  display:inline-flex;
+  align-items:center;
+  gap:0.35rem;
+  padding:0.18rem 0.55rem;
+  border:1px solid var(--border);
+  border-radius:20px;
+  font-size:0.58rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--muted)}
+.cam-pill i {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:currentColor}
+.cam-pill.live {
+  color:var(--green);
+  border-color:rgba(34,197,94,0.3);
+  background:rgba(34,197,94,0.08)}
+.cam-pill.live i {
+  animation:pulse 2s infinite}
+.cam-pill.off {
+  color:var(--red);
+  border-color:rgba(248,113,113,0.3);
+  background:rgba(248,113,113,0.08)}
 .cam-frame {
   position:relative;
-  border-radius:10px;
+  border-radius:12px;
   overflow:hidden;
-  background:#0B0D18;
+  background:radial-gradient(120% 90% at 50% 0%,#1A1F36 0%,#0B0D18 70%);
+  box-shadow:inset 0 0 0 1px var(--border);
   aspect-ratio:4 / 3}
+.cam-frame:has(img:not([hidden])) {
+  cursor:zoom-in}
 .cam-frame img {
   display:block;
   width:100%;
   height:100%;
   object-fit:cover}
+/* rand over het beeld heen, zodat die ook op een lichte opname zichtbaar blijft */
+.cam-frame::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);
+  pointer-events:none}
 .cam-msg {
   position:absolute;
   inset:0;
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
+  gap:0.6rem;
   padding:1rem;
   text-align:center;
   font-size:0.72rem;
   color:var(--muted)}
-.cam-frame img[hidden],.cam-msg[hidden] {
+.cam-msg i {
+  font-size:1.5rem;
+  color:var(--dim)}
+.cam-bar {
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  padding:1.6rem 0.7rem 0.5rem;
+  background:linear-gradient(to top,rgba(0,0,0,0.65),transparent);
+  color:#fff;
+  font-size:0.66rem;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  pointer-events:none}
+.cam-bar i {
+  font-size:0.75rem;
+  opacity:0.8}
+.cam-frame img[hidden],.cam-msg[hidden],.cam-frame img[hidden] ~ .cam-bar {
   display:none}
+.cam-frame:fullscreen,.cam-frame.cam-full {
+  border-radius:0;
+  background:#000;
+  aspect-ratio:auto;
+  cursor:zoom-out}
+.cam-frame.cam-full {
+  position:fixed;
+  inset:0;
+  z-index:1000}
+.cam-frame:fullscreen img,.cam-frame.cam-full img {
+  object-fit:contain}
+@media (prefers-reduced-motion:reduce) {
+  .cam-pill.live i {
+  animation:none}
+}
 .cam-form {
   display:grid;
   grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto;
