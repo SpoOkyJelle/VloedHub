@@ -244,9 +244,22 @@ function camState(cls, label) {
 }
 // Tik op het beeld voor een schermvullende weergave; die blijft meeverversen. Een eigen laag in plaats van de
 // Fullscreen-API, want die bestaat op de iPhone niet voor gewone elementen.
+// Het grote beeld groeit vanuit het blok en krimpt daar bij het sluiten weer naartoe: dit zet het op de plek van het blok
+function camShrink(big) {
+  var frame = document.getElementById('blk-cam-frame');
+  if (!frame) return;
+  var r = frame.getBoundingClientRect(), w = window.innerWidth, h = window.innerHeight;
+  big.style.transform = 'translate(' + (r.left + r.width / 2 - w / 2) + 'px,' + (r.top + r.height / 2 - h / 2) + 'px) scale(' + Math.max(r.width / w, r.height / h) + ')';
+}
 function toggleCamFull() {
   var ov = document.getElementById('cam-overlay'), img = document.getElementById('blk-cam-img');
-  if (ov) { ov.remove(); return; }
+  if (ov) {
+    if (!ov.classList.contains('open')) return;
+    ov.classList.remove('open');
+    camShrink(ov.firstChild);
+    setTimeout(function() { ov.remove(); }, 280);
+    return;
+  }
   if (!img || img.hidden || layoutEditMode) return;
   ov = document.createElement('div');
   ov.id = 'cam-overlay';
@@ -254,7 +267,11 @@ function toggleCamFull() {
   ov.onclick = toggleCamFull;
   ov.innerHTML = '<img alt="Beeld van de deurbel"><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>';
   ov.firstChild.src = img.src;
+  camShrink(ov.firstChild);
   document.body.appendChild(ov);
+  ov.offsetWidth; // beginstand vastleggen, anders slaat de browser de overgang over
+  ov.classList.add('open');
+  ov.firstChild.style.transform = '';
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && document.getElementById('cam-overlay')) toggleCamFull(); });
 function loadCamera() {
