@@ -14,6 +14,13 @@ function showPresence(d, error) {
       '<div><div class="outage-text">' + escHtml(p.name) + (p.type ? '<span class="presence-type">' + p.type + '</span>' : '') + '</div><div class="outage-sub">' + (p.home ? 'Thuis' : 'Weg') + (p.since ? ' sinds ' + shortWhen(p.since) : '') + ' · ' + presenceAgo(p.last_seen) + '</div></div>' +
       '<button class="presence-remove" onclick="removePresence(\'' + p.id + '\',this)" aria-label="' + escHtml(p.name) + ' verwijderen">Verwijderen</button></div>';
   }).join('') : '<div class="outage-sub">Nog geen telefoons aangemeld. Open VloedHub op elke telefoon, thuis op de wifi, en meld hem hieronder aan.</div>';
+  // van welk adres de gegevens van de apparaten in huis binnenkomen
+  var src = document.getElementById('presence-sources');
+  if (src) src.innerHTML = d.sources.length ? d.sources.map(function(x) {
+    var stale = Date.now() - x.at > 10 * 60 * 1000;
+    return '<div class="presence-row' + (stale ? '' : ' home') + '"><i class="fa-solid fa-microchip"></i><div><div class="outage-text">' + escHtml(x.role) + '</div>' +
+      '<div class="outage-sub presence-addr">' + x.ip + ' · ' + presenceAgo(x.at).replace('gezien', 'ontvangen') + '</div></div></div>';
+  }).join('') : '<div class="outage-sub">Nog niets ontvangen sinds de server is gestart.</div>';
   var me = d.people.filter(function(p) { return p.id === d.me.id; })[0];
   status.style.color = error ? 'var(--red)' : 'var(--dim)';
   status.textContent = error || (me ? 'Dit apparaat is aangemeld als ' + me.name + '. Met een andere naam opslaan past de naam aan.' :
@@ -43,7 +50,7 @@ function claimPresence(btn) {
 // kan ook een eigen naam krijgen en gewoon in de lijst blijven staan.
 var presenceDevices = [], presenceShowIgnored = false, presenceForm = null; // presenceForm: { mac, action } van het open invulveld
 function presenceTitle(x) {
-  return x.name || x.label || (x.router ? 'Modem' : x.camera ? 'Deurbelcamera' : x.hostname || x.visited_as || x.vendor || (x.private_mac ? 'Telefoon, tablet of laptop' : 'Onbekend apparaat'));
+  return x.name || x.label || (x.router ? 'Modem' : x.camera ? 'Deurbelcamera' : x.role || x.hostname || x.visited_as || x.vendor || (x.private_mac ? 'Telefoon, tablet of laptop' : 'Onbekend apparaat'));
 }
 function renderPresenceScan(error) {
   var out = document.getElementById('presence-scan');
@@ -55,9 +62,9 @@ function renderPresenceScan(error) {
   html += shown.map(function(x) {
     // de beste aanwijzing als titel, de rest eronder
     var title = presenceTitle(x);
-    var hints = [x.label && !x.ignored ? presenceTitle(Object.assign({}, x, { label: null })) : '', x.hostname, x.visited_as ? 'opende VloedHub als ' + x.visited_as : '', x.vendor, x.private_mac ? 'privé-wifi-adres' : ''].filter(function(h) { return h && h !== title; });
+    var hints = [x.label && !x.ignored ? presenceTitle(Object.assign({}, x, { label: null })) : '', x.role ? 'stuurt naar VloedHub als ' + x.role : '', x.hostname, x.visited_as ? 'opende VloedHub als ' + x.visited_as : '', x.vendor, x.private_mac ? 'privé-wifi-adres' : ''].filter(function(h) { return h && h !== title; });
     var phone = x.visited_as === 'iPhone' || x.visited_as === 'Android-telefoon';
-    var icon = x.name ? 'fa-house-user' : x.ignored ? 'fa-check' : x.router ? 'fa-wifi' : x.camera ? 'fa-video' : phone || x.private_mac ? 'fa-mobile-screen' : /ESP|Espressif/.test(title + ' ' + (x.vendor || '')) ? 'fa-microchip' : 'fa-circle-question';
+    var icon = x.name ? 'fa-house-user' : x.ignored ? 'fa-check' : x.router ? 'fa-wifi' : x.camera ? 'fa-video' : x.role ? 'fa-microchip' : phone || x.private_mac ? 'fa-mobile-screen' : /ESP|Espressif/.test(title + ' ' + (x.vendor || '')) ? 'fa-microchip' : 'fa-circle-question';
     var form = presenceForm && presenceForm.mac === x.mac ? presenceForm : null;
     var actions = x.name ? '<span class="presence-type">Bijgehouden</span>' :
       x.ignored ? '<button class="presence-remove" onclick="presenceDevice(\'' + x.mac + '\',\'unignore\')">Weer tonen</button>' :

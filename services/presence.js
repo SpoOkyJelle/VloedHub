@@ -28,7 +28,7 @@ var ignored = stored.ignored;   // [{ mac, label }]: bekende apparaten die niet 
 var names = stored.names;       // { mac: naam }: zelf gegeven namen, voor apparaten die wel in de scan blijven staan
 var lastScan = [];              // wat de laatste scan vond, om een apparaat daaruit te kunnen bijhouden
 var busy = false, lastSweep = 0;
-var visitors = {};   // ip -> { label, at }: met wat voor browser of apparaat dat adres VloedHub het laatst bezocht
+var visitors = {};   // ip -> { label, roles, at }: met wat voor browser dat adres VloedHub het laatst bezocht, en wat het aanlevert
 var vendors = {};    // eerste helft van een MAC-adres -> fabrikant (of "" als die onbekend is)
 
 function load() {
@@ -182,6 +182,22 @@ function check() {
   });
 }
 
+// De apparaten in huis melden zich op hun eigen adres bij de server: de P1-meter stuurt metingen, een ledstrip
+// vraagt zijn stand op. Daaraan is te zien welk apparaat het is. Een browser doet dat ook wel eens (het dashboard
+// vraagt ook de stand van een lamp op), dus die telt hier niet mee.
+function deviceRole(req) {
+  if (/Mozilla/.test(String((req.headers && req.headers["user-agent"]) || ""))) return null;
+  var url = String(req.url || ""), path = url.split("?")[0], post = req.method === "POST";
+  var device = (url.match(/[?&]device=([\w-]{1,30})/) || [])[1];
+  if (post && path === "/api/p1data") return "P1-meter";
+  if (post && path === "/api/temperature") return "Temperatuursensor";
+  if (post && path.indexOf("/api/wasmachine") === 0) return "Wasmachinesensor";
+  if (post && path === "/api/esphome") return "ESPHome-bridge";
+  if (path === "/api/led/state") return "Ledstrip" + (device ? " " + device : "");
+  if (path === "/api/relay/state") return "Lamp" + (device ? " " + device : "");
+  return null;
+}
+
 // Wat voor apparaat een aanvraag doet, voor zover de browser dat zegt
 function visitorLabel(req) {
   var ua = String((req.headers && req.headers["user-agent"]) || "");
@@ -199,8 +215,14 @@ function visitorLabel(req) {
 // Een aanvraag vanaf het adres van een aangemelde telefoon, met de browser van zo'n telefoon, bewijst dat die thuis is.
 // Van elk adres op het thuisnetwerk wordt ook onthouden wat voor apparaat het was, voor de netwerkscan.
 function sawRequest(req) {
-  var ip = lanIp(req.socket.remoteAddress), label = ip && visitorLabel(req);
-  if (label && (visitors[ip] || Object.keys(visitors).length < 300)) visitors[ip] = { label: label, at: Date.now() };
+  var ip = lanIp(req.socket.remoteAddress), role = ip && deviceRole(req), label = ip && visitorLabel(req);
+  if ((role || label) && (visitors[ip] || Object.keys(visitors).length < 300)) {
+    var v = visitors[ip] || (visitors[ip] = { label: null, roles: {} });
+    v.at = Date.now();
+    // wat een apparaat aanlevert zegt meer dan hoe het zich noemt
+    if (role) v.roles[role] = Date.now();
+    else if (!Object.keys(v.roles).length) v.label = label;
+  }
   if (!ip || !people.length) return;
   var type = phoneType(req);
   people.forEach(function(p) { if (p.ip === ip && type && type === p.type && markSeen(p)) save(); });
@@ -264,6 +286,7 @@ function describe(list, cb) {
     d.private_mac = privateMac(d.mac);
     d.camera = !!cam && cam.hostname === d.ip;
     d.visited_as = visitors[d.ip] ? visitors[d.ip].label : null;
+    d.role = visitors[d.ip] && Object.keys(visitors[d.ip].roles).join(" en ") || null;
     hostname(d.ip, function(name) {
       d.hostname = name;
       vendor(d.mac, function(v) { d.vendor = v; next(); });
@@ -272,7 +295,7 @@ function describe(list, cb) {
 }
 
 // Zoekt het hele thuisnetwerk af en geeft terug wat er nu op antwoordt, met wat er over elk apparaat bekend is:
-// cb(fout, [{ ip, mac, name, router, ignored, label, camera, hostname, vendor, private_mac, visited_as }]).
+// cb(fout, [{ ip, mac, name, router, ignored, label, camera, role, hostname, vendor, private_mac, visited_as }]).
 // Een telefoon in slaapstand kan ontbreken. De aangemelde telefoons worden meteen bijgewerkt.
 function scan(cb) {
   if (busy) return cb("Er loopt al een controle, probeer het zo nog eens");
@@ -378,6 +401,15 @@ function remove(id) {
   if (people.length !== before) save();
 }
 
+// Van welk adres elke soort gegevens binnenkomt (P1-meter, sensoren, ledstrips), met het laatste moment
+function getSources() {
+  var list = [];
+  Object.keys(visitors).forEach(function(ip) {
+    Object.keys(visitors[ip].roles).forEach(function(role) { list.push({ role: role, ip: ip, at: visitors[ip].roles[role] }); });
+  });
+  return list.sort(function(a, b) { return a.role.localeCompare(b.role) || b.at - a.at; });
+}
+
 // Voor de browser; het MAC-adres blijft op de server
 function getStatus(req) {
   var ip = cleanIp(req.socket.remoteAddress);
@@ -385,6 +417,7 @@ function getStatus(req) {
   return {
     people: people.map(function(p) { return { id: p.id, name: p.name, type: p.type || null, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null }; }),
     me: { local: !!lanIp(ip) && ownIps().indexOf(ip) === -1, phone: !!phoneType(req), id: me ? me.id : null },
+    sources: getSources(),
     away_after_min: AWAY_AFTER / 60000
   };
 }
