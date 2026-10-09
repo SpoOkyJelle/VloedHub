@@ -651,8 +651,9 @@ loadScenes();
 // ── Discostand van de app ──
 // Start iemand de scène Disco, dan doet de app zelf mee: de merkkleur loopt de regenboog rond en er schuiven
 // gekleurde lichtvlekken over het scherm. De server onthoudt welke scène het laatst is gestart, dus elk open
-// scherm (ook de wandtablet) gaat binnen een paar tellen mee. De kleur verspringt op de maat (twee keer per seconde)
-// naar een duidelijk andere tint; de helderheid blijft gelijk, dus het flitst niet.
+// scherm (ook de wandtablet) gaat binnen een paar tellen mee. Op de maat (twee keer per seconde) krijgt de kleur een
+// nieuw doel, ver van de vorige; de overgang ernaartoe loopt vloeiend via CSS (zie main.css) en duurt precies één tel,
+// dus de kleur is voortdurend onderweg. De helderheid blijft gelijk: het flitst niet.
 var DISCO_SCENE = 'disco', DISCO_POLL = 4000;
 var DISCO_BEAT = 500;   // ms per kleurwissel: 120 tellen per minuut
 var DISCO_JUMP = 137;   // graden op de kleurcirkel per wissel; zo ligt elke kleur ver van de vorige en herhaalt het lang niet
@@ -680,6 +681,7 @@ function setDisco(on) {
   if (on === discoOn) return;
   discoOn = on;
   document.body.classList.toggle('disco', on);
+  document.documentElement.classList.toggle('disco-colors', on);
   clearInterval(discoTimer);
   if (on) {
     discoStep();

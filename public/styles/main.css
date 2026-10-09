@@ -3067,6 +3067,14 @@ body.disco :is(.layout-block,.lamp-block,.setting-row):nth-child(3n+2) :is(.mod-
   filter:hue-rotate(120deg)}
 body.disco :is(.layout-block,.lamp-block,.setting-row):nth-child(3n) :is(.mod-switch,.lamp-state,.lamp-more) {
   filter:hue-rotate(240deg)}
-/* de wissel zelf is kort en strak */
-body.disco :is(.btn,.tab,.effect-btn,.mod-switch,.nav-item,.lamp-state,.tab-indicator),body.disco .mod-switch::after {
-  transition-duration:0.12s}
+
+/* Discostand: de merkkleur vloeit van de ene tint naar de volgende. Daarvoor moet de browser weten dat deze
+   variabelen kleuren (en drie getallen) zijn; dan kan hij ertussen overvloeien. De duur is één tel van de maat
+   (DISCO_BEAT in 03-home-blokken.js). Een browser die dit niet kent laat de kleur verspringen. */
+@property --accent { syntax:'<color>'; inherits:true; initial-value:#8DB255 }
+@property --accent-l { syntax:'<color>'; inherits:true; initial-value:#BBDD8C }
+@property --accent-text { syntax:'<color>'; inherits:true; initial-value:#8DB255 }
+@property --accent-hover { syntax:'<color>'; inherits:true; initial-value:#BBDD8C }
+@property --accent-rgb { syntax:'<number>#'; inherits:true; initial-value:141,178,85 }
+:root.disco-colors {
+  transition:--accent 0.5s linear,--accent-l 0.5s linear,--accent-text 0.5s linear,--accent-hover 0.5s linear,--accent-rgb 0.5s linear}
