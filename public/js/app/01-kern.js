@@ -98,15 +98,17 @@ function nextScreen(dir) {
 }
 
 // ── Touch swipe ──
-var touchX0 = 0, touchY0 = 0, isSwiping = false;
+var touchX0 = 0, touchY0 = 0, isSwiping = false, swipeBlocked = false;
 var outerEl = document.getElementById('screens-outer');
 outerEl.addEventListener('touchstart', function(e) {
   touchX0 = e.touches[0].clientX;
   touchY0 = e.touches[0].clientY;
   isSwiping = false;
+  // vegen over de regenstaafjes of een schuif hoort bij dat onderdeel, niet bij het bladeren tussen schermen
+  swipeBlocked = !!(e.target.closest && e.target.closest('.rain-bars, input[type="range"]'));
 }, {passive: true});
 outerEl.addEventListener('touchmove', function(e) {
-  if (KIOSK) return;
+  if (KIOSK || swipeBlocked) return;
   var dx = e.touches[0].clientX - touchX0;
   var dy = e.touches[0].clientY - touchY0;
   if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }

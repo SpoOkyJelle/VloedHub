@@ -19,6 +19,28 @@ function homeBlocks() { return Array.prototype.slice.call(document.querySelector
 // Het uitklappaneel van een lamp bestaat maar één keer. Op Home lenen we het van de Thuis-pagina:
 // het komt als eigen rij onder de rij van de lampkaart en gaat bij inklappen weer terug.
 var ledPanelOrigin = {};
+// Het paneel hangt als één geheel onder zijn lampkaart. Staat die kaart helemaal links of rechts, dan loopt de rand
+// daar recht door in plaats van met een ronde hoek.
+function joinLedPanel(panel, card) {
+  if (!card) return;
+  var p = panel.getBoundingClientRect(), c = card.getBoundingClientRect();
+  panel.classList.toggle('join-left', Math.abs(c.left - p.left) < 2);
+  panel.classList.toggle('join-right', Math.abs(c.right - p.right) < 2);
+}
+function openLedPanelCard(panel) {
+  var holder = panel._homeBlock || (panel.style.display !== 'none' ? panel.previousElementSibling : null);
+  return holder && holder.classList.contains('open') ? holder.querySelector('.lamp-card, .home-lamp') : null;
+}
+window.addEventListener('resize', function() {
+  Array.prototype.forEach.call(document.querySelectorAll('.lamp-panel'), function(panel) { joinLedPanel(panel, openLedPanelCard(panel)); });
+});
+// De sluitknop in het paneel doet hetzelfde als nog eens op "Aanpassen" tikken, op Home of op Thuis
+function closeLedPanel(id) {
+  var panel = document.getElementById('led-panel-' + id);
+  if (!panel) return;
+  if (panel._homeBlock) toggleHomeLedPanel(id, panel._homeBlock.querySelector('.lamp-more'));
+  else if (panel.style.display !== 'none') toggleLedPanel(id, panel.previousElementSibling.querySelector('.lamp-more'));
+}
 function returnLedPanel(panel) {
   var card = panel._homeBlock;
   if (card) { card.classList.remove('open'); var arrow = card.querySelector('.lamp-more'); if (arrow) arrow.setAttribute('aria-expanded', 'false'); }
@@ -64,6 +86,7 @@ function toggleHomeLedPanel(id, btn) {
     panel._homeBlock = block;
     block.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');
+    joinLedPanel(panel, block.querySelector('.home-lamp'));
   });
   if (!noMotion && panel.animate) panel.animate([{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 280, easing: EASE });
 }
@@ -81,6 +104,7 @@ function toggleLedPanel(id, btn) {
     panel.style.display = open ? 'none' : 'block';
     btn.setAttribute('aria-expanded', !open);
     if (blk) blk.classList.toggle('open', !open);
+    if (blk && !open) joinLedPanel(panel, blk.querySelector('.lamp-card'));
   }
   if (noMotion || !panel.animate) { apply(); return; }
   if (open) {

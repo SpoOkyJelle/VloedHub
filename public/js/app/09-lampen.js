@@ -22,6 +22,8 @@ function lampCardHtml(base, cfg, toggle, panelId) {
 }
 function ledPanelHtml(id) {
   return '<div id="led-panel-' + id + '" class="lamp-panel" style="display:none"><div class="card lamp-controls">' +
+    '<div class="lamp-panel-head"><div class="lamp-panel-title"><i class="fa-solid fa-lightbulb"></i><span id="panelname-led-' + id + '">' + LEDS[id].name + '</span></div>' +
+    '<button class="icon-btn" aria-label="Sluiten" title="Sluiten" onclick="closeLedPanel(\'' + id + '\')"><i class="fa-solid fa-chevron-up"></i></button></div>' +
     '<label class="lamp-slider"><span class="field-label">Helderheid</span><input type="range" min="10" max="255" value="180" id="led-' + id + '-brightness" oninput="ledBrightness(\'' + id + '\',this.value)"><span class="lamp-slider-val" id="led-' + id + '-brightness-val"></span></label>' +
     '<label class="lamp-slider" id="led-' + id + '-color-row" hidden><span class="field-label">Kleur</span><input type="color" class="color-field" value="#ffffff" id="led-' + id + '-color" oninput="ledSetColor(\'' + id + '\',this.value)"></label>' +
     '<div class="field-label">Effect</div><div class="effect-grid">' +

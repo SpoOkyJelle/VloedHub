@@ -2829,3 +2829,71 @@ body.block-dragging,body.block-dragging * {
   cursor:grabbing !important;
   user-select:none;
   -webkit-user-select:none}
+
+/* Regen: elk staafje is een knop; het gekozen staafje licht op en de regel eronder zegt hoeveel er valt */
+.rain-bars {
+  touch-action:pan-y}
+.rain-bar {
+  flex:1;
+  min-width:0;
+  height:100%;
+  display:flex;
+  align-items:flex-end;
+  padding:0;
+  border:none;
+  border-radius:2px 2px 0 0;
+  background:none;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.rain-bar:hover,.rain-bar.sel {
+  background:rgba(var(--overlay-rgb),0.1)}
+.rain-bar.sel i {
+  background:var(--text)}
+.rain-bar:focus-visible {
+  outline-offset:0}
+.rain-readout {
+  min-height:1.4em;
+  margin-top:0.35rem;
+  font-size:var(--fs-xs);
+  color:var(--dim);
+  font-variant-numeric:tabular-nums}
+.rain-readout.on {
+  color:var(--muted)}
+.rain-readout strong {
+  color:var(--text)}
+.rain-readout span {
+  color:var(--dim)}
+
+/* Lamp aanpassen: de kaart en het uitklapdeel vormen één vlak met één rand, zodat je ziet bij welke lamp het hoort.
+   De kaart loopt door tot op het paneel en dekt daar diens bovenrand af (als een tabblad). */
+.lamp-block.open > .lamp-card,.layout-block.open > .home-lamp {
+  position:relative;
+  z-index:1;
+  margin-bottom:calc(-0.6rem - 1px);
+  padding-bottom:calc(1.4rem + 1px);
+  border-color:rgba(var(--accent-rgb),0.6);
+  border-bottom-color:var(--surface);
+  border-radius:var(--r-lg) var(--r-lg) 0 0}
+.lamp-block.open .lamp-more,.layout-block.open .lamp-more {
+  border-top-color:transparent}
+.lamp-panel .lamp-controls {
+  border-color:rgba(var(--accent-rgb),0.6)}
+.lamp-panel.join-left .lamp-controls {
+  border-top-left-radius:0}
+.lamp-panel.join-right .lamp-controls {
+  border-top-right-radius:0}
+.lamp-panel-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5rem;
+  margin:-0.3rem -0.4rem -0.2rem 0}
+.lamp-panel-title {
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  min-width:0;
+  font-size:var(--fs-md);
+  font-weight:700}
+.lamp-panel-title i {
+  color:var(--accent-l)}

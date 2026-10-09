@@ -31,11 +31,50 @@ function rainView(d) {
   }
   v.bars = '<div class="rain-bars">' + d.points.map(function(p) {
     var h = p.mm > 0 ? Math.max(8, Math.min(100, Math.sqrt(p.mm / RAIN_FULL) * 100)) : 0;
-    return '<span title="' + p.time + ' · ' + nlNum(p.mm, 1) + ' mm/u"><i style="height:' + h + '%"></i></span>';
+    return '<button class="rain-bar" data-time="' + p.time + '" data-mm="' + p.mm + '" aria-label="' + p.time + ': ' + rainAmount(p.mm) + '"><i style="height:' + h + '%"></i></button>';
   }).join('') + '</div>' +
-    '<div class="rain-axis"><span>' + d.points[0].time + '</span><span>' + d.points[Math.floor(d.points.length / 2)].time + '</span><span>' + last + '</span></div>';
+    '<div class="rain-axis"><span>' + d.points[0].time + '</span><span>' + d.points[Math.floor(d.points.length / 2)].time + '</span><span>' + last + '</span></div>' +
+    '<div class="rain-readout" aria-live="polite">Tik op een staafje, of veeg erover, om te zien hoeveel er valt</div>';
   return v;
 }
+// De feed geeft de sterkte in mm per uur; een staafje is vijf minuten, dus daarin valt een twaalfde daarvan
+function rainAmount(mm) {
+  if (!(mm > 0)) return 'droog';
+  if (mm < 0.1) return 'vrijwel droog, minder dan 0,1 mm per uur';
+  return nlNum(mm, 1) + ' mm per uur (' + rainStrength(mm).toLowerCase() + ')';
+}
+function rainSelect(bar) {
+  var bars = bar.parentNode;
+  var old = bars.querySelector('.sel');
+  if (old === bar) return;
+  if (old) old.classList.remove('sel');
+  bar.classList.add('sel');
+  var mm = parseFloat(bar.dataset.mm) || 0;
+  // het regenblok en de weerkaart hebben elk hun eigen uitleesregel, direct na de as
+  var out = bars.nextElementSibling && bars.nextElementSibling.nextElementSibling;
+  if (!out || !out.classList.contains('rain-readout')) return;
+  out.classList.add('on');
+  out.innerHTML = '<strong>' + bar.dataset.time + '</strong> · ' + rainAmount(mm) +
+    (mm >= 0.1 ? '<span> · ' + nlNum(mm / 12, mm / 12 < 0.1 ? 2 : 1) + ' mm in deze vijf minuten</span>' : '');
+}
+// Tikken kiest een staafje; met de vinger of muis ingedrukt eroverheen vegen loopt ze langs
+var rainSliding = null;
+document.addEventListener('pointerdown', function(e) {
+  var bar = e.target.closest && e.target.closest('.rain-bar');
+  if (!bar) return;
+  rainSliding = bar.parentNode;
+  rainSelect(bar);
+});
+document.addEventListener('pointermove', function(e) {
+  if (!rainSliding) return;
+  var el = document.elementFromPoint(e.clientX, e.clientY);
+  var bar = el && el.closest('.rain-bar');
+  if (bar && bar.parentNode === rainSliding) rainSelect(bar);
+});
+document.addEventListener('pointerup', function() { rainSliding = null; });
+document.addEventListener('pointercancel', function() { rainSliding = null; });
+// toetsenbord: Tab naar een staafje kiest het, Enter en spatie ook
+document.addEventListener('focusin', function(e) { if (e.target.classList && e.target.classList.contains('rain-bar')) rainSelect(e.target); });
 // De verwachting staat als uitklapdeel in de weerkaart, en in het losse blok als dat op Home is gezet
 function loadRain() {
   if (!moduleOn('regen')) return;
