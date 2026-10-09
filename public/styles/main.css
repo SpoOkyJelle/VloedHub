@@ -2911,3 +2911,39 @@ body.block-dragging,body.block-dragging * {
   font-weight:700}
 .lamp-panel-title i {
   color:var(--accent-l)}
+
+/* Tabbladen met een schuivend vlak (Instellingen, thema): het groene vlak is één element dat naar het gekozen
+   tabblad schuift; het tabblad zelf heeft dan geen eigen achtergrond meer. */
+.tab-slide {
+  position:relative}
+.tab-indicator {
+  position:absolute;
+  top:0;
+  left:0;
+  border:1px solid rgba(var(--accent-rgb),0.5);
+  border-radius:var(--r-pill);
+  background:rgba(var(--accent-rgb),0.2);
+  opacity:0;
+  pointer-events:none}
+.tab-slide.ready .tab-indicator {
+  transition:transform 0.32s var(--ease),width 0.32s var(--ease),height 0.32s var(--ease),opacity 0.2s}
+.tab-slide .tab {
+  position:relative;
+  z-index:1;
+  transition:color 0.2s,border-color 0.2s,transform 0.12s}
+.tab-slide .tab.active {
+  background:transparent;
+  border-color:transparent}
+.tab-slide .tab:active {
+  transform:scale(0.95)}
+/* De inhoud van het gekozen tabblad schuift binnen vanaf de kant waar je naartoe gaat, blok na blok */
+@keyframes set-in {
+  from {
+  opacity:0;
+  transform:translateX(calc(var(--set-dir, 1) * 18px))}
+}
+.set-group.active > .set-section {
+  animation:set-in 0.3s var(--ease) both}
+.set-group.active > .set-section:nth-child(2) { animation-delay:0.05s }
+.set-group.active > .set-section:nth-child(3) { animation-delay:0.1s }
+.set-group.active > .set-section:nth-child(n+4) { animation-delay:0.15s }

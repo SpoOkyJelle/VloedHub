@@ -276,12 +276,12 @@
 </div>
 <!-- SCREEN 5: INSTELLINGEN -->
 <div class='screen' id='screen-5'>
-<div class='tab-bar set-tabs' id='settings-tabs'>
-  <button class='tab active' data-set='algemeen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-sliders'></i> Algemeen</button>
-  <button class='tab' data-set='apparaten' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-microchip'></i> Apparaten</button>
-  <button class='tab' data-set='koppelingen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
-  <button class='tab' data-set='aanwezig' data-module='aanwezigheid' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-house-user'></i> Wie is thuis</button>
-  <button class='tab' data-set='systeem' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-server'></i> Systeem</button>
+<div class='tab-bar set-tabs tab-slide' id='settings-tabs' role='tablist'>
+  <button class='tab active' role='tab' data-set='algemeen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-sliders'></i> Algemeen</button>
+  <button class='tab' role='tab' data-set='apparaten' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-microchip'></i> Apparaten</button>
+  <button class='tab' role='tab' data-set='koppelingen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
+  <button class='tab' role='tab' data-set='aanwezig' data-module='aanwezigheid' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-house-user'></i> Wie is thuis</button>
+  <button class='tab' role='tab' data-set='systeem' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-server'></i> Systeem</button>
 </div>
 <div class='set-group active' data-set='algemeen'>
 <div class='set-section'>
@@ -293,7 +293,7 @@
 <div class='setting-card'>
   <div class='setting-row setting-row-wrap'>
     <div class='setting-text'><div class='setting-title'>Thema</div><div class='setting-desc'>Geldt voor dit apparaat. Automatisch volgt de instelling van je telefoon of computer.</div></div>
-    <div class='tab-bar' role='group' aria-label='Thema'><button class='tab' data-theme-pref='dark' onclick='setTheme("dark")'><i class='fa-solid fa-moon'></i> Donker</button><button class='tab' data-theme-pref='light' onclick='setTheme("light")'><i class='fa-solid fa-sun'></i> Licht</button><button class='tab' data-theme-pref='auto' onclick='setTheme("auto")'><i class='fa-solid fa-circle-half-stroke'></i> Automatisch</button></div>
+    <div class='tab-bar tab-slide' role='group' aria-label='Thema'><button class='tab' data-theme-pref='dark' onclick='setTheme("dark")'><i class='fa-solid fa-moon'></i> Donker</button><button class='tab' data-theme-pref='light' onclick='setTheme("light")'><i class='fa-solid fa-sun'></i> Licht</button><button class='tab' data-theme-pref='auto' onclick='setTheme("auto")'><i class='fa-solid fa-circle-half-stroke'></i> Automatisch</button></div>
   </div>
   <div class='setting-row'>
     <div class='setting-text'><div class='setting-title'>Wandtablet-weergave</div><div class='setting-desc'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>

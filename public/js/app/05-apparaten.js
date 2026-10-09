@@ -221,11 +221,45 @@ function unlinkHc() { hcPost('unlink'); }
 
 // ── Tabbladen van Instellingen ──
 // Het gekozen tabblad blijft op dit apparaat bewaard
+// Het groene vlak achter het gekozen tabblad is één los element dat naar zijn nieuwe plek schuift
+function moveTabIndicator(bar) {
+  if (!bar) return;
+  var active = bar.querySelector('.tab.active'), ind = bar.querySelector('.tab-indicator');
+  if (!ind) {
+    ind = document.createElement('span');
+    ind.className = 'tab-indicator';
+    ind.setAttribute('aria-hidden', 'true');
+    bar.insertBefore(ind, bar.firstChild);
+  }
+  // staat de balk niet in beeld (ander tabblad), dan valt er niets te meten
+  if (!active || !active.offsetWidth) { ind.style.opacity = 0; bar.classList.remove('ready'); return; }
+  ind.style.width = active.offsetWidth + 'px';
+  ind.style.height = active.offsetHeight + 'px';
+  ind.style.transform = 'translate(' + active.offsetLeft + 'px,' + active.offsetTop + 'px)';
+  ind.style.opacity = 1;
+  // de eerste keer staat het er meteen; pas daarna schuift het
+  if (!bar.classList.contains('ready')) { ind.offsetWidth; bar.classList.add('ready'); }
+  // op een smal scherm schuift de rij mee, zodat het gekozen tabblad in beeld blijft
+  var left = active.offsetLeft - 12, right = active.offsetLeft + active.offsetWidth + 12;
+  if (left < bar.scrollLeft) bar.scrollTo({ left: left, behavior: noMotion ? 'auto' : 'smooth' });
+  else if (right > bar.scrollLeft + bar.clientWidth) bar.scrollTo({ left: right - bar.clientWidth, behavior: noMotion ? 'auto' : 'smooth' });
+}
+function moveTabIndicators() { Array.prototype.forEach.call(document.querySelectorAll('.tab-slide'), moveTabIndicator); }
 function showSettingsTab(name) {
   if (!document.querySelector('.set-group[data-set="' + name + '"]')) name = 'algemeen';
+  // de inhoud komt binnen vanaf de kant waar je naartoe gaat
+  var order = Array.prototype.map.call(document.querySelectorAll('#settings-tabs .tab'), function(t) { return t.dataset.set; });
+  var current = document.querySelector('#settings-tabs .tab.active');
+  var from = current ? order.indexOf(current.dataset.set) : -1, to = order.indexOf(name);
+  document.getElementById('screen-5').style.setProperty('--set-dir', to < from ? -1 : 1);
   document.querySelectorAll('#screen-5 [data-set]').forEach(function(el) { el.classList.toggle('active', el.dataset.set === name); });
+  document.querySelectorAll('#settings-tabs .tab').forEach(function(t) { t.setAttribute('aria-selected', t.dataset.set === name); });
+  moveTabIndicators();
   try { localStorage.setItem('vh-settings-tab', name); } catch (e) {}
 }
+window.addEventListener('resize', moveTabIndicators);
+// het lettertype komt soms later binnen dan deze code; de tabbladen zijn dan net iets breder geworden
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveTabIndicators);
 try { showSettingsTab(localStorage.getItem('vh-settings-tab') || 'algemeen'); } catch (e) {}
 
 // ── Modules ──
@@ -246,6 +280,7 @@ function applyModules() {
   Object.keys(MODULES).forEach(function(k) { document.body.classList.toggle('mod-off-' + k, !moduleOn(k)); });
   document.body.classList.toggle('mod-off-thuis', !['lights','fridge','esphome','temperature','wasmachine','vaatwasser'].some(moduleOn));
   applyLayout(0);
+  moveTabIndicators();
   if (screenLoaded[1]) loadCostsDaily();
 }
 function toggleModule(btn) {

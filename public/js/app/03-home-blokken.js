@@ -482,6 +482,7 @@ function loadDisplaySettings() {
     b.classList.toggle('active', on);
     b.setAttribute('aria-pressed', on);
   });
+  moveTabIndicators();
 }
 function saveNight(toggle) {
   var v = nightSettings();
