@@ -38,7 +38,7 @@ function loadWeekdayChart() {
     chartWeekday = new Chart(document.getElementById('chart-weekday'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gem. verbruik (kW)', data: data, backgroundColor: ['rgba(141,178,85,0.4)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.4)'], borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TEXT, font: { size: 11, weight: '600' } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true } } }
     });
   }).catch(function(){});
 }
@@ -86,7 +86,7 @@ function loadCostsDaily() {
         { label: 'Stroom (€)', data: elecD, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
         { label: 'Gas (€)',    data: gasD,  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
       ].filter(function(ds, i) { return i === 0 || moduleOn('gas'); })},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: CHART_GRID }, beginAtZero: true, stacked: true } } }
     });
   }).catch(function(){});
 }
@@ -155,7 +155,7 @@ function loadCostsOverview() {
       data: { labels: nights.map(function(n) { return nlDate(n.day, {weekday:'short', day:'numeric'}); }), datasets: [
         { label: 'Gem. vermogen (W)', data: nights.map(function(n) { return (n.kw * 1000).toFixed(0); }), backgroundColor: 'rgba(248,113,113,0.45)', borderColor: '#F87171', borderWidth: 1, borderRadius: 3 }
       ]},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.parsed.y + ' W gemiddeld'; }, afterLabel: function(c) { var n = nights[c.dataIndex]; return num(n.kwh, 2) + ' kWh' + (n.cost != null ? ' · ' + eur(n.cost) : ''); } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.parsed.y + ' W gemiddeld'; }, afterLabel: function(c) { var n = nights[c.dataIndex]; return num(n.kwh, 2) + ' kWh' + (n.cost != null ? ' · ' + eur(n.cost) : ''); } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true } } }
     });
 
     var partial = o.months.length && o.months[0].first_day.slice(8) !== '01';
@@ -167,7 +167,7 @@ function loadCostsOverview() {
         { label: 'Stroom (€)', data: o.months.map(function(m) { return m.elec_cost != null ? m.elec_cost.toFixed(2) : 0; }), backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
         { label: 'Gas (€)',    data: o.months.map(function(m) { return m.gas_cost != null ? m.gas_cost.toFixed(2) : 0; }),  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
       ].filter(function(ds, i) { return i === 0 || moduleOn('gas'); })},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: CHART_GRID }, beginAtZero: true, stacked: true } } }
     });
   }).catch(function(){});
 }
@@ -201,7 +201,7 @@ function loadGasMonthly() {
     chartGasMonthly = new Chart(document.getElementById('chart-gas-monthly'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true } } }
     });
   }).catch(function(){});
 }

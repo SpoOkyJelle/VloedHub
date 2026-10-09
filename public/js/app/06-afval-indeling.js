@@ -114,6 +114,7 @@ function toggleLayoutEdit() {
   btn.innerHTML = '<i class="fa-solid ' + (layoutEditMode ? 'fa-check' : 'fa-pen-to-square') + '"></i>';
   btn.title = layoutEditMode ? 'Indeling opslaan' : 'Indeling aanpassen';
   if (layoutEditMode) {
+    closeHomeLedPanels();
     renderEditBars(0);
   } else {
     removeEditBars(0);
@@ -131,11 +132,12 @@ function renderEditBars(screenIdx) {
     var bar = document.createElement('div');
     bar.className = 'layout-block-edit-bar';
     bar.dataset.editBar = type;
-    bar.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span class="lbl">' + def.label + '</span>' +
-      '<button onclick="moveBlock(0,\'' + type + '\',-1)" title="Eerder" aria-label="' + def.label + ' eerder zetten"><i class="fa-solid fa-arrow-up"></i></button>' +
-      '<button onclick="moveBlock(0,\'' + type + '\',1)" title="Later" aria-label="' + def.label + ' later zetten"><i class="fa-solid fa-arrow-down"></i></button>' +
+    bar.innerHTML = '<button class="drag-handle" title="Sleep om te verplaatsen" aria-label="' + def.label + ' verplaatsen: sleep, of gebruik de pijltjestoetsen"><i class="fa-solid fa-grip-vertical"></i></button>' +
+      '<i class="fa-solid ' + def.icon + '"></i><span class="lbl">' + def.label + '</span>' +
       '<button class="block-size-btn" onclick="toggleBlockSize(' + screenIdx + ',\'' + type + '\',this)" title="Breedte (1 tot 4 kolommen)" aria-label="Breedte van ' + def.label + '">' + (size === 'half' ? '2' : size === 'full' ? '4' : size) + '</button>' +
       '<button class="danger" onclick="removeBlock(0,\'' + type + '\')" title="Verwijderen" aria-label="' + def.label + ' verwijderen"><i class="fa-solid fa-xmark"></i></button>';
+    bar.addEventListener('pointerdown', function(e) { startBlockDrag(e, block); });
+    bar.firstChild.addEventListener('keydown', function(e) { blockDragKey(e, type); });
     block.insertBefore(bar, block.firstChild);
   });
   // Add "add block" button
@@ -147,6 +149,85 @@ function renderEditBars(screenIdx) {
   addBtn.className = 'block-add';
   addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Blok toevoegen';
   screen.appendChild(addBtn);
+}
+
+// ── Blokken verslepen ──
+// Pak een blok bij zijn balk en sleep het over een ander blok: het schuift daar direct tussen en de rest maakt
+// plaats. Het blok blijft in de pagina staan (geen zwevende kopie), zodat je meteen ziet hoe de indeling wordt.
+var blockDrag = null;
+function startBlockDrag(e, block) {
+  // de knoppen voor breedte en verwijderen blijven gewone knoppen
+  if (blockDrag || e.button || (e.target.closest('button') && !e.target.closest('.drag-handle'))) return;
+  e.preventDefault();
+  blockDrag = { block: block, x: e.clientX, y: e.clientY, lock: 0, moved: false, scroll: setInterval(blockDragScroll, 16) };
+  block.classList.add('dragging');
+  document.body.classList.add('block-dragging');
+  document.addEventListener('pointermove', blockDragMove);
+  document.addEventListener('pointerup', endBlockDrag);
+  document.addEventListener('pointercancel', endBlockDrag);
+}
+function blockDragMove(e) {
+  if (!blockDrag) return;
+  blockDrag.x = e.clientX; blockDrag.y = e.clientY;
+  blockDragOver();
+}
+function blockDragOver() {
+  var d = blockDrag;
+  // even wachten tot het vorige verschuiven klaar is, anders springt het blok heen en weer
+  if (!d || Date.now() < d.lock) return;
+  var el = document.elementFromPoint(d.x, d.y);
+  var target = el && el.closest('#screen-0 > .layout-block');
+  if (!target || target === d.block) return;
+  var screen = d.block.parentNode;
+  var after = d.block.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING;
+  flipAnimate(homeBlocks(), function() { screen.insertBefore(d.block, after ? target.nextSibling : target); });
+  d.lock = Date.now() + 260;
+  d.moved = true;
+}
+// bij de boven- of onderrand schuift de pagina mee
+function blockDragScroll() {
+  var d = blockDrag;
+  if (!d) return;
+  var screen = d.block.parentNode, r = screen.getBoundingClientRect(), edge = 70;
+  var dy = d.y < r.top + edge ? -10 : d.y > r.bottom - edge ? 10 : 0;
+  if (!dy) return;
+  var before = screen.scrollTop;
+  screen.scrollTop += dy;
+  if (screen.scrollTop !== before) blockDragOver();
+}
+// de volgorde in de pagina wordt de volgorde van de indeling
+function layoutOrderFromDom(screenIdx) {
+  var cfg = layoutConfig[layoutKey(screenIdx)];
+  if (!cfg) return;
+  var byType = {};
+  cfg.forEach(function(item) { byType[item.type] = item; });
+  var order = [];
+  document.querySelectorAll('#screen-' + screenIdx + ' > .layout-block').forEach(function(b) {
+    if (b.style.display !== 'none' && byType[b.dataset.block]) { order.push(byType[b.dataset.block]); delete byType[b.dataset.block]; }
+  });
+  // blokken van een uitgezette module staan niet in beeld maar horen nog wel bij de indeling
+  layoutConfig[layoutKey(screenIdx)] = order.concat(cfg.filter(function(item) { return byType[item.type]; }));
+}
+function endBlockDrag() {
+  var d = blockDrag;
+  if (!d) return;
+  blockDrag = null;
+  clearInterval(d.scroll);
+  d.block.classList.remove('dragging');
+  document.body.classList.remove('block-dragging');
+  document.removeEventListener('pointermove', blockDragMove);
+  document.removeEventListener('pointerup', endBlockDrag);
+  document.removeEventListener('pointercancel', endBlockDrag);
+  if (d.moved) layoutOrderFromDom(0);
+}
+// zonder muis of vinger: pijltjestoetsen op de greep
+function blockDragKey(e, type) {
+  var dir = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : 0;
+  if (!dir) return;
+  e.preventDefault();
+  moveBlock(0, type, dir);
+  var handle = document.querySelector('[data-edit-bar="' + type + '"] .drag-handle');
+  if (handle) handle.focus();
 }
 
 function removeEditBars(screenIdx) {

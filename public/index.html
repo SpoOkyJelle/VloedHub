@@ -10,6 +10,7 @@
 <meta name='theme-color' content='#0C0F1D'>
 <link rel='icon' href='/icons/icon-192.png' type='image/png'>
 <link rel='apple-touch-icon' href='/icons/icon-180.png'>
+<script src='/js/theme.js'></script>
 <link rel='preload' href='/vendor/poppins/poppins-latin-600.woff2' as='font' type='font/woff2' crossorigin>
 <link rel='stylesheet' href='/styles/tokens.css'>
 <link rel='stylesheet' href='/vendor/fontawesome/css/all.min.css'>
@@ -290,9 +291,21 @@
 <div class='set-section'>
 <div class='section-title'>Weergave</div>
 <div class='setting-card'>
+  <div class='setting-row setting-row-wrap'>
+    <div class='setting-text'><div class='setting-title'>Thema</div><div class='setting-desc'>Geldt voor dit apparaat. Automatisch volgt de instelling van je telefoon of computer.</div></div>
+    <div class='tab-bar' role='group' aria-label='Thema'><button class='tab' data-theme-pref='dark' onclick='setTheme("dark")'><i class='fa-solid fa-moon'></i> Donker</button><button class='tab' data-theme-pref='light' onclick='setTheme("light")'><i class='fa-solid fa-sun'></i> Licht</button><button class='tab' data-theme-pref='auto' onclick='setTheme("auto")'><i class='fa-solid fa-circle-half-stroke'></i> Automatisch</button></div>
+  </div>
   <div class='setting-row'>
     <div class='setting-text'><div class='setting-title'>Wandtablet-weergave</div><div class='setting-desc'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>
     <a href='/?kiosk=1' class='btn btn-ghost'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Nachtstand</div><div class='setting-desc'>De wandtablet toont 's nachts alleen een gedimde klok. Tikken of aanbellen maakt hem een minuut wakker. Geldt voor dit apparaat.</div></div>
+    <button class='mod-switch' role='switch' aria-checked='false' aria-label='Nachtstand' id='night-on' onclick='saveNight(true)'></button>
+  </div>
+  <div class='setting-row night-times' id='night-times' hidden>
+    <label class='form-field'><span class='field-label'>Van</span><input class='field' type='time' id='night-from' onchange='saveNight()'></label>
+    <label class='form-field'><span class='field-label'>Tot</span><input class='field' type='time' id='night-to' onchange='saveNight()'></label>
   </div>
 </div>
 </div>
@@ -492,6 +505,7 @@
     <div class='block-picker-list' id='block-picker-list'></div>
   </div>
 </div>
+<div class='night-overlay' id='night-overlay' onclick='nightWake()'><div class='night-clock' id='night-clock'><div id='night-time'></div><div id='night-date'></div></div><div class='night-hint'>Tik om het scherm te wekken</div></div>
 <div class='toast-stack' id='toast-stack' role='status' aria-live='polite'></div>
 </body>
 </html>

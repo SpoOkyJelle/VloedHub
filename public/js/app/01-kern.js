@@ -173,8 +173,22 @@ function powerParts(kw) {
 }
 function powerHtml(kw, unitClass) { var p = powerParts(kw); return p[0] + '<span class="' + (unitClass || 'card-unit') + '">' + p[1] + '</span>'; }
 function powerText(kw) { var p = powerParts(kw); return p[0] + ' ' + p[1]; }
-// Assen en bijschriften van grafieken
-var CHART_TICK = '#7C8AA8';
+// Assen, bijschriften en rasterlijnen van grafieken nemen de kleuren van het thema over
+var CHART_TICK, CHART_TEXT, CHART_GRID;
+function cssVar(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
+function chartColors() {
+  CHART_TICK = cssVar('--dim', '#7C8AA8');
+  CHART_TEXT = cssVar('--muted', '#94A3B8');
+  CHART_GRID = cssVar('--chart-grid', 'rgba(255,255,255,0.04)');
+  if (window.Chart) Chart.defaults.color = CHART_TEXT;
+}
+chartColors();
+// Ander thema: de grafieken worden opnieuw getekend zodra hun scherm weer in beeld komt, die op Home meteen
+document.addEventListener('vh-theme', function() {
+  chartColors();
+  for (var n = 1; n <= 4; n++) if (n !== currentScreen) screenLoaded[n] = false;
+  applyLayout(0);
+});
 
 // ── Meldingen onderin ──
 // Kort bericht na iets wat je zelf deed: een fout die anders onzichtbaar blijft, of een bevestiging

@@ -25,27 +25,6 @@
   font-display:swap;
   src:url('/vendor/poppins/poppins-latin-700.woff2') format('woff2')}
 :root {
-  /* vlakken */
-  --bg:#0C0F1D;
-  --surface:#141728;
-  --surface2:#1A1E35;
-  --border:rgba(255,255,255,0.07);
-  --border-strong:rgba(255,255,255,0.14);
-  /* tekst: --muted voor toelichting, --dim voor labels en kopjes; beide halen 4,5:1 op --surface */
-  --text:#F1F5F9;
-  --muted:#94A3B8;
-  --dim:#7C8AA8;
-  /* merk en status */
-  --accent:#8DB255;
-  --accent-l:#BBDD8C;
-  --accent-rgb:141,178,85;
-  --on-accent:#16210A;
-  --green:#22C55E;
-  --orange:#F97316;
-  --blue:#38BDF8;
-  --yellow:#FBBF24;
-  --red:#F87171;
-  --red-rgb:248,113,113;
   /* lettergroottes: niets onder 11 px */
   --fs-2xs:0.6875rem;
   --fs-xs:0.75rem;
@@ -62,3 +41,95 @@
   /* kleinste maat van iets waar je op tikt */
   --tap:44px;
   --ease:cubic-bezier(0.4,0,0.2,1)}
+
+/* Kleuren, donker. Dit is ook de set voor onderdelen die in het lichte thema donker blijven
+   (de weerkaart met zijn regen en sneeuw, het camerabeeld, de nachtklok): die staan hier in de lijst. */
+:root,.weather-card,.cam-frame,.night-overlay {
+  color-scheme:dark;
+  /* vlakken */
+  --bg:#0C0F1D;
+  --surface:#141728;
+  --surface2:#1A1E35;
+  --surface-raised:#232842;
+  --bar-bg:rgba(12,15,29,0.97);
+  --border:rgba(255,255,255,0.07);
+  --border-strong:rgba(255,255,255,0.14);
+  /* tint over een vlak heen: wit op donker, donkerblauw op licht */
+  --overlay-rgb:255,255,255;
+  /* tekst: --muted voor toelichting, --dim voor labels en kopjes; beide halen 4,5:1 op --surface */
+  --text:#F1F5F9;
+  --muted:#94A3B8;
+  --dim:#7C8AA8;
+  /* merk: --accent voor vlakken, --accent-l en --accent-text voor tekst */
+  --accent:#8DB255;
+  --accent-l:#BBDD8C;
+  --accent-text:#8DB255;
+  --accent-hover:#BBDD8C;
+  --accent-rgb:141,178,85;
+  --on-accent:#16210A;
+  /* status; de -l-varianten zijn voor tekst op een getint vlak van dezelfde kleur */
+  --green:#22C55E;
+  --green-l:#4ADE80;
+  --orange:#F97316;
+  --orange-l:#FDBA74;
+  --blue:#38BDF8;
+  --yellow:#FBBF24;
+  --yellow-l:#FDE68A;
+  --red:#F87171;
+  --red-l:#FCA5A5;
+  --red-rgb:248,113,113;
+  --danger-bg:#3A1518;
+  --chart-grid:rgba(255,255,255,0.04);
+  --shadow:0 14px 40px rgba(0,0,0,0.55)}
+
+/* Kleuren, licht. js/theme.js zet data-theme op <html>; bij "automatisch" volgt die het apparaat. */
+:root[data-theme='light'] {
+  color-scheme:light;
+  --bg:#F2F4F8;
+  --surface:#FFFFFF;
+  --surface2:#F1F4F9;
+  --surface-raised:#FFFFFF;
+  --bar-bg:rgba(255,255,255,0.94);
+  --border:rgba(15,23,42,0.10);
+  --border-strong:rgba(15,23,42,0.20);
+  --overlay-rgb:15,23,42;
+  --text:#0F172A;
+  --muted:#475569;
+  --dim:#64748B;
+  --accent:#7BA63E;
+  --accent-l:#3D6B12;
+  --accent-text:#4D7A1C;
+  --accent-hover:#8DB255;
+  --accent-rgb:94,138,43;
+  --on-accent:#16210A;
+  --green:#16A34A;
+  --green-l:#15803D;
+  --orange:#EA580C;
+  --orange-l:#C2410C;
+  --blue:#0284C7;
+  --yellow:#B45309;
+  --yellow-l:#92400E;
+  --red:#DC2626;
+  --red-l:#B91C1C;
+  --red-rgb:220,38,38;
+  --danger-bg:#FEE2E2;
+  --chart-grid:rgba(15,23,42,0.08);
+  --shadow:0 12px 32px rgba(15,23,42,0.16)}
+.weather-card,.cam-frame,.night-overlay {
+  color:var(--text)}
+
+/* Focus: zichtbaar met het toetsenbord, niet na een tik */
+:focus-visible {
+  outline:2px solid var(--accent-l);
+  outline-offset:2px}
+:focus:not(:focus-visible) {
+  outline:none}
+input[type='range'] {
+  accent-color:var(--accent)}
+/* Minder beweging: alles staat er direct */
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+  animation-duration:0.01ms !important;
+  animation-iteration-count:1 !important;
+  transition-duration:0.01ms !important}
+}

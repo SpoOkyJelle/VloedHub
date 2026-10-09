@@ -1,5 +1,5 @@
 // ── Wasmachine ──
-var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } } }); }).catch(function(){}); }
+var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TEXT, font: { size: 11, weight: '600' } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, precision: 0 }, grid: { color: CHART_GRID }, beginAtZero: true } } } }); }).catch(function(){}); }
 
 function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste was: ' + (s.last_finished_at ? shortWhen(s.last_finished_at) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="table-empty">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
 function esphomeCards(rows, editable) {
@@ -58,23 +58,23 @@ var BLOCKS = {
   },
   'power_price': {label:'Stroomprijs',icon:'fa-tag',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-price" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-price');if(!el)return;var price=p.electricity_eur_kwh;var gas=p.gas_eur_m3;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';el.innerHTML='<div class="power-label">Stroomprijs</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div>'+(gas!=null?'<div class="power-sub">Gas: €'+nlNum(gas,2)+'/m³</div>':'');}).catch(function(){});}
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-price');if(!el)return;var price=p.electricity_eur_kwh;var gas=p.gas_eur_m3;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'var(--green-l)':price<0.25?'var(--yellow)':'var(--red)';el.innerHTML='<div class="power-label">Stroomprijs</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div>'+(gas!=null?'<div class="power-sub">Gas: €'+nlNum(gas,2)+'/m³</div>':'');}).catch(function(){});}
   },
   'wasmachine_quick': {label:'Wasmachine',icon:'fa-shirt',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-wash-quick" class="power-hero"></div>';},
-    refresh:function(){Promise.all([fetch('/api/wasmachine/status').then(function(r){return r.json();}),fetch('/api/wasmachine/stats').then(function(r){return r.json();})]).then(function(res){var s=res[0];var st=res[1];var el=document.getElementById('blk-wash-quick');if(!el)return;var state=s.state||'idle';var color=state==='running'?'#FBBF24':state==='done'?'#4ADE80':'var(--dim)';var icon=state==='running'?'fa-rotate':state==='done'?'fa-circle-check':'fa-moon';var label=state==='running'?'In gebruik':state==='done'?'Klaar!':'Inactief';el.innerHTML='<div class="power-label">Wasmachine</div><div class="power-value sm" style="color:'+color+'"><i class="fa-solid '+icon+'"></i> '+label+'</div><div class="power-sub">Vandaag: '+(st.today||0)+' · Week: '+(st.week||0)+'</div>';}).catch(function(){});}
+    refresh:function(){Promise.all([fetch('/api/wasmachine/status').then(function(r){return r.json();}),fetch('/api/wasmachine/stats').then(function(r){return r.json();})]).then(function(res){var s=res[0];var st=res[1];var el=document.getElementById('blk-wash-quick');if(!el)return;var state=s.state||'idle';var color=state==='running'?'var(--yellow)':state==='done'?'var(--green-l)':'var(--dim)';var icon=state==='running'?'fa-rotate':state==='done'?'fa-circle-check':'fa-moon';var label=state==='running'?'In gebruik':state==='done'?'Klaar!':'Inactief';el.innerHTML='<div class="power-label">Wasmachine</div><div class="power-value sm" style="color:'+color+'"><i class="fa-solid '+icon+'"></i> '+label+'</div><div class="power-sub">Vandaag: '+(st.today||0)+' · Week: '+(st.week||0)+'</div>';}).catch(function(){});}
   },
   'day_summary': {label:'Dag samenvatting',icon:'fa-chart-pie',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-daysummary" class="info-strip cols-2"></div>';},
-    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var d=res[0];var el=document.getElementById('blk-daysummary');if(!el)return;var t=d.today?d.today.elec_kwh:null;var ySofar=d.yesterday?d.yesterday.elec_kwh_sofar:null;var yFull=d.yesterday?d.yesterday.elec_kwh:null;var cost=res[1].day?res[1].day.elec_cost:null;var diff=(t!=null&&ySofar!=null)?t-ySofar:null;var col=diff==null?'var(--muted)':diff>0?'#F87171':'#4ADE80';el.innerHTML='<div class="info-card"><div class="info-label">Vandaag</div><div class="info-value c-yellow">'+(t!=null?nlNum(t,1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(cost!=null?'€'+nlNum(cost,2):'')+'</div></div><div class="info-card"><div class="info-label">t.o.v. gisteren, zelfde tijd</div><div class="info-value" style="color:'+col+'">'+(diff!=null?(diff>0?'+':'−')+nlNum(Math.abs(diff),1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(yFull!=null?'Gisteren totaal: '+nlNum(yFull,1)+' kWh':'')+'</div></div>';}).catch(function(){});}
+    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var d=res[0];var el=document.getElementById('blk-daysummary');if(!el)return;var t=d.today?d.today.elec_kwh:null;var ySofar=d.yesterday?d.yesterday.elec_kwh_sofar:null;var yFull=d.yesterday?d.yesterday.elec_kwh:null;var cost=res[1].day?res[1].day.elec_cost:null;var diff=(t!=null&&ySofar!=null)?t-ySofar:null;var col=diff==null?'var(--muted)':diff>0?'var(--red)':'var(--green-l)';el.innerHTML='<div class="info-card"><div class="info-label">Vandaag</div><div class="info-value c-yellow">'+(t!=null?nlNum(t,1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(cost!=null?'€'+nlNum(cost,2):'')+'</div></div><div class="info-card"><div class="info-label">t.o.v. gisteren, zelfde tijd</div><div class="info-value" style="color:'+col+'">'+(diff!=null?(diff>0?'+':'−')+nlNum(Math.abs(diff),1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(yFull!=null?'Gisteren totaal: '+nlNum(yFull,1)+' kWh':'')+'</div></div>';}).catch(function(){});}
   },
   'cheap_hours': {label:'Goedkope uren',icon:'fa-clock',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-cheap" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-cheap');if(!el)return;var price=p.electricity_eur_kwh;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';var tip=price<0.15?'Goedkoop uur, goed moment!':price<0.25?'Gemiddeld tarief':'Duur uur, wacht indien mogelijk';el.innerHTML='<div class="power-label">Huidig tarief</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div><div class="power-sub">'+tip+'</div>';}).catch(function(){});}
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-cheap');if(!el)return;var price=p.electricity_eur_kwh;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'var(--green-l)':price<0.25?'var(--yellow)':'var(--red)';var tip=price<0.15?'Goedkoop uur, goed moment!':price<0.25?'Gemiddeld tarief':'Duur uur, wacht indien mogelijk';el.innerHTML='<div class="power-label">Huidig tarief</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div><div class="power-sub">'+tip+'</div>';}).catch(function(){});}
   },
   'solar_return': {label:'Teruglevering',icon:'fa-solar-panel',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-solar" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-solar');if(!el)return;var latest=d.latest;var ret=latest?latest.power_returned_total_kw:null;var color=ret>0?'#4ADE80':'var(--dim)';el.innerHTML='<div class="power-label">Teruglevering</div><div class="power-value sm" style="color:'+color+'">'+powerHtml(ret,'unit')+'</div><div class="power-sub">'+(ret>0?'Zonnepanelen actief':'Geen teruglevering')+'</div>';}).catch(function(){});}
+    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-solar');if(!el)return;var latest=d.latest;var ret=latest?latest.power_returned_total_kw:null;var color=ret>0?'var(--green-l)':'var(--dim)';el.innerHTML='<div class="power-label">Teruglevering</div><div class="power-value sm" style="color:'+color+'">'+powerHtml(ret,'unit')+'</div><div class="power-sub">'+(ret>0?'Zonnepanelen actief':'Geen teruglevering')+'</div>';}).catch(function(){});}
   },
   'gas_today': {label:'Gas vandaag',icon:'fa-fire',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
@@ -314,6 +314,7 @@ function openCamOverlay(ring) {
     camOverlayTick();
   }
   if (!ring) return;
+  nightWake(CAM_RING_OPEN);
   if (!ov.querySelector('.cam-ring')) ov.insertAdjacentHTML('beforeend', '<div class="cam-ring"><i class="fa-solid fa-bell"></i>Er wordt aangebeld</div>');
   clearTimeout(camOvClose);
   camOvClose = setTimeout(closeCamOverlay, CAM_RING_OPEN);
@@ -426,11 +427,76 @@ function connFail() {
 
 // ── Wandtablet-weergave ──
 function kioskTick() {
+  nightTick();
   var now = new Date();
   var c = document.getElementById('kiosk-clock'), d = document.getElementById('kiosk-date');
   if (c) c.textContent = now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false});
   if (d) d.textContent = now.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'});
 }
+// ── Nachtstand ──
+// Binnen de ingestelde uren toont de wandtablet alleen een gedimde klok op zwart. Een tik of de deurbel maakt
+// hem een minuut wakker. De instelling hoort bij het apparaat (de tablet), niet bij het huis.
+var NIGHT_KEY = 'vh-night', NIGHT_AWAKE = 60000;
+var nightAwakeUntil = 0;
+function nightSettings() {
+  try { var v = JSON.parse(localStorage.getItem(NIGHT_KEY)); if (v && v.from && v.to) return v; } catch (e) {}
+  return { on: false, from: '23:00', to: '07:00' };
+}
+function nightMinutes(hhmm) { var p = String(hhmm).split(':'); return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0); }
+function nightActive(now) {
+  var v = nightSettings();
+  if (!v.on) return false;
+  var m = now.getHours() * 60 + now.getMinutes(), from = nightMinutes(v.from), to = nightMinutes(v.to);
+  // loopt de periode over middernacht heen, dan is het nacht ná het begin óf vóór het eind
+  return from <= to ? m >= from && m < to : m >= from || m < to;
+}
+function nightTick() {
+  var ov = document.getElementById('night-overlay');
+  if (!ov || !KIOSK) return;
+  var now = new Date();
+  var show = nightActive(now) && Date.now() > nightAwakeUntil;
+  ov.classList.toggle('show', show);
+  if (!show) return;
+  setEl('night-time', now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false}));
+  setEl('night-date', now.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'}));
+  // elke minuut een andere plek, zodat de klok niet inbrandt
+  var step = now.getMinutes();
+  document.getElementById('night-clock').style.transform = 'translate(' + ((step * 7) % 21 - 10) + 'vw,' + ((step * 5) % 17 - 8) + 'vh)';
+}
+function nightWake(ms) { nightAwakeUntil = Date.now() + (ms || NIGHT_AWAKE); nightTick(); }
+// zolang je de tablet gebruikt blijft hij wakker
+document.addEventListener('pointerdown', function() { if (KIOSK && nightActive(new Date())) nightWake(); }, true);
+
+// Instellingen > Algemeen > Weergave
+function loadDisplaySettings() {
+  var v = nightSettings(), sw = document.getElementById('night-on');
+  if (!sw) return;
+  sw.classList.toggle('on', !!v.on);
+  sw.setAttribute('aria-checked', !!v.on);
+  document.getElementById('night-from').value = v.from;
+  document.getElementById('night-to').value = v.to;
+  document.getElementById('night-times').hidden = !v.on;
+  var pref = window.vhTheme ? vhTheme.get() : 'dark';
+  document.querySelectorAll('[data-theme-pref]').forEach(function(b) {
+    var on = b.dataset.themePref === pref;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+  });
+}
+function saveNight(toggle) {
+  var v = nightSettings();
+  if (toggle) v.on = !v.on;
+  v.from = document.getElementById('night-from').value || v.from;
+  v.to = document.getElementById('night-to').value || v.to;
+  try { localStorage.setItem(NIGHT_KEY, JSON.stringify(v)); } catch (e) { toast('Opslaan lukt niet op dit apparaat', 'error'); }
+  loadDisplaySettings();
+  nightTick();
+}
+function setTheme(pref) { if (window.vhTheme) vhTheme.set(pref); loadDisplaySettings(); }
+loadDisplaySettings();
+// de nachtklok staat verderop in de pagina dan dit script: de eerste controle wacht tot hij er is
+document.addEventListener('DOMContentLoaded', nightTick);
+
 function exitKiosk() {
   try { localStorage.removeItem('vh-kiosk'); } catch (e) {}
   location.href = '/';

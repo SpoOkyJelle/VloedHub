@@ -1,6 +1,6 @@
 // ── Chart ──
 // Grafieken in hetzelfde lettertype en dezelfde tekstkleur als de rest van de app
-if (window.Chart) { Chart.defaults.font.family = "'Poppins', system-ui, sans-serif"; Chart.defaults.font.size = 11; Chart.defaults.color = '#94A3B8'; Chart.defaults.locale = 'nl-NL'; }
+if (window.Chart) { Chart.defaults.font.family = "'Poppins', system-ui, sans-serif"; Chart.defaults.font.size = 11; Chart.defaults.color = CHART_TEXT; Chart.defaults.locale = 'nl-NL'; }
 function accentGradient(c) {
   var area = c.chart.chartArea;
   if (!area) return 'rgba(141,178,85,0.1)';
@@ -28,7 +28,7 @@ function loadHomeChart(btn) {
         plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 11 } }, grid: { display: false } },
-          y: { ticks: { color: CHART_TICK, maxTicksLimit: 4, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          y: { ticks: { color: CHART_TICK, maxTicksLimit: 4, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true }
         }
       }
     });
@@ -50,10 +50,10 @@ function loadChart(range, btn) {
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 11 } } } },
+        plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } } },
         scales: {
-          x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } },
+          y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true }
         }
       }
     });
@@ -156,8 +156,8 @@ function loadPeaks() {
       ]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } } },
-        scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } }
+        plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } } },
+        scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true } }
       }
     });
   }).catch(function() {});
@@ -175,7 +175,7 @@ function loadPhaseChart() {
         { label: 'Gemiddeld (kW)', data: [s.avg_l1,s.avg_l2,s.avg_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },
         { label: 'Piek (kW)', data: [s.max_l1,s.max_l2,s.max_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }
       ]},
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }, y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true }, y: { ticks: { color: CHART_TEXT, font: { size: 11, weight: '600' } }, grid: { color: CHART_GRID } } } }
     });
   }).catch(function() {});
 }
@@ -190,7 +190,7 @@ function loadGasDaily() {
     chartGas = new Chart(document.getElementById('chart-gas'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true } } }
     });
   }).catch(function() {});
 }

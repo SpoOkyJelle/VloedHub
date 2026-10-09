@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="/js/theme.js"></script>
   <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="prefetch" href="/styles/main.css">
   <link rel="prefetch" href="/vendor/fontawesome/css/all.min.css">
@@ -166,8 +167,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .pin-key:active {
-      background: rgba(141,178,85,0.15);
-      border-color: rgba(141,178,85,0.4);
+      background: rgba(var(--accent-rgb),0.15);
+      border-color: rgba(var(--accent-rgb),0.4);
       transform: scale(0.94);
     }
     .pin-key.spacer { visibility: hidden; pointer-events: none; }
@@ -194,8 +195,8 @@
       font-size: var(--fs-xs);
       color: var(--muted);
       text-align: center;
-      background: rgba(141,178,85,0.08);
-      border: 1px solid rgba(141,178,85,0.2);
+      background: rgba(var(--accent-rgb),0.08);
+      border: 1px solid rgba(var(--accent-rgb),0.2);
       border-radius: 10px;
       padding: 0.6rem 1rem;
       line-height: 1.5;
