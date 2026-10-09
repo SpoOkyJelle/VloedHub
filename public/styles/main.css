@@ -3078,3 +3078,30 @@ body.disco :is(.layout-block,.lamp-block,.setting-row):nth-child(3n) :is(.mod-sw
 @property --accent-rgb { syntax:'<number>#'; inherits:true; initial-value:141,178,85 }
 :root.disco-colors {
   transition:--accent 0.5s linear,--accent-l 0.5s linear,--accent-text 0.5s linear,--accent-hover 0.5s linear,--accent-rgb 0.5s linear}
+
+/* Discostand: over de achtergrond van elk blok ligt een zachte regenboog waarvan de kleuren doorschuiven.
+   De regenboog zelf staat stil; alleen zijn kleurtoon draait rond, wat de browser zonder opnieuw tekenen kan.
+   Hij ligt onder de inhoud (tekst blijft leesbaar) en draait alleen op het scherm dat in beeld is.
+   De weerkaart en het uitklapdeel van een lamp doen niet mee: die gebruiken hun eigen laag al. */
+body.disco .screen.current :is(.card:not(.lamp-controls),.chart-card,.stat-card,.info-card,.power-hero,.setting-card,.log-card,.phase-card,.esp-card) {
+  position:relative;
+  isolation:isolate}
+body.disco .screen.current :is(.card:not(.lamp-controls),.chart-card,.stat-card,.info-card,.power-hero,.setting-card,.log-card,.phase-card,.esp-card)::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:inherit;
+  background:linear-gradient(125deg,rgba(248,113,113,0.2),rgba(251,191,36,0.16) 22%,rgba(74,222,128,0.16) 42%,rgba(56,189,248,0.2) 62%,rgba(192,132,252,0.2) 82%,rgba(244,114,182,0.2));
+  pointer-events:none;
+  animation:disco-hue 5s linear infinite}
+/* blokken naast elkaar lopen niet gelijk op */
+body.disco .screen.current :is(.layout-block,.lamp-block,.stat-card,.info-card,.phase-card,.chart-card,.card,.set-section):nth-child(3n+2) :is(.card,.chart-card,.power-hero,.setting-card,.log-card)::before,
+body.disco .screen.current :is(.stat-card,.info-card,.phase-card,.chart-card,.card):nth-child(3n+2)::before {
+  animation-delay:-1.7s}
+body.disco .screen.current :is(.layout-block,.lamp-block,.stat-card,.info-card,.phase-card,.chart-card,.card,.set-section):nth-child(3n) :is(.card,.chart-card,.power-hero,.setting-card,.log-card)::before,
+body.disco .screen.current :is(.stat-card,.info-card,.phase-card,.chart-card,.card):nth-child(3n)::before {
+  animation-delay:-3.4s}
+@keyframes disco-hue {
+  to { filter:hue-rotate(360deg) }
+}

@@ -57,6 +57,8 @@ var screenLoaded = [true, false, false, false, false, false];
 function showScreen(n, btn, fromSwipe) {
   var changed = n !== currentScreen;
   currentScreen = n;
+  // het scherm dat in beeld is; zware effecten (discostand) draaien alleen daar
+  document.querySelectorAll('.screen').forEach(function(el) { el.classList.toggle('current', el.id === 'screen-' + n); });
   screenTrack.style.transition = noMotion ? 'none' : fromSwipe
     ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
     : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
