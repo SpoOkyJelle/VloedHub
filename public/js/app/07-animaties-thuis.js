@@ -41,6 +41,17 @@ function closeLedPanel(id) {
   if (panel._homeBlock) toggleHomeLedPanel(id, panel._homeBlock.querySelector('.lamp-more'));
   else if (panel.style.display !== 'none') toggleLedPanel(id, panel.previousElementSibling.querySelector('.lamp-more'));
 }
+// Er staat er maar één open: een andere lamp aanpassen klapt de vorige dicht, anders schuiven de panelen over elkaar
+function closeOtherLedPanels(keep) {
+  Array.prototype.forEach.call(document.querySelectorAll('.lamp-panel'), function(panel) {
+    if (panel === keep || panel.style.display === 'none') return;
+    if (panel._homeBlock) { returnLedPanel(panel); return; }
+    panel.style.display = 'none';
+    var blk = panel.previousElementSibling, more = blk && blk.querySelector('.lamp-more');
+    if (blk) blk.classList.remove('open');
+    if (more) more.setAttribute('aria-expanded', 'false');
+  });
+}
 function returnLedPanel(panel) {
   var card = panel._homeBlock;
   if (card) { card.classList.remove('open'); var arrow = card.querySelector('.lamp-more'); if (arrow) arrow.setAttribute('aria-expanded', 'false'); }
@@ -80,6 +91,7 @@ function toggleHomeLedPanel(id, btn) {
     last = sib;
   }
   flipAnimate(homeBlocks(), function() {
+    closeOtherLedPanels(panel);
     last.parentNode.insertBefore(panel, last.nextSibling);
     panel.classList.add('home-open');
     panel.style.display = 'block';
@@ -101,6 +113,7 @@ function toggleLedPanel(id, btn) {
     for (var sib = blk.parentNode.nextElementSibling; sib; sib = sib.nextElementSibling) els.push(sib);
   }
   function apply() {
+    if (!open) closeOtherLedPanels(panel);
     panel.style.display = open ? 'none' : 'block';
     btn.setAttribute('aria-expanded', !open);
     if (blk) blk.classList.toggle('open', !open);

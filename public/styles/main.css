@@ -2608,8 +2608,7 @@ body.kiosk .toast-stack {
   font-weight:600;
   color:var(--muted)}
 .lamp-name > span {
-  min-width:0;
-  overflow-wrap:anywhere}
+  overflow-wrap:break-word}
 .lamp-state {
   font-size:clamp(1rem,9cqi,1.25rem);
   font-weight:700;
@@ -2866,13 +2865,15 @@ body.block-dragging,body.block-dragging * {
 
 /* Lamp aanpassen: de kaart en het uitklapdeel vormen één vlak met één rand, zodat je ziet bij welke lamp het hoort.
    De kaart loopt door tot op het paneel en dekt daar diens bovenrand af (als een tabblad). */
-.lamp-block.open > .lamp-card,.layout-block.open > .home-lamp {
+/* het blok van de open lamp ligt boven het paneel, zodat de kaart diens bovenrand over zijn hele breedte afdekt */
+.lamp-block.open,.layout-block.open {
   position:relative;
-  z-index:1;
-  margin-bottom:calc(-0.6rem - 1px);
-  padding-bottom:calc(1.4rem + 1px);
+  z-index:2}
+.lamp-block.open > .lamp-card,.layout-block.open > .home-lamp {
+  margin-bottom:calc(-0.6rem - 3px);
+  padding-bottom:calc(1.4rem + 3px);
   border-color:rgba(var(--accent-rgb),0.6);
-  border-bottom-color:var(--surface);
+  border-bottom:none;
   border-radius:var(--r-lg) var(--r-lg) 0 0}
 .lamp-block.open .lamp-more,.layout-block.open .lamp-more {
   border-top-color:transparent}
