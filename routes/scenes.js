@@ -19,6 +19,18 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "GET" && req.url === "/api/scenes/active") {
+    json(res, 200, scenes.getActive());
+    return true;
+  }
+
+  // alleen de actieve scène vergeten (de discostand van de app stopt); de lampen blijven zoals ze zijn
+  if (req.method === "POST" && req.url === "/api/scenes/active/clear") {
+    scenes.clearActive();
+    json(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "POST" && req.url === "/api/scenes/run") {
     readBody(req, function(data) {
       if (!data || !scenes.run(data.scene)) return json(res, 400, { ok: false, error: "Onbekende scène" });

@@ -552,6 +552,8 @@ function runScene(btn) {
       btn.classList.add('done');
       setTimeout(function() { btn.classList.remove('done'); }, 900);
       lampsRefresh();
+      // Disco zet ook de app zelf in discostand; elke andere scène haalt hem er weer uit
+      setDisco(btn.dataset.scene === DISCO_SCENE);
     }).catch(function() { btn.disabled = false; toast('Scène starten lukte niet', 'error'); });
 }
 
@@ -645,3 +647,54 @@ function deleteScene(btn) {
 }
 loadScenes();
 
+
+// ── Discostand van de app ──
+// Start iemand de scène Disco, dan doet de app zelf mee: de merkkleur loopt de regenboog rond en er schuiven
+// gekleurde lichtvlekken over het scherm. De server onthoudt welke scène het laatst is gestart, dus elk open
+// scherm (ook de wandtablet) gaat binnen een paar tellen mee. Bewust zonder flitsen: alles beweegt langzaam.
+var DISCO_SCENE = 'disco', DISCO_POLL = 4000;
+var discoOn = false, discoTimer = null, discoHue = 90;
+var DISCO_VARS = ['--accent', '--accent-l', '--accent-text', '--accent-hover', '--accent-rgb'];
+function hslRgb(h, s, l) {
+  var a = s * Math.min(l, 1 - l);
+  function f(n) { var k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }
+  return [f(0), f(8), f(4)];
+}
+function discoStep() {
+  discoHue = (discoHue + 3) % 360;
+  var light = document.documentElement.dataset.theme === 'light', st = document.documentElement.style;
+  function rgb(l, sat) { return 'rgb(' + hslRgb(discoHue, sat || 0.75, l).join(',') + ')'; }
+  var base = hslRgb(discoHue, 0.75, light ? 0.45 : 0.6);
+  st.setProperty('--accent', 'rgb(' + base.join(',') + ')');
+  st.setProperty('--accent-rgb', base.join(','));
+  // tekst in de merkkleur moet leesbaar blijven: licht op donker, donker op licht
+  st.setProperty('--accent-l', rgb(light ? 0.3 : 0.78, 0.85));
+  st.setProperty('--accent-text', rgb(light ? 0.35 : 0.65));
+  st.setProperty('--accent-hover', rgb(light ? 0.55 : 0.75));
+}
+function setDisco(on) {
+  on = !!on;
+  if (on === discoOn) return;
+  discoOn = on;
+  document.body.classList.toggle('disco', on);
+  clearInterval(discoTimer);
+  if (on) {
+    discoStep();
+    // wie minder beweging wil krijgt één feestkleur, zonder verloop
+    if (!noMotion) discoTimer = setInterval(discoStep, 120);
+  } else {
+    DISCO_VARS.forEach(function(v) { document.documentElement.style.removeProperty(v); });
+  }
+}
+// De knop "Stoppen" haalt alleen de app uit discostand; de lampen blijven zoals ze zijn
+function stopDisco() {
+  setDisco(false);
+  fetch('/api/scenes/active/clear', {method:'POST'}).catch(function(){});
+}
+function discoSync() {
+  if (document.hidden) return;
+  fetch('/api/scenes/active').then(function(r){return r.json();}).then(function(d) { setDisco(d && d.id === DISCO_SCENE); }).catch(function(){});
+}
+setInterval(discoSync, DISCO_POLL);
+// noMotion komt uit een later deel van de app; de eerste controle wacht daarop
+document.addEventListener('DOMContentLoaded', discoSync);

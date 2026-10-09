@@ -93,13 +93,20 @@ function remove(id) {
   return true;
 }
 
+// De scène die het laatst is gestart. Alle open schermen vragen dit na, zodat bijvoorbeeld de discostand van de app
+// op de wandtablet meegaat als iemand hem op zijn telefoon start. Niet bewaard: na een herstart is er geen actieve scène.
+var active = { id: null, at: 0 };
+function getActive() { return active; }
+function clearActive() { active = { id: null, at: Date.now() }; }
+
 function run(id) {
   var scene = list().filter(function(s) { return s.id === id; })[0];
   if (!scene) return false;
+  active = { id: id, at: Date.now() };
   Object.keys(scene.led || {}).forEach(function(d) { Object.assign(state.getLedState(d), scene.led[d]); });
   Object.keys(scene.relay || {}).forEach(function(d) { Object.assign(state.getRelayState(d), scene.relay[d]); });
   state.saveState();
   return true;
 }
 
-module.exports = { list: list, save: save, remove: remove, run: run, ICONS: ICONS, LED_DEVICES: LED_DEVICES, RELAY_DEVICES: RELAY_DEVICES };
+module.exports = { list: list, save: save, remove: remove, run: run, getActive: getActive, clearActive: clearActive, ICONS: ICONS, LED_DEVICES: LED_DEVICES, RELAY_DEVICES: RELAY_DEVICES };

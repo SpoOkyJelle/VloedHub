@@ -2947,3 +2947,112 @@ body.block-dragging,body.block-dragging * {
 .set-group.active > .set-section:nth-child(2) { animation-delay:0.05s }
 .set-group.active > .set-section:nth-child(3) { animation-delay:0.1s }
 .set-group.active > .set-section:nth-child(n+4) { animation-delay:0.15s }
+
+/* Discostand van de app: gekleurde lichtvlekken die langzaam over het scherm schuiven, en een knop om te stoppen.
+   De vlekken mengen met wat eronder staat (oplichten op donker, kleuren op licht) en vangen geen tikken af. */
+.disco-lights {
+  position:fixed;
+  inset:0;
+  z-index:150;
+  overflow:hidden;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity 0.8s,visibility 0s 0.8s}
+:root[data-theme='light'] .disco-lights {
+  mix-blend-mode:multiply}
+body.disco .disco-lights {
+  opacity:1;
+  visibility:visible;
+  transition:opacity 0.8s}
+.disco-lights i {
+  position:absolute;
+  width:70vmax;
+  height:70vmax;
+  border-radius:50%;
+  animation:disco-drift 11s ease-in-out infinite alternate;
+  animation-play-state:paused;
+  will-change:transform}
+body.disco .disco-lights i {
+  animation-play-state:running}
+.disco-lights i:nth-child(1) {
+  top:-35vmax;
+  left:-25vmax;
+  background:radial-gradient(circle,rgba(244,114,182,0.4) 0%,transparent 62%);
+  --dx:45vw;
+  --dy:35vh}
+.disco-lights i:nth-child(2) {
+  top:-30vmax;
+  right:-30vmax;
+  background:radial-gradient(circle,rgba(56,189,248,0.38) 0%,transparent 62%);
+  --dx:-40vw;
+  --dy:45vh;
+  animation-duration:13s}
+.disco-lights i:nth-child(3) {
+  bottom:-40vmax;
+  left:-10vmax;
+  background:radial-gradient(circle,rgba(251,191,36,0.3) 0%,transparent 62%);
+  --dx:35vw;
+  --dy:-40vh;
+  animation-duration:9s}
+.disco-lights i:nth-child(4) {
+  bottom:-35vmax;
+  right:-20vmax;
+  background:radial-gradient(circle,rgba(192,132,252,0.4) 0%,transparent 62%);
+  --dx:-45vw;
+  --dy:-30vh;
+  animation-duration:15s}
+@keyframes disco-drift {
+  from { transform:translate(0,0) scale(0.85) }
+  to { transform:translate(var(--dx),var(--dy)) scale(1.15) }
+}
+.disco-pill {
+  position:fixed;
+  bottom:calc(var(--nav-h) + var(--nav-safe) + 0.75rem);
+  left:50%;
+  z-index:260;
+  display:none;
+  align-items:center;
+  gap:0.5rem;
+  min-height:2.5rem;
+  padding:0.4rem 0.5rem 0.4rem 0.9rem;
+  transform:translateX(-50%);
+  border:2px solid transparent;
+  border-radius:var(--r-pill);
+  background:linear-gradient(var(--surface-raised),var(--surface-raised)) padding-box,linear-gradient(90deg,#F87171,#FBBF24,#4ADE80,#38BDF8,#C084FC,#F472B6,#F87171) border-box;
+  background-size:100% 100%,200% 100%;
+  color:var(--text);
+  font-family:inherit;
+  font-size:var(--fs-sm);
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:var(--shadow);
+  animation:disco-border 3s linear infinite}
+.disco-pill i {
+  color:#F472B6}
+.disco-pill span {
+  padding:0.2rem 0.65rem;
+  border-radius:var(--r-pill);
+  background:rgba(var(--overlay-rgb),0.1);
+  font-size:var(--fs-xs);
+  font-weight:600;
+  color:var(--muted)}
+body.disco .disco-pill {
+  display:inline-flex}
+body.kiosk .disco-pill {
+  bottom:calc(1rem + env(safe-area-inset-bottom, 0px))}
+/* meldingen onderin komen boven de knop te staan */
+body.disco .toast-stack {
+  margin-bottom:3.25rem}
+/* het logo danst mee */
+body.disco .app-logo,body.disco .nav-logo {
+  animation:disco-bop 1.2s ease-in-out infinite}
+@keyframes disco-bop {
+  0%,100% { transform:rotate(-8deg) scale(1) }
+  50% { transform:rotate(8deg) scale(1.08) }
+}
+@media(min-width:720px) {
+  .disco-pill {
+  bottom:1.25rem}
+}
