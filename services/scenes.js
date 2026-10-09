@@ -8,21 +8,25 @@ var party = require("./party");
 // Per apparaat: geen invoer = niet wijzigen. Effect 0 = Warm Wit, 2 = Rainbow, 3 = Rainbow Wave, 10 = Eigen kleur.
 var SCENES_FILE = path.join(__dirname, "../data/scenes.json");
 
-var LED_DEVICES   = ["default", "keuken", "gang"];
+var LED_DEVICES   = ["default", "keuken", "gang", "tv-meubel"];
 var RELAY_DEVICES = ["gang"];
 var ICONS = ["power-off", "moon", "lightbulb", "music", "sun", "film", "bed", "utensils", "couch", "star", "heart", "wand-magic-sparkles"];
-var MAX_EFFECT = 10;
+var MAX_EFFECT = 15;  // effecten 11-15 zijn tv-meubel specifiek
 
 var DEFAULTS = [
   { id: "all_off", label: "Alles uit", icon: "power-off",
-    led: { "default": { on: false }, "keuken": { on: false }, "gang": { on: false } }, relay: { "gang": { on: false } } },
+    led: { "default": { on: false }, "keuken": { on: false }, "gang": { on: false }, "tv-meubel": { on: false } }, relay: { "gang": { on: false } } },
   { id: "evening", label: "Avond", icon: "moon",
-    led: { "default": { on: true, effect: 0, brightness: 110 }, "keuken": { on: true, effect: 0, brightness: 110 }, "gang": { on: true, effect: 0, brightness: 110 } },
+    led: { "default": { on: true, effect: 0, brightness: 110 }, "keuken": { on: true, effect: 0, brightness: 110 }, "gang": { on: true, effect: 0, brightness: 110 }, "tv-meubel": { on: true, effect: 0, brightness: 80 } },
     relay: { "gang": { on: true } } },
   { id: "all_on", label: "Alles aan", icon: "lightbulb",
-    led: { "default": { on: true }, "keuken": { on: true }, "gang": { on: true } }, relay: { "gang": { on: true } } },
+    led: { "default": { on: true }, "keuken": { on: true }, "gang": { on: true }, "tv-meubel": { on: true } }, relay: { "gang": { on: true } } },
   { id: "disco", label: "Disco", icon: "music",
-    led: { "default": { on: true, effect: 3 }, "keuken": { on: true, effect: 3 }, "gang": { on: true, effect: 2 } }, relay: { "gang": { on: false } } }
+    led: { "default": { on: true, effect: 3 }, "keuken": { on: true, effect: 3 }, "gang": { on: true, effect: 2 }, "tv-meubel": { on: true, effect: 12 } }, relay: { "gang": { on: false } } },
+  { id: "film", label: "Film", icon: "film",
+    led: { "default": { on: false }, "keuken": { on: false }, "gang": { on: false }, "tv-meubel": { on: true, effect: 11, brightness: 120 } }, relay: { "gang": { on: false } } },
+  { id: "gaming", label: "Gaming", icon: "star",
+    led: { "default": { on: false }, "keuken": { on: false }, "gang": { on: false }, "tv-meubel": { on: true, effect: 12, brightness: 200 } }, relay: { "gang": { on: false } } }
 ];
 
 function list() {

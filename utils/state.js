@@ -6,9 +6,10 @@ var includeOldData = false;
 var STATE_FILE = path.join(__dirname, '../data/lamp-state.json');
 
 var ledStates = {
-  "default": { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } },
-  "keuken":  { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } },
-  "gang":    { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } }
+  "default":   { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } },
+  "keuken":    { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } },
+  "gang":      { on: false, effect: 0, brightness: 180, color: { r: 255, g: 255, b: 255 } },
+  "tv-meubel": { on: false, effect: 0, brightness: 120, color: { r: 255, g: 255, b: 255 } }
 };
 
 var relayStates = {
