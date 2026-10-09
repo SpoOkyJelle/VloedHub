@@ -305,11 +305,11 @@ function addBlock(screenIdx, type) {
 }
 
 var deviceNamesCache = {};
-function loadDeviceNames() { fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){ deviceNamesCache = names; var map = { 'led::default':['rename-led-default','homelabel-led-default','panelname-led-default'], 'led::keuken':['rename-led-keuken','homelabel-led-keuken','panelname-led-keuken'], 'led::gang':['rename-led-gang','homelabel-led-gang','panelname-led-gang'], 'relay::gang':['sname-relay-gang','rename-relay-gang','homelabel-relay-gang'] }; var defaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' }; Object.keys(map).forEach(function(key){ var name = names[key] || defaults[key]; map[key].forEach(function(id){ var el = document.getElementById(id); if (el) el.textContent = name; }); }); }).catch(function(){}); }
+function loadDeviceNames() { fetch('/api/device-names').then(function(r){return r.json();}).then(function(names){ deviceNamesCache = names; var map = { 'led::default':['rename-led-default','homelabel-led-default','panelname-led-default'], 'led::keuken':['rename-led-keuken','homelabel-led-keuken','panelname-led-keuken'], 'led::gang':['rename-led-gang','homelabel-led-gang','panelname-led-gang'], 'led::tv-meubel':['rename-led-tv-meubel','homelabel-led-tv-meubel','panelname-led-tv-meubel'], 'relay::gang':['sname-relay-gang','rename-relay-gang','homelabel-relay-gang'] }; var defaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','led::tv-meubel':'LED TV Meubel','relay::gang':'Lamp Gang' }; Object.keys(map).forEach(function(key){ var name = names[key] || defaults[key]; map[key].forEach(function(id){ var el = document.getElementById(id); if (el) el.textContent = name; }); }); }).catch(function(){}); }
 function refreshSettingsNames() {
-  var deviceDefaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' };
-  var deviceIcons = { 'led::default':'fa-lightbulb','led::keuken':'fa-lightbulb','led::gang':'fa-lightbulb','relay::gang':'fa-toggle-on' };
-  var ledKeys = ['default','keuken','gang'];
+  var deviceDefaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','led::tv-meubel':'LED TV Meubel','relay::gang':'Lamp Gang' };
+  var deviceIcons = { 'led::default':'fa-lightbulb','led::keuken':'fa-lightbulb','led::gang':'fa-lightbulb','led::tv-meubel':'fa-lightbulb','relay::gang':'fa-toggle-on' };
+  var ledKeys = ['default','keuken','gang','tv-meubel'];
   function row(icon, nameId, name, sub, onclick) {
     return '<div class="setting-row"><i class="fa-solid ' + icon + ' setting-icon"></i>' +
       '<div class="setting-text"><div class="setting-title"><span id="' + nameId + '">' + escHtml(name) + '</span></div>' + (sub ? '<div class="setting-desc">' + sub + '</div>' : '') + '</div>' +

@@ -1,11 +1,12 @@
 // ── Lampen ──
-var LED_EFFECTS = ['Warm Wit','Ijs Wit','Rainbow','Rainbow Wave','Fade Aan/Uit','Confetti','Vuur','Meteor Regen','Twinkle','Politielichten','Eigen kleur'];
+var LED_EFFECTS = ['Warm Wit','Ijs Wit','Rainbow','Rainbow Wave','Fade Aan/Uit','Confetti','Vuur','Meteor Regen','Twinkle','Politielichten','Eigen kleur','Film Modus','Gaming','Sfeer Fade','Nacht','Kaars'];
 var LED_CUSTOM = LED_EFFECTS.length - 1;
 // De ledstrips werken hetzelfde; alleen het adres, de naam en de kaart op Home verschillen
 var LEDS = {
-  'default': { key: 'led::default', name: 'LED Strip',       query: '',               home: 'home-led-status' },
-  'keuken':  { key: 'led::keuken',  name: 'Ledstrip Keuken', query: '?device=keuken', home: 'home-led-keuken-status' },
-  'gang':    { key: 'led::gang',    name: 'Ledstrip Gang',   query: '?device=gang',   home: 'home-led-gang-status' }
+  'default':   { key: 'led::default',   name: 'LED Strip',       query: '',                  home: 'home-led-status' },
+  'keuken':    { key: 'led::keuken',    name: 'Ledstrip Keuken', query: '?device=keuken',    home: 'home-led-keuken-status' },
+  'gang':      { key: 'led::gang',      name: 'Ledstrip Gang',   query: '?device=gang',      home: 'home-led-gang-status' },
+  'tv-meubel': { key: 'led::tv-meubel', name: 'LED TV Meubel',   query: '?device=tv-meubel', home: 'home-led-tv-meubel-status' }
 };
 var RELAY = { key: 'relay::gang', name: 'Lamp Gang', query: '?device=gang', home: 'home-relay-gang-status' };
 var ledStates = {}, ledSendTimers = {};

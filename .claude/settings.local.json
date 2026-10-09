@@ -24,7 +24,8 @@
       "Bash(grep -o \".\\\\{0,80\\\\}power-label.\\\\{0,80\\\\}\" \"C:\\\\Users\\\\thepu\\\\Desktop\\\\VloedHub\\\\public\\\\index.html\")",
       "Bash(grep -o \".\\\\{0,80\\\\}info-label.\\\\{0,80\\\\}\" \"C:\\\\Users\\\\thepu\\\\Desktop\\\\VloedHub\\\\public\\\\index.html\")",
       "Bash(grep -o \".\\\\{0,100\\\\}esphomeRename.\\\\{0,30\\\\}\" \"C:\\\\Users\\\\thepu\\\\Desktop\\\\VloedHub\\\\public\\\\index.html\")",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(find C:\\\\\\\\Users\\\\\\\\thepu\\\\\\\\Desktop\\\\\\\\VloedHub -type f \\\\\\( -name \"*.js\" -o -name \"*.ejs\" -o -name \"*.html\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/.claude/*\")"
     ]
   }
 }

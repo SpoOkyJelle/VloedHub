@@ -608,15 +608,15 @@
         hint('Zet de relaisuitgang uit.')),
 
     led_on: t('df-node-title--action','fa-lightbulb','Lamp aan') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
         '<div class="df-field df-field--row"><label>Kleur</label><input type="color" df-color value="#ffffff"></div>'),
 
     led_off: t('df-node-title--off','fa-regular fa-lightbulb','Lamp uit') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>')),
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>')),
 
     led_effect: t('df-node-title--effect','fa-wand-magic-sparkles','LED effect') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Effect','<select df-effect>' +
           '<option value="0">Statisch</option>' +
           '<option value="1">Regenboog</option>' +
@@ -646,31 +646,31 @@
         f('Body','<textarea df-body rows="2"></textarea>')),
 
     dim_to: t('df-node-title--action','fa-sliders','Dim naar') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="180" oninput="updateBrightness(this)">') +
         f('Seconden','<input type="number" df-seconds min="1" max="300" value="5">')),
 
     dim_relative: t('df-node-title--action','fa-sliders','Dim relatief') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Delta %','<input type="number" df-delta min="-100" max="100" step="5" value="20">') +
         hint('Positief = feller, negatief = dimmer.')),
 
     color_temp: t('df-node-title--action','fa-temperature-half','Kleurtemperatuur') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Kelvin','<input type="number" df-kelvin min="2000" max="6500" step="100" value="3000">') +
         hint('2000K = kaarslicht \u00b7 4000K = neutraal \u00b7 6500K = daglicht')),
 
     adaptive_light: t('df-node-title--action','fa-wand-magic-sparkles','Adaptief licht') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         hint('Past helderheid en kleur automatisch aan op het tijdstip.')),
 
     wake_light: t('df-node-title--action','fa-sun','Wekker-licht') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Helderheid <span class="brightness-val"></span>','<input type="range" df-brightness min="0" max="255" value="200" oninput="updateBrightness(this)">') +
         f('Minuten','<input type="number" df-minutes min="1" max="60" value="30">')),
 
     flash: t('df-node-title--action','fa-bolt','Flits') +
-      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option></select>') +
+      b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
         f('Aantal keer','<input type="number" df-times min="1" max="20" value="3">') +
         f('Interval ms','<input type="number" df-interval_ms min="100" max="5000" step="100" value="500">')),
 
@@ -1783,7 +1783,7 @@
     value:        { label: 'Waarde',              type: 'number' },
     timestart:    { label: 'Tijd van',            type: 'time' },
     timeend:      { label: 'Tijd tot',            type: 'time' },
-    device:       { label: 'Apparaat',            type: 'select', options: [['default','Woonkamer'],['keuken','Keuken'],['gang','Gang']] },
+    device:       { label: 'Apparaat',            type: 'select', options: [['default','Woonkamer'],['keuken','Keuken'],['gang','Gang'],['tv-meubel','TV Meubel']] },
     brightness:   { label: 'Helderheid',          type: 'range', min: 0, max: 255, step: 1 },
     color:        { label: 'Kleur',               type: 'color' },
     effect:       { label: 'Effect',              type: 'select', options: [

@@ -31,7 +31,7 @@ var layoutEditMode = false;
 function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -41,6 +41,7 @@ var BLOCKS = {
   'led_default':      {label:'LED Strip',             icon:'fa-lightbulb',       dynamic:false},
   'led_keuken':       {label:'Ledstrip Keuken',       icon:'fa-lightbulb',       dynamic:false},
   'led_gang':         {label:'Ledstrip Gang',          icon:'fa-lightbulb',       dynamic:false},
+  'led_tv_meubel':    {label:'LED TV Meubel',           icon:'fa-lightbulb',       dynamic:false},
   'relay_gang':       {label:'Lamp Gang',              icon:'fa-toggle-on',       dynamic:false},
   'phases':           {label:'Fases L1/L2/L3',     icon:'fa-plug-circle-bolt',dynamic:false},
   'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
@@ -461,7 +462,7 @@ if (KIOSK) {
 
 // ── Scènes ──
 var SCENE_DATA = { scenes: [], icons: [], led: [], relay: [] };
-var SCENE_DEVICE_NAMES = { 'led::default': 'LED Strip', 'led::keuken': 'Ledstrip Keuken', 'led::gang': 'Ledstrip Gang', 'relay::gang': 'Lamp Gang' };
+var SCENE_DEVICE_NAMES = { 'led::default': 'LED Strip', 'led::keuken': 'Ledstrip Keuken', 'led::gang': 'Ledstrip Gang', 'led::tv-meubel': 'LED TV Meubel', 'relay::gang': 'Lamp Gang' };
 function escHtml(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function sceneDeviceName(key) { return (typeof deviceNamesCache !== 'undefined' && deviceNamesCache[key]) || SCENE_DEVICE_NAMES[key] || key; }
 function renderScenes() {
