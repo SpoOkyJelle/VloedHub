@@ -24,6 +24,9 @@ var ledPanelOrigin = {};
 function joinLedPanel(panel, card) {
   if (!card) return;
   var p = panel.getBoundingClientRect(), c = card.getBoundingClientRect();
+  // waar de kaart op het paneel staat: daar laat het paneel zijn bovenrand weg
+  panel.style.setProperty('--tab-left', (c.left - p.left) + 'px');
+  panel.style.setProperty('--tab-width', c.width + 'px');
   panel.classList.toggle('join-left', Math.abs(c.left - p.left) < 2);
   panel.classList.toggle('join-right', Math.abs(c.right - p.right) < 2);
 }

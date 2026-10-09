@@ -2870,15 +2870,28 @@ body.block-dragging,body.block-dragging * {
   position:relative;
   z-index:2}
 .lamp-block.open > .lamp-card,.layout-block.open > .home-lamp {
-  margin-bottom:calc(-0.6rem - 3px);
-  padding-bottom:calc(1.4rem + 3px);
+  /* precies tot en met de bovenrand van het paneel (1 px): verder en de zijranden steken in het paneel uit */
+  margin-bottom:calc(-0.6rem - 1px);
+  padding-bottom:calc(1.4rem + 1px);
   border-color:rgba(var(--accent-rgb),0.6);
   border-bottom:none;
   border-radius:var(--r-lg) var(--r-lg) 0 0}
 .lamp-block.open .lamp-more,.layout-block.open .lamp-more {
   border-top-color:transparent}
 .lamp-panel .lamp-controls {
+  position:relative;
   border-color:rgba(var(--accent-rgb),0.6)}
+/* Onder de kaart heeft het paneel geen bovenrand. Het paneel dekt dat stuk zelf af, op precies dezelfde pixels als
+   de rand; de kaart eroverheen leggen liet er een dun lijntje van doorschemeren. De breedte komt uit joinLedPanel. */
+.lamp-panel .lamp-controls::before {
+  content:'';
+  position:absolute;
+  top:-1px;
+  left:var(--tab-left, 0px);
+  width:max(0px, calc(var(--tab-width, 0px) - 2px));
+  height:2px;
+  background:var(--surface);
+  pointer-events:none}
 .lamp-panel.join-left .lamp-controls {
   border-top-left-radius:0}
 .lamp-panel.join-right .lamp-controls {
