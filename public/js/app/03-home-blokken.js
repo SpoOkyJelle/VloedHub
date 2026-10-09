@@ -314,7 +314,6 @@ function openCamOverlay(ring) {
     camOverlayTick();
   }
   if (!ring) return;
-  nightWake(CAM_RING_OPEN);
   if (!ov.querySelector('.cam-ring')) ov.insertAdjacentHTML('beforeend', '<div class="cam-ring"><i class="fa-solid fa-bell"></i>' + (typeof partyState !== 'undefined' && partyState.on ? 'Nieuwe gast!' : 'Er wordt aangebeld') + '</div>');
   clearTimeout(camOvClose);
   camOvClose = setTimeout(closeCamOverlay, CAM_RING_OPEN);
@@ -427,55 +426,13 @@ function connFail() {
 
 // ── Wandtablet-weergave ──
 function kioskTick() {
-  nightTick();
   var now = new Date();
   var c = document.getElementById('kiosk-clock'), d = document.getElementById('kiosk-date');
   if (c) c.textContent = now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false});
   if (d) d.textContent = now.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'});
 }
-// ── Nachtstand ──
-// Binnen de ingestelde uren toont de wandtablet alleen een gedimde klok op zwart. Een tik of de deurbel maakt
-// hem een minuut wakker. De instelling hoort bij het apparaat (de tablet), niet bij het huis.
-var NIGHT_KEY = 'vh-night', NIGHT_AWAKE = 60000;
-var nightAwakeUntil = 0;
-function nightSettings() {
-  try { var v = JSON.parse(localStorage.getItem(NIGHT_KEY)); if (v && v.from && v.to) return v; } catch (e) {}
-  return { on: false, from: '23:00', to: '07:00' };
-}
-function nightMinutes(hhmm) { var p = String(hhmm).split(':'); return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0); }
-function nightActive(now) {
-  var v = nightSettings();
-  if (!v.on) return false;
-  var m = now.getHours() * 60 + now.getMinutes(), from = nightMinutes(v.from), to = nightMinutes(v.to);
-  // loopt de periode over middernacht heen, dan is het nacht ná het begin óf vóór het eind
-  return from <= to ? m >= from && m < to : m >= from || m < to;
-}
-function nightTick() {
-  var ov = document.getElementById('night-overlay');
-  if (!ov || !KIOSK) return;
-  var now = new Date();
-  var show = nightActive(now) && Date.now() > nightAwakeUntil;
-  ov.classList.toggle('show', show);
-  if (!show) return;
-  setEl('night-time', now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false}));
-  setEl('night-date', now.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long'}));
-  // elke minuut een andere plek, zodat de klok niet inbrandt
-  var step = now.getMinutes();
-  document.getElementById('night-clock').style.transform = 'translate(' + ((step * 7) % 21 - 10) + 'vw,' + ((step * 5) % 17 - 8) + 'vh)';
-}
-function nightWake(ms) { nightAwakeUntil = Date.now() + (ms || NIGHT_AWAKE); nightTick(); }
-// zolang je de tablet gebruikt blijft hij wakker
-document.addEventListener('pointerdown', function() { if (KIOSK && nightActive(new Date())) nightWake(); }, true);
-
 // Instellingen > Algemeen > Weergave
 function loadDisplaySettings() {
-  var v = nightSettings(), sw = document.getElementById('night-on');
-  if (!sw) return;
-  sw.classList.toggle('on', !!v.on);
-  sw.setAttribute('aria-checked', !!v.on);
-  document.getElementById('night-from').value = v.from;
-  document.getElementById('night-to').value = v.to;
-  document.getElementById('night-times').hidden = !v.on;
   var pref = window.vhTheme ? vhTheme.get() : 'dark';
   document.querySelectorAll('[data-theme-pref]').forEach(function(b) {
     var on = b.dataset.themePref === pref;
@@ -484,19 +441,8 @@ function loadDisplaySettings() {
   });
   moveTabIndicators();
 }
-function saveNight(toggle) {
-  var v = nightSettings();
-  if (toggle) v.on = !v.on;
-  v.from = document.getElementById('night-from').value || v.from;
-  v.to = document.getElementById('night-to').value || v.to;
-  try { localStorage.setItem(NIGHT_KEY, JSON.stringify(v)); } catch (e) { toast('Opslaan lukt niet op dit apparaat', 'error'); }
-  loadDisplaySettings();
-  nightTick();
-}
 function setTheme(pref) { if (window.vhTheme) vhTheme.set(pref); loadDisplaySettings(); }
 loadDisplaySettings();
-// de nachtklok staat verderop in de pagina dan dit script: de eerste controle wacht tot hij er is
-document.addEventListener('DOMContentLoaded', nightTick);
 
 function exitKiosk() {
   try { localStorage.removeItem('vh-kiosk'); } catch (e) {}

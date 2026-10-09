@@ -43,8 +43,8 @@
   --ease:cubic-bezier(0.4,0,0.2,1)}
 
 /* Kleuren, donker. Dit is ook de set voor onderdelen die in het lichte thema donker blijven
-   (de weerkaart met zijn regen en sneeuw, het camerabeeld, de nachtklok): die staan hier in de lijst. */
-:root,.weather-card,.cam-frame,.night-overlay {
+   (de weerkaart met zijn regen en sneeuw, het camerabeeld): die staan hier in de lijst. */
+:root,.weather-card,.cam-frame {
   color-scheme:dark;
   /* vlakken */
   --bg:#0C0F1D;
@@ -115,7 +115,7 @@
   --danger-bg:#FEE2E2;
   --chart-grid:rgba(15,23,42,0.08);
   --shadow:0 12px 32px rgba(15,23,42,0.16)}
-.weather-card,.cam-frame,.night-overlay {
+.weather-card,.cam-frame {
   color:var(--text)}
 
 /* Focus: zichtbaar met het toetsenbord, niet na een tik */

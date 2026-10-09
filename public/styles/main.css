@@ -2756,54 +2756,11 @@ body.kiosk .toast-stack {
   flex-shrink:0;
   white-space:nowrap}
 
-/* Instellingen: thema en nachtstand */
+/* Instellingen: thema */
 .setting-row-wrap {
   flex-wrap:wrap}
 .setting-row-wrap .setting-text {
   flex-basis:12rem}
-.setting-row.night-times {
-  justify-content:flex-start;
-  border-top:none;
-  padding-top:0}
-.setting-row.night-times[hidden] {
-  display:none}
-.night-times .field {
-  width:auto}
-/* Nachtklok van de wandtablet: zwart scherm met een gedimde klok die elke minuut iets verschuift */
-.night-overlay {
-  position:fixed;
-  inset:0;
-  z-index:1900;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:#000;
-  cursor:pointer}
-.night-overlay.show {
-  display:flex}
-.night-clock {
-  text-align:center;
-  color:#667085;
-  transition:transform 2s var(--ease)}
-#night-time {
-  font-size:clamp(4rem,18vw,11rem);
-  font-weight:600;
-  letter-spacing:-0.04em;
-  line-height:1;
-  font-variant-numeric:tabular-nums}
-#night-date {
-  margin-top:0.6rem;
-  font-size:var(--fs-lg);
-  color:#4B5565;
-  text-transform:capitalize}
-.night-hint {
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  text-align:center;
-  font-size:var(--fs-xs);
-  color:#3A4150}
 /* Indeling aanpassen: een blok pak je bij zijn balk en sleep je naar zijn nieuwe plek */
 .layout-block-edit-bar {
   gap:0.15rem;

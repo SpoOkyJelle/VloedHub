@@ -309,14 +309,6 @@
     <div class='setting-text'><div class='setting-title'>Wandtablet-weergave</div><div class='setting-desc'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>
     <a href='/?kiosk=1' class='btn btn-ghost'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
   </div>
-  <div class='setting-row'>
-    <div class='setting-text'><div class='setting-title'>Nachtstand</div><div class='setting-desc'>De wandtablet toont 's nachts alleen een gedimde klok. Tikken of aanbellen maakt hem een minuut wakker. Geldt voor dit apparaat.</div></div>
-    <button class='mod-switch' role='switch' aria-checked='false' aria-label='Nachtstand' id='night-on' onclick='saveNight(true)'></button>
-  </div>
-  <div class='setting-row night-times' id='night-times' hidden>
-    <label class='form-field'><span class='field-label'>Van</span><input class='field' type='time' id='night-from' onchange='saveNight()'></label>
-    <label class='form-field'><span class='field-label'>Tot</span><input class='field' type='time' id='night-to' onchange='saveNight()'></label>
-  </div>
 </div>
 </div>
 </div>
@@ -517,7 +509,6 @@
 </div>
 <div class='disco-lights' aria-hidden='true'><i></i><i></i><i></i><i></i></div>
 <button class='disco-pill' onclick='stopDisco()' aria-label='Discostand van de app stoppen'><i class='fa-solid fa-music'></i> Disco <span>Stoppen</span></button>
-<div class='night-overlay' id='night-overlay' onclick='nightWake()'><div class='night-clock' id='night-clock'><div id='night-time'></div><div id='night-date'></div></div><div class='night-hint'>Tik om het scherm te wekken</div></div>
 <canvas class='confetti' id='confetti' aria-hidden='true'></canvas>
 <div class='confetti-word' id='confetti-word' role='status'></div>
 <div class='toast-stack' id='toast-stack' role='status' aria-live='polite'></div>
