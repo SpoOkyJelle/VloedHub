@@ -1,9 +1,9 @@
 // ── Koelkast ──
 function fridgeSkeleton() {
-  return '<div class="chart-title">Koelkast</div><div class="fridge-row"><span class="skel-line" style="flex:1;height:2.6rem"></span><span class="skel-line" style="flex:1;height:2.6rem"></span></div><div class="power-sub">&nbsp;</div>';
+  return '<div class="chart-title">Koelkast</div><div class="fridge-row"><span class="skel-line grow tall"></span><span class="skel-line grow tall"></span></div><div class="power-sub">&nbsp;</div>';
 }
 function fridgeHtml(d) {
-  var head = '<div class="chart-header"><span class="chart-title"><i class="fa-solid fa-snowflake" style="color:var(--blue);margin-right:0.4rem"></i>Koelkast</span>';
+  var head = '<div class="chart-header"><span class="chart-title"><i class="fa-solid fa-snowflake title-icon c-blue"></i>Koelkast</span>';
   if (!d.configured) return head + '</div><div class="fridge-msg">Nog niet gekoppeld. Zet de databasegegevens op de server (zie <code>services/fridge.js</code>).</div>';
   if (!d.ok) return head + '</div><div class="fridge-msg">' + (d.error || 'Niet bereikbaar') + '</div>';
   if (!d.compartments.length) return head + '</div><div class="fridge-msg">Nog geen metingen</div>';
@@ -40,7 +40,7 @@ setInterval(loadFridge, 5 * 60 * 1000);
 function showDiscordStatus(d, note) {
   var el = document.getElementById('discord-status');
   if (!el) return;
-  el.style.color = 'var(--dim)';
+  el.style.color = '';
   var text = d.configured ? 'Ingesteld (eindigt op …' + d.hint + ')' : 'Nog niet ingesteld: er worden geen meldingen verstuurd';
   if (d.fromEnv) text += ' · vast ingesteld op de server';
   if (d.configured && d.enabled === false) text += ' · meldingen staan uit bij Modules';
@@ -78,7 +78,7 @@ function testDiscordWebhook(btn) {
 function showCameraStatus(d, note, error) {
   var el = document.getElementById('camera-status');
   if (!el) return;
-  el.style.color = error ? 'var(--red)' : note ? 'var(--green)' : 'var(--dim)';
+  el.style.color = error ? 'var(--red)' : note ? 'var(--green)' : '';
   var text = d.configured ? 'Ingesteld op ' + d.host + ' (gebruiker ' + d.user + ')' : 'Nog niet ingesteld. Zet HTTP aan op de camera en maak daar een gebruiker met alleen kijkrechten.';
   if (d.configured && d.bell === false) text += ' · deze camera meldt het aanbellen niet aan VloedHub';
   el.textContent = error || (note ? note + ' · ' + text : text);
@@ -120,7 +120,7 @@ function refreshVaatwasserStats() {
     setEl('dish-rows', s.recent.length ? s.recent.map(function(r) {
       var extras = (r.options || '').split(',').filter(Boolean).map(function(x) { return s.extras[x] || x; }).join(', ');
       return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + dishProgram(r.program) + (extras ? '<span class="esp-sub"> · ' + extras + '</span>' : '') + '</td><td>' + dishDuration(r.duration_min) + '</td><td>' + pct(r.energy_pct) + '</td><td>' + pct(r.water_pct) + '</td><td>' + (r.est_kwh != null ? '±' + num(r.est_kwh, 2) + ' kWh' + (r.est_cost != null ? ' · ' + eur(r.est_cost) : '') : '—') + '</td></tr>';
-    }).join('') : '<tr><td colspan="6" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen beurten gelogd — vanaf nu wordt elke beurt bijgehouden</td></tr>');
+    }).join('') : '<tr><td colspan="6" class="table-empty">Nog geen beurten gelogd — vanaf nu wordt elke beurt bijgehouden</td></tr>');
   }).catch(function(){});
 }
 // Goedkoopste moment om te starten, op basis van de uurprijzen en de duur van je meest gedraaide programma
@@ -130,16 +130,17 @@ function refreshVaatwasserAdvies(busy) {
     if (a.best_price == null) { setEl('dish-best', ''); return; }
     var basis = dishDuration(a.duration_min) + (a.measured ? ' ' + dishProgram(a.program) : ', aanname');
     function cost(p) { return a.kwh != null ? ' ≈ ' + eur(a.kwh * p) : ''; }
-    if (a.best_start === 'now') { setEl('dish-best', '<i class="fa-solid fa-bolt"></i> Nu starten is het goedkoopst · €' + a.best_price.toFixed(2) + '/kWh' + cost(a.best_price) + ' <span>(' + basis + ')</span>'); return; }
+    if (a.best_start === 'now') { setEl('dish-best', '<i class="fa-solid fa-bolt"></i> Nu starten is het goedkoopst · €' + nlNum(a.best_price, 2) + '/kWh' + cost(a.best_price) + ' <span>(' + basis + ')</span>'); return; }
     var save = a.now_price ? Math.round((a.now_price - a.best_price) / a.now_price * 100) : null;
-    setEl('dish-best', '<i class="fa-solid fa-clock"></i> Goedkoopst starten om <strong>' + shortWhen(a.best_start) + '</strong> · €' + a.best_price.toFixed(2) + '/kWh' + cost(a.best_price) +
-      (a.now_price != null ? ' · nu €' + a.now_price.toFixed(2) + (save > 0 ? ', scheelt ' + save + '%' : '') : '') + ' <span>(' + basis + ')</span>');
+    setEl('dish-best', '<i class="fa-solid fa-clock"></i> Goedkoopst starten om <strong>' + shortWhen(a.best_start) + '</strong> · €' + nlNum(a.best_price, 2) + '/kWh' + cost(a.best_price) +
+      (a.now_price != null ? ' · nu €' + nlNum(a.now_price, 2) + (save > 0 ? ', scheelt ' + save + '%' : '') : '') + ' <span>(' + basis + ')</span>');
   }).catch(function(){});
 }
 function toggleDishStats() {
   var open = false;
   document.querySelectorAll('.dish-collapse').forEach(function(el) { open = el.classList.toggle('open'); });
-  document.getElementById('dish-chevron').style.transform = open ? 'rotate(180deg)' : '';
+  var card = document.querySelector('.dish-card');
+  if (card) card.setAttribute('aria-expanded', open);
 }
 function refreshVaatwasser() {
   refreshVaatwasserStats();
@@ -154,15 +155,15 @@ function refreshVaatwasser() {
     setEl('dish-last', !d.linked ? 'Koppel bij Instellingen' : d.lastFinished ? 'Laatste: ' + shortWhen(d.lastFinished) : '');
     var alertsEl = document.getElementById('dish-alerts');
     alertsEl.textContent = '';
-    (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.textContent = '⚠ ' + a; alertsEl.appendChild(el); });
+    (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> '; el.appendChild(document.createTextNode(a)); alertsEl.appendChild(el); });
     if ((d.alerts || []).length > 0) {
       var btn = document.createElement('button');
-      btn.className = 'small-btn';
-      btn.style.cssText = 'margin-left:0.4rem;font-size:0.65rem;padding:0.1rem 0.4rem;opacity:0.7';
+      btn.className = 'btn btn-quiet btn-sm';
       btn.title = 'Meldingen wissen (probleem is verholpen)';
-      btn.textContent = '✓ wissen';
-      btn.onclick = function() {
-        fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); });
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Wissen';
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); }).catch(actionFailed('Wissen lukte niet'));
       };
       alertsEl.appendChild(btn);
     }
@@ -179,7 +180,7 @@ function refreshVaatwasser() {
 var hcPollTimer = null;
 function showHcStatus(d, note) {
   var el = document.getElementById('hc-status'), pend = document.getElementById('hc-pending');
-  el.style.color = d.error ? 'var(--red)' : d.linked ? 'var(--green)' : 'var(--dim)';
+  el.style.color = d.error ? 'var(--red)' : d.linked ? 'var(--green)' : '';
   el.textContent = d.error ? d.error
     : d.linked ? 'Gekoppeld' + (d.name ? ' met ' + d.name : '')
     : d.pending ? 'Wacht op goedkeuring…'
@@ -188,7 +189,7 @@ function showHcStatus(d, note) {
   pend.textContent = '';
   if (d.pending) {
     var a = document.createElement('a');
-    a.href = d.pending.url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'btn btn-primary'; a.style.textDecoration = 'none';
+    a.href = d.pending.url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'btn btn-primary';
     a.textContent = 'Open Home Connect';
     var code = document.createElement('span');
     code.className = 'power-sub';
@@ -232,13 +233,12 @@ function loadModules() {
   fetch('/api/modules').then(function(r){return r.json();}).then(function(list) {
     var el = document.getElementById('settings-modules');
     if (!el) return;
-    el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem"><div><div style="font-size:0.85rem;font-weight:600">Stroom (P1-meter)</div><div style="font-size:0.65rem;color:var(--dim)">De basis van de app, staat altijd aan</div></div><span class="mod-switch on locked"></span></div>' +
+    function row(label, hint, sw) { return '<div class="setting-row"><div class="setting-text"><div class="setting-title">' + label + '</div><div class="setting-desc">' + hint + '</div></div>' + sw + '</div>'; }
+    el.innerHTML = '<div class="setting-card">' +
+      row('Stroom (P1-meter)', 'De basis van de app, staat altijd aan', '<span class="mod-switch on locked"></span>') +
       list.map(function(m) {
-        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem">' +
-          '<div><div style="font-size:0.85rem;font-weight:600">' + m.label + '</div><div style="font-size:0.65rem;color:var(--dim)">' + m.hint + '</div></div>' +
-          '<button class="mod-switch' + (m.enabled ? ' on' : '') + '" role="switch" aria-checked="' + m.enabled + '" aria-label="' + m.label + '" data-key="' + m.key + '" onclick="toggleModule(this)"></button></div>';
-      }).join('') + '</div></div>';
+        return row(m.label, m.hint, '<button class="mod-switch' + (m.enabled ? ' on' : '') + '" role="switch" aria-checked="' + m.enabled + '" aria-label="' + m.label + '" data-key="' + m.key + '" onclick="toggleModule(this)"></button>');
+      }).join('') + '</div>';
   }).catch(function(){});
 }
 // Past de modules toe op de open pagina: klassen op body, Home-blokken en de kostengrafiek
@@ -256,10 +256,10 @@ function toggleModule(btn) {
   fetch('/api/modules', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: btn.dataset.key, enabled: enabled})})
     .then(function(r){return r.json();}).then(function(d) {
       btn.disabled = false;
-      if (!d.ok) { show(!enabled); return; }
+      if (!d.ok) { show(!enabled); toast(d.error || 'Module omzetten lukte niet', 'error'); return; }
       MODULES = d.modules;
       applyModules();
-    }).catch(function() { btn.disabled = false; show(!enabled); });
+    }).catch(function() { btn.disabled = false; show(!enabled); toast('Module omzetten lukte niet', 'error'); });
 }
 
 // ── Apparaatstatus ──
@@ -267,24 +267,20 @@ function loadDeviceStatus() {
   fetch('/api/monitor').then(function(r){return r.json();}).then(function(list) {
     var el = document.getElementById('settings-device-status');
     if (!el) return;
-    if (!list.length) { el.innerHTML = '<div class="power-hero"><div style="font-size:0.75rem;color:var(--muted)">Nog geen apparaten gezien</div></div>'; return; }
-    el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' + list.map(function(d, i) {
-      var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
-      var color = d.online ? 'var(--green)' : 'var(--red)';
+    if (!list.length) { el.innerHTML = '<div class="setting-card"><div class="empty-note">Nog geen apparaten gezien</div></div>'; return; }
+    el.innerHTML = '<div class="setting-card">' + list.map(function(d) {
       var when = d.last_seen ? d.last_seen.slice(8, 10) + '-' + d.last_seen.slice(5, 7) + ' ' + d.last_seen.slice(11, 16) : 'nog niet gezien';
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;' + border + '">' +
-        '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + color + '"></span>' +
-        '<div style="min-width:0"><div style="font-size:0.85rem;font-weight:600">' + d.name + '</div>' +
-        '<div style="font-size:0.65rem;color:var(--dim)">Laatste bericht: ' + when + ' · ' + (d.notify ? 'melding na ' + d.limit_min + ' min stilte' : 'geen melding') + '</div></div></div>' +
-        '<div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0"><span style="font-size:0.72rem;font-weight:600;color:' + color + '">' + (d.online ? 'Online' : 'Offline') + '</span>' +
-        '<button class="mod-switch' + (d.notify ? ' on' : '') + '" role="switch" aria-checked="' + d.notify + '" aria-label="Melding als ' + escHtml(d.name) + ' offline gaat" title="Melding bij offline" data-key="' + escHtml(d.key) + '" onclick="toggleDeviceNotify(this)"></button></div></div>';
-    }).join('') + '</div></div>';
+      return '<div class="setting-row"><span class="status-dot ' + (d.online ? 'on' : 'off') + '"></span>' +
+        '<div class="setting-text"><div class="setting-title">' + escHtml(d.name) + '</div>' +
+        '<div class="setting-desc">Laatste bericht: ' + when + ' · ' + (d.notify ? 'melding na ' + d.limit_min + ' min stilte' : 'geen melding') + '</div></div>' +
+        '<span class="status-word ' + (d.online ? 'on' : 'off') + '">' + (d.online ? 'Online' : 'Offline') + '</span>' +
+        '<button class="mod-switch' + (d.notify ? ' on' : '') + '" role="switch" aria-checked="' + d.notify + '" aria-label="Melding als ' + escHtml(d.name) + ' offline gaat" title="Melding bij offline" data-key="' + escHtml(d.key) + '" onclick="toggleDeviceNotify(this)"></button></div>';
+    }).join('') + '</div>';
   }).catch(function(){});
 }
 function toggleDeviceNotify(btn) {
   var on = !btn.classList.contains('on');
   btn.disabled = true;
   fetch('/api/monitor/notify', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: btn.dataset.key, notify: on})})
-    .then(loadDeviceStatus).catch(loadDeviceStatus);
+    .then(loadDeviceStatus).catch(function() { toast('Instelling opslaan lukte niet', 'error'); loadDeviceStatus(); });
 }
-

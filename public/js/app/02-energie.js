@@ -1,4 +1,6 @@
 // ── Chart ──
+// Grafieken in hetzelfde lettertype en dezelfde tekstkleur als de rest van de app
+if (window.Chart) { Chart.defaults.font.family = "'Poppins', system-ui, sans-serif"; Chart.defaults.font.size = 11; Chart.defaults.color = '#94A3B8'; Chart.defaults.locale = 'nl-NL'; }
 function accentGradient(c) {
   var area = c.chart.chartArea;
   if (!area) return 'rgba(141,178,85,0.1)';
@@ -25,8 +27,8 @@ function loadHomeChart(btn) {
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#3D4D6A', maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
-          y: { ticks: { color: '#3D4D6A', maxTicksLimit: 4, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { size: 11 } }, grid: { display: false } },
+          y: { ticks: { color: CHART_TICK, maxTicksLimit: 4, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
         }
       }
     });
@@ -48,18 +50,18 @@ function loadChart(range, btn) {
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } },
+        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 11 } } } },
         scales: {
-          x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+          x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
         }
       }
     });
   }).catch(function() {});
 }
 
-function eur(v) { return v != null ? '€' + Number(v).toFixed(2) : '—'; }
-function num(v, d) { return v != null ? Number(v).toFixed(d != null ? d : 3) : '—'; }
+function eur(v) { return v != null ? '€' + nlNum(v, 2) : '—'; }
+function num(v, d) { return v != null ? nlNum(v, d != null ? d : 3) : '—'; }
 
 // ── Costs ──
 function refreshCosts() {
@@ -67,12 +69,12 @@ function refreshCosts() {
     var rows = [['Laatste uur','hour'],['Vandaag','day'],['7 dagen','week'],['30 dagen','month']];
     setEl('cost-rows', rows.map(function(r) {
       var d = c[r[1]];
-      return '<tr><td>' + r[0] + '</td><td class="num">' + num(d.elec_kwh) + '</td><td class="num">' + eur(d.elec_cost) + '</td><td class="num" data-module="gas">' + num(d.gas_m3) + '</td><td class="num" data-module="gas">' + eur(d.gas_cost) + '</td></tr>';
+      return '<tr><td>' + r[0] + '</td><td class="num">' + num(d.elec_kwh, 2) + '</td><td class="num">' + eur(d.elec_cost) + '</td><td class="num" data-module="gas">' + num(d.gas_m3, 2) + '</td><td class="num" data-module="gas">' + eur(d.gas_cost) + '</td></tr>';
     }).join(''));
     var day = c.day;
     if (day && (day.elec_cost != null || day.gas_cost != null)) {
       var total = (day.elec_cost || 0) + (day.gas_cost || 0);
-      setEl('hero-cost-today', '€' + total.toFixed(2) + '<span class="card-unit">/dag</span>');
+      setEl('hero-cost-today', eur(total));
     }
   }).catch(function() {});
 }
@@ -83,9 +85,9 @@ setInterval(refreshCosts, 60000);
 function refreshPrices() {
   fetch('/api/prices').then(function(r) { return r.json(); }).then(function(p) {
     if (p.electricity_eur_kwh != null)
-      setEl('price-elec', Number(p.electricity_eur_kwh).toFixed(4) + '<span class="card-unit">€/kWh</span>');
+      setEl('price-elec', eur(p.electricity_eur_kwh) + '<span class="card-unit">/kWh</span>');
     if (p.gas_eur_m3 != null)
-      setEl('price-gas', Number(p.gas_eur_m3).toFixed(4) + '<span class="card-unit">€/m³</span>');
+      setEl('price-gas', eur(p.gas_eur_m3) + '<span class="card-unit">/m³</span>');
   }).catch(function() {});
 }
 refreshPrices();
@@ -116,8 +118,8 @@ setInterval(refreshHomeTemp, 60000);
 function refreshStats() {
   fetch('/api/stats').then(function(r) { return r.json(); }).then(function(s) {
     if (!s || s.avg_del == null) return;
-    setEl('stat-avg-del', num(s.avg_del, 3) + '<span class="stat-unit">kW</span>');
-    setEl('stat-max-del', num(s.max_del, 3) + '<span class="stat-unit">kW</span>');
+    setEl('stat-avg-del', powerHtml(s.avg_del, 'stat-unit'));
+    setEl('stat-max-del', powerHtml(s.max_del, 'stat-unit'));
     var phases = [['L1', s.avg_l1], ['L2', s.avg_l2], ['L3', s.avg_l3]];
     var top = phases.filter(function(p) { return p[1] != null; }).sort(function(a,b) { return b[1]-a[1]; })[0];
     var topEl = document.getElementById('stat-top-phase'); if (topEl) topEl.textContent = top ? top[0] : '—';
@@ -154,8 +156,8 @@ function loadPeaks() {
       ]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } } },
-        scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } }
+        plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { afterLabel: function(ctx) { return 'Metingen: ' + counts[ctx.dataIndex]; } } } },
+        scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } }
       }
     });
   }).catch(function() {});
@@ -173,7 +175,7 @@ function loadPhaseChart() {
         { label: 'Gemiddeld (kW)', data: [s.avg_l1,s.avg_l2,s.avg_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.6)','rgba(56,189,248,0.6)','rgba(251,146,60,0.6)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 },
         { label: 'Piek (kW)', data: [s.max_l1,s.max_l2,s.max_l3].map(function(v){return v!=null?Number(v).toFixed(3):0;}), backgroundColor: ['rgba(141,178,85,0.2)','rgba(56,189,248,0.2)','rgba(251,146,60,0.2)'], borderColor: ['#8DB255','#38BDF8','#F97316'], borderWidth: 1, borderRadius: 4 }
       ]},
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }, y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }, y: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
     });
   }).catch(function() {});
 }
@@ -188,7 +190,7 @@ function loadGasDaily() {
     chartGas = new Chart(document.getElementById('chart-gas'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
     });
   }).catch(function() {});
 }
@@ -198,7 +200,7 @@ function refreshComparison() {
   fetch('/api/day-comparison').then(function(r){return r.json();}).then(function(c) {
     var t = c.today, y = c.yesterday, w = c.lastweek;
     function kwh(v) { return v != null ? num(v,2)+' kWh' : '—'; }
-    function m3(v)  { return v != null ? num(v,3)+' m³' : '—'; }
+    function m3(v)  { return v != null ? num(v,2)+' m³' : '—'; }
     function delta(now, ref) {
       if (now == null || ref == null || ref === 0) return '';
       var pct = ((now - ref) / ref * 100);
@@ -224,12 +226,12 @@ function refreshSafety() {
     if (!s) return;
     var dipsEl = document.getElementById('saf-dips');
     var vdTotal = (s.dips || 0) + (s.peaks || 0);
-    if (dipsEl) { dipsEl.innerHTML = vdTotal + (vdTotal ? '<span class="stat-unit"> ' + (s.dips || 0) + ' te laag · ' + (s.peaks || 0) + ' te hoog</span>' : ''); dipsEl.style.color = vdTotal > 0 ? '#F87171' : '#4ADE80'; }
+    if (dipsEl) { dipsEl.innerHTML = vdTotal + (vdTotal ? '<span class="stat-unit"> ' + (s.dips || 0) + ' te laag · ' + (s.peaks || 0) + ' te hoog</span>' : ''); dipsEl.className = 'stat-value ' + (vdTotal > 0 ? 'c-red' : 'c-green'); }
     if (s.max_a1 != null) setEl('saf-max-amp', num(s.max_a1,0)+'A / '+num(s.max_a2,0)+'A / '+num(s.max_a3,0)+'A<span class="stat-unit"> max</span>');
   }).catch(function(){});
   fetch('/api/night-usage').then(function(r){return r.json();}).then(function(s) {
     if (!s) return;
-    if (s.night_avg != null) setEl('saf-night', num(s.night_avg,3)+'<span class="stat-unit">kW</span>');
+    if (s.night_avg != null) setEl('saf-night', powerHtml(s.night_avg, 'stat-unit'));
   }).catch(function(){});
 }
 

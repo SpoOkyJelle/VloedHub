@@ -1,18 +1,5 @@
+/* Kleuren, lettergroottes en hoeken staan in tokens.css */
 :root {
-  --bg: #0C0F1D;
-  --surface: #141728;
-  --surface2: #1A1E35;
-  --border: rgba(255,255,255,0.06);
-  --text: #F1F5F9;
-  --muted: #4A5880;
-  --dim: #3D4D6A;
-  --accent: #8DB255;
-  --accent-l: #BBDD8C;
-  --green: #22C55E;
-  --orange: #F97316;
-  --blue: #38BDF8;
-  --yellow: #FBBF24;
-  --red: #F87171;
   --header-h: calc(52px + env(safe-area-inset-top, 0px));
   --sidebar-w: 240px;
 }
@@ -75,9 +62,9 @@ html, body {
   width: 100%;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   font-weight: 600;
   font-family: inherit;
   padding: 0.3rem 0.5rem;
@@ -101,8 +88,8 @@ html, body {
   align-items: center;
   gap: 0.35rem;
   padding: 0.3rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -133,12 +120,12 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 .btn-icon:hover { color: var(--text); background: rgba(141,178,85,0.15); border-color: rgba(141,178,85,0.3); }
@@ -154,7 +141,7 @@ html, body {
 .toggle-track {
   width: 34px;
   height: 18px;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   background: var(--dim);
   position: relative;
   transition: background 0.2s;
@@ -172,7 +159,7 @@ html, body {
   transition: left 0.2s;
 }
 .toggle-wrap input:checked ~ .toggle-track .toggle-knob { left: 18px; }
-.toggle-label { font-size: 0.72rem; color: var(--muted); }
+.toggle-label { font-size: var(--fs-xs); color: var(--muted); }
 
 /* ── Layout ──────────────────────────────────────────────────────────── */
 .flows-layout {
@@ -211,7 +198,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 0.85rem 0.5rem;
-  font-size: 0.6rem;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--dim);
@@ -219,7 +206,7 @@ html, body {
 }
 
 .sidebar-hint {
-  font-size: 0.62rem;
+  font-size: var(--fs-2xs);
   color: var(--dim);
   padding: 0 0.85rem 0.5rem;
 }
@@ -233,7 +220,7 @@ html, body {
 }
 
 .flow-list-empty {
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   color: var(--dim);
   padding: 0.4rem 0.85rem;
 }
@@ -244,7 +231,7 @@ html, body {
   align-items: flex-start;
   gap: 0.1rem;
   padding: 0.4rem 0.85rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
   border-radius: 0;
   transition: background 0.12s;
@@ -252,7 +239,7 @@ html, body {
 .flow-list-item:hover { background: rgba(255,255,255,0.04); }
 .flow-list-item.active { background: rgba(141,178,85,0.1); color: var(--accent-l); }
 .flow-list-item-row { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
-.flow-item-meta { font-size: 0.58rem; color: var(--dim); padding-left: 1.2rem; }
+.flow-item-meta { font-size: var(--fs-2xs); color: var(--dim); padding-left: 1.2rem; }
 
 .flow-item-dot {
   width: 7px;
@@ -275,7 +262,7 @@ html, body {
 }
 
 .palette-group-label {
-  font-size: 0.58rem;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--dim);
@@ -289,7 +276,7 @@ html, body {
   gap: 0.6rem;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   cursor: grab;
   margin-bottom: 0.4rem;
   background: var(--surface2);
@@ -300,8 +287,8 @@ html, body {
 .palette-node:active { cursor: grabbing; }
 .palette-node > i { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; color: var(--blue); }
 
-.palette-node-name { font-size: 0.72rem; font-weight: 600; }
-.palette-node-desc { font-size: 0.6rem;  color: var(--dim); }
+.palette-node-name { font-size: var(--fs-xs); font-weight: 600; }
+.palette-node-desc { font-size: var(--fs-2xs);  color: var(--dim); }
 
 /* ── Canvas ──────────────────────────────────────────────────────────── */
 .flows-canvas-wrap {
@@ -331,13 +318,13 @@ html, body {
   pointer-events: none;
 }
 .canvas-empty i  { font-size: 2.5rem; opacity: 0.4; }
-.canvas-empty p  { font-size: 0.8rem; }
+.canvas-empty p  { font-size: var(--fs-sm); }
 
 /* ── Drawflow overrides ───────────────────────────────────────────────── */
 .drawflow .drawflow-node {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 0;
   min-width: 200px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.45);
@@ -383,9 +370,9 @@ html, body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 0.85rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  border-radius: 11px 11px 0 0;
+  border-radius: var(--r-md) 11px 0 0;
 }
 
 .df-node-title--timer {
@@ -503,7 +490,7 @@ html, body {
   position: absolute;
   right: 18px;
   top: -1px;
-  font-size: 0.55rem;
+  font-size: var(--fs-2xs);
   color: var(--green);
   white-space: nowrap;
   font-weight: 600;
@@ -513,7 +500,7 @@ html, body {
   position: absolute;
   right: 18px;
   top: -1px;
-  font-size: 0.55rem;
+  font-size: var(--fs-2xs);
   color: var(--red);
   white-space: nowrap;
   font-weight: 600;
@@ -530,7 +517,7 @@ html, body {
 
 .df-field label {
   display: block;
-  font-size: 0.58rem;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--dim);
@@ -546,10 +533,10 @@ html, body {
   width: 100%;
   background: #1A1E35;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   color: var(--text);
   padding: 0.28rem 0.5rem;
-  font-size: 0.73rem;
+  font-size: var(--fs-xs);
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
@@ -583,7 +570,7 @@ html, body {
 
 /* Hint text inside a node */
 .df-node-hint {
-  font-size: 0.62rem;
+  font-size: var(--fs-2xs);
   color: var(--dim);
   line-height: 1.45;
   padding-top: 0.1rem;
@@ -606,14 +593,14 @@ html, body {
   width: 34px;
   height: 26px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   cursor: pointer;
   padding: 2px;
 }
 
 .brightness-val {
-  font-size: 0.65rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   font-weight: 500;
 }
@@ -626,9 +613,9 @@ html, body {
   transform: translateX(-50%) translateY(12px);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--r-pill);
   padding: 0.45rem 1.1rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   color: var(--text);
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   opacity: 0;
@@ -767,7 +754,7 @@ html, body {
     gap: 3px;
     cursor: pointer;
     color: var(--muted);
-    font-size: 0.6rem;
+    font-size: var(--fs-2xs);
     font-weight: 600;
     font-family: inherit;
     background: transparent;
@@ -812,7 +799,7 @@ html, body {
     right: 0;
     bottom: var(--bottom-nav-h);
     background: var(--surface);
-    border-radius: 18px 18px 0 0;
+    border-radius: var(--r-lg) 18px 0 0;
     border-top: 1px solid var(--border);
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
@@ -848,7 +835,7 @@ html, body {
   }
 
   .sheet-title {
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     color: var(--text);
   }
@@ -864,7 +851,7 @@ html, body {
     border-radius: 50%;
     color: var(--muted);
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -886,7 +873,7 @@ html, body {
     gap: 0.75rem;
     padding: 0.85rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     cursor: pointer;
     margin-bottom: 0.5rem;
     background: var(--surface2);
@@ -908,19 +895,19 @@ html, body {
   }
 
   .mobile-palette-node-name {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     line-height: 1.3;
   }
 
   .mobile-palette-node-desc {
-    font-size: 0.65rem;
+    font-size: var(--fs-xs);
     color: var(--dim);
     margin-top: 2px;
   }
 
   .mobile-palette-group-label {
-    font-size: 0.6rem;
+    font-size: var(--fs-2xs);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--dim);
@@ -940,7 +927,7 @@ html, body {
     top: 50%;
     transform: translateY(-60%);
     color: var(--dim);
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     pointer-events: none;
   }
 
@@ -948,9 +935,9 @@ html, body {
     width: 100%;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--r-sm);
     color: var(--text);
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-family: inherit;
     padding: 0.5rem 0.65rem 0.5rem 2rem;
     outline: none;
@@ -975,7 +962,7 @@ html, body {
     flex-direction: column;
     gap: 0.15rem;
     padding: 0.85rem 0.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     cursor: pointer;
     margin-bottom: 0.25rem;
     transition: background 0.12s;
@@ -999,7 +986,7 @@ html, body {
   }
 
   .mobile-flow-item-name {
-    font-size: 0.82rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1011,7 +998,7 @@ html, body {
   }
 
   .mobile-flow-item-meta {
-    font-size: 0.62rem;
+    font-size: var(--fs-2xs);
     color: var(--dim);
     padding-left: 1.4rem;
   }
@@ -1024,10 +1011,10 @@ html, body {
     gap: 0.5rem;
     padding: 0.75rem;
     border: 1px dashed rgba(141,178,85, 0.35);
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     background: rgba(141,178,85, 0.05);
     color: var(--accent);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
@@ -1050,9 +1037,9 @@ html, body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.9rem 0.75rem;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--text);
     min-height: 52px;
@@ -1068,7 +1055,7 @@ html, body {
     width: 24px;
     text-align: center;
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     flex-shrink: 0;
   }
 
@@ -1094,13 +1081,13 @@ html, body {
 
   .node-edit-type-badge {
     display: inline-block;
-    font-size: 0.6rem;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     background: rgba(141,178,85, 0.15);
     color: var(--accent-l);
-    border-radius: 5px;
+    border-radius: var(--r-sm);
     padding: 0.15rem 0.45rem;
     margin-left: 0.5rem;
   }
@@ -1115,7 +1102,7 @@ html, body {
 
   .node-edit-field label {
     display: block;
-    font-size: 0.62rem;
+    font-size: var(--fs-2xs);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--dim);
@@ -1132,10 +1119,10 @@ html, body {
     width: 100%;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     color: var(--text);
     padding: 0.65rem 0.75rem;
-    font-size: 0.85rem;
+    font-size: var(--fs-md);
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
@@ -1183,7 +1170,7 @@ html, body {
     width: 48px;
     height: 40px;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     background: transparent;
     cursor: pointer;
     padding: 3px;
@@ -1201,7 +1188,7 @@ html, body {
   }
 
   .node-edit-brightness-val {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     color: var(--muted);
     min-width: 36px;
     text-align: right;
@@ -1223,9 +1210,9 @@ html, body {
     flex: 1;
     justify-content: center;
     padding: 0.65rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     min-height: 44px;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
   }
 
   /* Hide the default Drawflow node inline editing on mobile */

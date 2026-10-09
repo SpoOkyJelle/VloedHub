@@ -97,7 +97,7 @@ function toggleMeldingen() { meldingenAll = !meldingenAll; loadMeldingen(); }
 // Wissen vraagt een tweede tik ter bevestiging
 function clearMeldingen(btn) {
   if (!meldingenClearArmed) { meldingenClearArmed = true; btn.textContent = 'Zeker weten?'; setTimeout(function() { if (meldingenClearArmed) { meldingenClearArmed = false; btn.textContent = 'Wissen'; } }, 4000); return; }
-  fetch('/api/meldingen/clear', {method:'POST'}).then(function() { meldingenAll = false; loadMeldingen(); }).catch(function(){});
+  fetch('/api/meldingen/clear', {method:'POST'}).then(function() { meldingenAll = false; loadMeldingen(); }).catch(actionFailed('Meldingen wissen lukte niet'));
 }
 loadMeldingen();
 setInterval(loadMeldingen, 60000);

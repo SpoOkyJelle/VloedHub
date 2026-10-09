@@ -10,27 +10,11 @@
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+  <link rel="stylesheet" href="/styles/tokens.css">
   <link rel="prefetch" href="/styles/main.css">
-  <link rel="prefetch" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="prefetch" href="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js">
+  <link rel="prefetch" href="/vendor/fontawesome/css/all.min.css">
+  <link rel="prefetch" href="/vendor/chartjs/chart.umd.min.js">
   <style>
-    :root {
-      --bg: #0C0F1D;
-      --surface: #141728;
-      --surface2: #1A1E35;
-      --border: rgba(255,255,255,0.07);
-      --text: #F1F5F9;
-      --muted: #4A5880;
-      --dim: #3D4D6A;
-      --accent: #8DB255;
-      --accent-l: #BBDD8C;
-      --red: #F87171;
-      --green: #22C55E;
-    }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
@@ -91,13 +75,13 @@
       letter-spacing: -0.02em;
     }
     .pin-logo-sub {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--muted);
     }
 
     /* Subtitle */
     .pin-subtitle {
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       color: var(--muted);
       text-align: center;
     }
@@ -189,7 +173,7 @@
     .pin-key.spacer { visibility: hidden; pointer-events: none; }
     .pin-key.delete { font-size: clamp(1.2rem, 6.5cqw, 1.9rem); color: var(--muted); }
     .pin-key-sub {
-      font-size: 0.55rem;
+      font-size: var(--fs-2xs);
       font-weight: 500;
       letter-spacing: 0.1em;
       color: var(--muted);
@@ -198,7 +182,7 @@
 
     /* Error message */
     .pin-error {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--red);
       text-align: center;
       min-height: 1.2em;
@@ -207,7 +191,7 @@
 
     /* First-time setup notice */
     .pin-setup-notice {
-      font-size: 0.7rem;
+      font-size: var(--fs-xs);
       color: var(--muted);
       text-align: center;
       background: rgba(141,178,85,0.08);

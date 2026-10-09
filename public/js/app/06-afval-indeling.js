@@ -32,7 +32,7 @@ function loadAfvalAddress() {
 }
 function saveAfvalAddress() {
   var status = document.getElementById('afval-address-status');
-  status.style.color = 'var(--dim)';
+  status.style.color = '';
   status.textContent = 'Adres opzoeken…';
   fetch('/api/afval/address', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
     postcode: document.getElementById('afval-postcode').value,
@@ -103,17 +103,19 @@ setInterval(function() {
 }, 5 * 60 * 1000);
 
 function saveLayout() {
-  fetch('/api/layout', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(layoutConfig)}).then(function(){applyLayout(0);});
+  fetch('/api/layout', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(layoutConfig)}).then(function(r){ if (!r.ok) throw new Error('status ' + r.status); applyLayout(0); }).catch(actionFailed('Indeling opslaan lukte niet'));
 }
 
 function toggleLayoutEdit() {
   layoutEditMode = !layoutEditMode;
   var btn = document.getElementById('layout-edit-btn');
+  btn.classList.toggle('on', layoutEditMode);
+  btn.setAttribute('aria-pressed', layoutEditMode);
+  btn.innerHTML = '<i class="fa-solid ' + (layoutEditMode ? 'fa-check' : 'fa-pen-to-square') + '"></i>';
+  btn.title = layoutEditMode ? 'Indeling opslaan' : 'Indeling aanpassen';
   if (layoutEditMode) {
-    btn.style.background = 'rgba(34,197,94,0.85)';
     renderEditBars(0);
   } else {
-    btn.style.background = 'rgba(141,178,85,0.85)';
     removeEditBars(0);
     saveLayout();
   }
@@ -130,10 +132,10 @@ function renderEditBars(screenIdx) {
     bar.className = 'layout-block-edit-bar';
     bar.dataset.editBar = type;
     bar.innerHTML = '<i class="fa-solid ' + def.icon + '"></i><span class="lbl">' + def.label + '</span>' +
-      '<button onclick="moveBlock(0,\'' + type + '\',-1)" title="Omhoog">↑</button>' +
-      '<button onclick="moveBlock(0,\'' + type + '\',1)" title="Omlaag">↓</button>' +
-      '<button class="block-size-btn" onclick="toggleBlockSize(' + screenIdx + ',\'' + type + '\',this)" title="Grootte">' + (size === 'half' ? '2' : size === 'full' ? '4' : size) + '</button>' +
-      '<button onclick="removeBlock(0,\'' + type + '\')" title="Verwijderen" style="color:#F87171">✕</button>';
+      '<button onclick="moveBlock(0,\'' + type + '\',-1)" title="Eerder" aria-label="' + def.label + ' eerder zetten"><i class="fa-solid fa-arrow-up"></i></button>' +
+      '<button onclick="moveBlock(0,\'' + type + '\',1)" title="Later" aria-label="' + def.label + ' later zetten"><i class="fa-solid fa-arrow-down"></i></button>' +
+      '<button class="block-size-btn" onclick="toggleBlockSize(' + screenIdx + ',\'' + type + '\',this)" title="Breedte (1 tot 4 kolommen)" aria-label="Breedte van ' + def.label + '">' + (size === 'half' ? '2' : size === 'full' ? '4' : size) + '</button>' +
+      '<button class="danger" onclick="removeBlock(0,\'' + type + '\')" title="Verwijderen" aria-label="' + def.label + ' verwijderen"><i class="fa-solid fa-xmark"></i></button>';
     block.insertBefore(bar, block.firstChild);
   });
   // Add "add block" button
@@ -142,7 +144,7 @@ function renderEditBars(screenIdx) {
   var addBtn = document.createElement('button');
   addBtn.dataset.editAdd = '1';
   addBtn.onclick = showBlockPicker;
-  addBtn.style.cssText = 'width:100%;padding:0.65rem;border-radius:10px;border:1px dashed rgba(141,178,85,0.4);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;font-weight:600;cursor:pointer;font-size:0.85rem';
+  addBtn.className = 'block-add';
   addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Blok toevoegen';
   screen.appendChild(addBtn);
 }
@@ -199,21 +201,14 @@ function showBlockPicker() {
   var used = cfg.map(function(b){ return b.type; });
   var available = Object.keys(BLOCKS).filter(function(k){ return used.indexOf(k) === -1 && blockEnabled(k); });
   var list = document.getElementById('block-picker-list');
-  if (!available.length) {
-    list.innerHTML = '<div style="color:var(--dim);font-size:0.8rem">Alle blokken zijn al zichtbaar.</div>';
-  } else {
-    list.innerHTML = available.map(function(type) {
-      var def = BLOCKS[type];
-      return '<button onclick="addBlock(0,\'' + type + '\')" style="display:flex;align-items:center;gap:0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:0.75rem;cursor:pointer;color:inherit;font-family:inherit;font-size:0.85rem;width:100%"><i class="fa-solid ' + def.icon + '" style="color:var(--accent-l);width:1.2rem;text-align:center"></i><span style="font-weight:600">' + def.label + '</span></button>';
-    }).join('');
-  }
-  var picker = document.getElementById('block-picker');
-  picker.style.display = 'flex';
+  list.innerHTML = available.length ? available.map(function(type) {
+    var def = BLOCKS[type];
+    return '<button class="block-option" onclick="addBlock(0,\'' + type + '\')"><i class="fa-solid ' + def.icon + '"></i><span>' + def.label + '</span></button>';
+  }).join('') : '<div class="empty-note">Alle blokken staan al op Home.</div>';
+  openModal('block-picker');
 }
 
-function closeBlockPicker() {
-  document.getElementById('block-picker').style.display = 'none';
-}
+function closeBlockPicker() { closeModal('block-picker'); }
 
 function addBlock(screenIdx, type) {
   var cfg = layoutConfig[layoutKey(screenIdx)];
@@ -234,6 +229,11 @@ function refreshSettingsNames() {
   var deviceDefaults = { 'led::default':'LED Strip','led::keuken':'Ledstrip Keuken','led::gang':'Ledstrip Gang','relay::gang':'Lamp Gang' };
   var deviceIcons = { 'led::default':'fa-lightbulb','led::keuken':'fa-lightbulb','led::gang':'fa-lightbulb','relay::gang':'fa-toggle-on' };
   var ledKeys = ['default','keuken','gang'];
+  function row(icon, nameId, name, sub, onclick) {
+    return '<div class="setting-row"><i class="fa-solid ' + icon + ' setting-icon"></i>' +
+      '<div class="setting-text"><div class="setting-title"><span id="' + nameId + '">' + escHtml(name) + '</span></div>' + (sub ? '<div class="setting-desc">' + sub + '</div>' : '') + '</div>' +
+      '<button class="icon-btn" aria-label="Naam van ' + escHtml(name) + ' wijzigen" title="Naam wijzigen" onclick="' + onclick + '"><i class="fa-solid fa-pen"></i></button></div>';
+  }
   Promise.all([
     fetch('/api/device-names').then(function(r){return r.json();}),
     Promise.all(ledKeys.map(function(k){ return fetch('/api/led/state?device='+k).then(function(r){return r.json();}).then(function(s){return {key:'led::'+k,ip:s.ip||null};}); })),
@@ -244,60 +244,35 @@ function refreshSettingsNames() {
     results[1].forEach(function(x){ipMap[x.key]=x.ip;});
     ipMap['relay::gang'] = results[2];
     var el = document.getElementById('settings-device-names');
-    if (!el) return;
-    el.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
-      Object.keys(deviceDefaults).map(function(key, i) {
-        var name = names[key] || deviceDefaults[key];
-        var icon = deviceIcons[key];
-        var kEnc = encodeURIComponent(key);
-        var ip = ipMap[key];
-        var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid ' + icon + '" style="color:var(--accent-l);width:1rem;text-align:center"></i>' +
-          '<div><span id="sn-' + kEnc + '" style="font-size:0.9rem;font-weight:600">' + name + '</span>' +
-          (ip ? '<div style="font-size:0.65rem;color:var(--dim);font-family:monospace">' + ip + '</div>' : '') +
-          '</div></div>' +
-          '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="settingsDeviceRename(\'' + kEnc + '\',\'' + encodeURIComponent(deviceDefaults[key]) + '\')"></i></div>';
-      }).join('') + '</div></div>';
+    if (!el || el.querySelector('.rename-input')) return;
+    el.innerHTML = '<div class="setting-card">' + Object.keys(deviceDefaults).map(function(key) {
+      var kEnc = encodeURIComponent(key), ip = ipMap[key];
+      return row(deviceIcons[key], 'sn-' + kEnc, names[key] || deviceDefaults[key], ip ? '<span class="mono">' + escHtml(ip) + '</span>' : '', 'settingsDeviceRename(\'' + kEnc + '\')');
+    }).join('') + '</div>';
   }).catch(function(){});
   fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){
     var el2 = document.getElementById('settings-esphome-names');
-    if (!el2) return;
-    if (!rows.length) { el2.innerHTML = '<div class="power-hero" style="color:var(--dim);font-size:0.8rem">Geen ESPHome data ontvangen</div>'; return; }
-    el2.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
-      rows.map(function(r, i) {
-        var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
-        var dEnc = encodeURIComponent(r.device); var sEnc = encodeURIComponent(r.sensor_name);
-        return '<div style="display:flex;justify-content:space-between;align-items:center;' + border + '">' +
-          '<div style="display:flex;align-items:center;gap:0.6rem"><i class="fa-solid fa-microchip" style="color:var(--blue);width:1rem;text-align:center"></i>' +
-          '<div><span id="sne-' + dEnc + '-' + sEnc + '" style="font-size:0.9rem;font-weight:600">' + escHtml(r.display_name) + '</span>' +
-          '<div style="font-size:0.65rem;color:var(--dim)">' + escHtml(r.sensor_name) + (r.host ? ' · <span style="font-family:monospace">' + escHtml(r.host) + '</span>' : '') + '</div></div></div>' +
-          '<i class="fa-solid fa-pen" style="font-size:0.7rem;opacity:0.5;cursor:pointer;padding:0.3rem" onclick="esphomeRenameSettings(\'' + dEnc + '\',\'' + sEnc + '\')"></i></div>';
-      }).join('') + '</div></div>';
+    if (!el2 || el2.querySelector('.rename-input')) return;
+    if (!rows.length) { el2.innerHTML = '<div class="setting-card"><div class="empty-note">Geen ESPHome data ontvangen</div></div>'; return; }
+    el2.innerHTML = '<div class="setting-card">' + rows.map(function(r) {
+      var dEnc = encodeURIComponent(r.device), sEnc = encodeURIComponent(r.sensor_name);
+      return row('fa-microchip', 'sne-' + dEnc + '-' + sEnc, r.display_name, escHtml(r.sensor_name) + (r.host ? ' · <span class="mono">' + escHtml(r.host) + '</span>' : ''), 'esphomeRenameSettings(\'' + dEnc + '\',\'' + sEnc + '\')');
+    }).join('') + '</div>';
   }).catch(function(){});
 }
-function settingsDeviceRename(keyEnc, defaultEnc) {
-  var key = decodeURIComponent(keyEnc); var def = decodeURIComponent(defaultEnc);
-  var spanEl = document.getElementById('sn-' + keyEnc);
-  if (!spanEl) return;
-  var current = deviceNamesCache[key] || def;
-  var input = document.createElement('input');
-  input.value = current;
-  input.style.cssText = 'font-size:0.9rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:600';
-  spanEl.replaceWith(input); input.focus(); input.select();
-  function commit() { fetch('/api/device-names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:key,name:input.value.trim()})}).then(function(){loadDeviceNames();refreshSettingsNames();}); }
-  input.addEventListener('keydown',function(e){if(e.key==='Enter')input.blur();if(e.key==='Escape')refreshSettingsNames();});
-  input.addEventListener('blur',commit);
+function saveDeviceName(key, name) {
+  return fetch('/api/device-names', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: key, name: name})})
+    .then(function(r) { if (!r.ok) throw new Error('status ' + r.status); })
+    .catch(actionFailed('Naam opslaan lukte niet')).then(loadDeviceNames);
+}
+function saveEsphomeName(device, sensor, name) {
+  return fetch('/api/esphome/rename', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: device, sensor_name: sensor, display_name: name})})
+    .then(function(r) { if (!r.ok) throw new Error('status ' + r.status); })
+    .catch(actionFailed('Naam opslaan lukte niet')).then(refreshEsphome);
+}
+function settingsDeviceRename(keyEnc) {
+  inlineRename(document.getElementById('sn-' + keyEnc), function(name) { saveDeviceName(decodeURIComponent(keyEnc), name).then(refreshSettingsNames); });
 }
 function esphomeRenameSettings(dEnc, sEnc) {
-  var device = decodeURIComponent(dEnc); var sensor = decodeURIComponent(sEnc);
-  var spanEl = document.getElementById('sne-' + dEnc + '-' + sEnc);
-  if (!spanEl) return;
-  var input = document.createElement('input');
-  input.value = spanEl.textContent;
-  input.style.cssText = 'font-size:0.9rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:600';
-  spanEl.replaceWith(input); input.focus(); input.select();
-  function commit() { fetch('/api/esphome/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:device,sensor_name:sensor,display_name:input.value.trim()})}).then(function(){refreshSettingsNames();refreshEsphome();}); }
-  input.addEventListener('keydown',function(e){if(e.key==='Enter')input.blur();if(e.key==='Escape')refreshSettingsNames();});
-  input.addEventListener('blur',commit);
+  inlineRename(document.getElementById('sne-' + dEnc + '-' + sEnc), function(name) { saveEsphomeName(decodeURIComponent(dEnc), decodeURIComponent(sEnc), name).then(refreshSettingsNames); });
 }

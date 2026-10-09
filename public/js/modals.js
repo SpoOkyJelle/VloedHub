@@ -1,15 +1,9 @@
 function showPinModal() {
-  var el = document.getElementById('pin-modal-overlay');
-  el.style.display = 'flex';
-  document.getElementById('pin-current').value = '';
-  document.getElementById('pin-new').value = '';
-  document.getElementById('pin-confirm').value = '';
+  ['pin-current', 'pin-new', 'pin-confirm'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('pin-modal-error').textContent = '';
-  document.getElementById('pin-current').focus();
+  openModal('pin-modal-overlay', closePinModal);
 }
-function closePinModal() {
-  document.getElementById('pin-modal-overlay').style.display = 'none';
-}
+function closePinModal() { closeModal('pin-modal-overlay'); }
 function savePinModal() {
   var current = document.getElementById('pin-current').value;
   var newPin  = document.getElementById('pin-new').value;
@@ -22,16 +16,16 @@ function savePinModal() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ current: current, pin: newPin })
   }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d.ok) { closePinModal(); }
-    else { errEl.textContent = d.error || 'Fout'; }
-  });
+    if (d.ok) { closePinModal(); toast('PIN gewijzigd', 'ok'); }
+    else { errEl.textContent = d.error || 'Wijzigen mislukt'; }
+  }).catch(function() { errEl.textContent = 'Verbindingsfout'; });
 }
 function logout() {
   fetch('/api/auth/logout', { method: 'POST' }).then(function() {
     window.location.href = '/pin';
-  });
+  }).catch(actionFailed('Uitloggen lukte niet'));
 }
-document.getElementById('pin-modal-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closePinModal();
+// Enter in een van de velden slaat op
+document.getElementById('pin-modal-body').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') savePinModal();
 });
-document.addEventListener('DOMContentLoaded',function(){var eb=document.getElementById('layout-edit-btn');if(eb)eb.style.display='flex';});

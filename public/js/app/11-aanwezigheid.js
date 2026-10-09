@@ -23,7 +23,7 @@ function showPresence(d, error) {
   }).join('') : '<div class="outage-sub">Nog niets ontvangen sinds de server is gestart.</div>';
   var me = d.people.filter(function(p) { return p.id === d.me.id; })[0];
   var blocked = !error && (!d.me.local || !d.me.phone);
-  status.style.color = error ? 'var(--red)' : blocked ? 'var(--text)' : 'var(--dim)';
+  status.style.color = error ? 'var(--red)' : blocked ? 'var(--text)' : '';
   status.textContent = error || (me ? 'Dit apparaat is aangemeld als ' + me.name + '. Met een andere naam opslaan past de naam aan.' :
     d.me.local && !d.me.phone ? 'Dit apparaat is geen telefoon — open VloedHub op je telefoon (verbonden met de wifi thuis) om hem aan te melden.' :
     d.me.local ? 'Dit apparaat is nog niet aangemeld. Het telt als weg na ' + d.away_after_min + ' minuten niet gevonden te zijn op de wifi.' :
@@ -59,7 +59,7 @@ function renderPresenceScan(error) {
   var hidden = presenceDevices.filter(function(x) { return x.ignored; }).length;
   var shown = presenceDevices.filter(function(x) { return presenceShowIgnored || !x.ignored; });
   var html = '<div class="outage-sub">' + (presenceDevices.length - hidden) + ' apparaten' + (hidden ? ' · ' + hidden + ' genegeerd <button class="presence-remove" onclick="presenceShowIgnored=!presenceShowIgnored;renderPresenceScan()">' + (presenceShowIgnored ? 'Verbergen' : 'Tonen') + '</button>' : '') +
-    '. Een telefoon in slaapstand kan ontbreken.</div>' + (error ? '<div class="outage-sub" style="color:var(--red)">' + escHtml(error) + '</div>' : '');
+    '. Een telefoon in slaapstand kan ontbreken.</div>' + (error ? '<div class="outage-sub c-red">' + escHtml(error) + '</div>' : '');
   html += shown.map(function(x) {
     // de beste aanwijzing als titel, de rest eronder
     var title = presenceTitle(x);
@@ -104,11 +104,11 @@ function scanPresence(btn) {
   out.innerHTML = '<div class="outage-sub">Netwerk afzoeken en apparaten opzoeken, dit kan een halve minuut duren…</div>';
   fetch('/api/presence/scan', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
     btn.disabled = false;
-    if (!d.ok) { out.innerHTML = '<div class="outage-sub" style="color:var(--red)">' + escHtml(d.error || 'Scan mislukt') + '</div>'; return; }
+    if (!d.ok) { out.innerHTML = '<div class="outage-sub c-red">' + escHtml(d.error || 'Scan mislukt') + '</div>'; return; }
     presenceDevices = d.devices;
     showPresence(d);
     renderPresenceScan();
-  }).catch(function() { btn.disabled = false; out.innerHTML = '<div class="outage-sub" style="color:var(--red)">Verbindingsfout</div>'; });
+  }).catch(function() { btn.disabled = false; out.innerHTML = '<div class="outage-sub c-red">Verbindingsfout</div>'; });
 }
 // Verwijderen vraagt een tweede tik ter bevestiging
 function removePresence(id, btn) {
@@ -120,7 +120,13 @@ function removePresence(id, btn) {
   }
   presenceRemoveArmed = null;
   fetch('/api/presence/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: id })})
-    .then(function(r){return r.json();}).then(function(d) { if (d.ok) showPresence(d); }).catch(function(){});
+    .then(function(r){return r.json();}).then(function(d) { if (d.ok) showPresence(d); else toast(d.error || 'Verwijderen lukte niet', 'error'); }).catch(actionFailed('Verwijderen lukte niet'));
 }
 // alleen bijwerken zolang Instellingen open staat
 setInterval(function() { if (currentScreen === 5 && !document.hidden && presenceRemoveArmed === null && !presenceForm) loadPresence(); }, 30000);
+
+// ── Start ──
+// Home pas indelen als alle delen hierboven geladen zijn: de blokken gebruiken functies en lijsten uit latere
+// bestanden, en eerder indelen liep daarop stuk waarna de indeling een tweede keer van de server moest komen.
+loadDeviceNames();
+loadLayout();

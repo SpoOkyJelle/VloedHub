@@ -55,32 +55,37 @@ var screenTrack = document.getElementById('screens-track');
 var screenLoaded = [true, false, false, false, false, false];
 
 function showScreen(n, btn, fromSwipe) {
+  var changed = n !== currentScreen;
   currentScreen = n;
-  screenTrack.style.transition = fromSwipe
+  screenTrack.style.transition = noMotion ? 'none' : fromSwipe
     ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
     : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
   screenTrack.style.transform = 'translateX(calc(-' + (100/6) + '% * ' + n + '))';
-  document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
-  if (btn) {
-    btn.classList.add('active');
-  } else {
-    var nb = document.querySelector('.nav-item[data-screen="' + n + '"]');
-    if (nb) nb.classList.add('active');
-  }
+  document.querySelectorAll('.nav-item[data-screen]').forEach(function(b) {
+    var on = b.dataset.screen === String(n);
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  // Instellingen heeft op de telefoon geen plek in de onderbalk: daar licht het icoon in de kop op
+  var hs = document.getElementById('header-settings');
+  if (hs) hs.classList.toggle('active', n === 5);
+  // Na een veeg stond het scherm al in beeld; alleen bij een tik op het menu komt de inhoud binnenschuiven
   var screenEl = document.getElementById('screen-' + n);
-  if (screenEl) {
+  if (screenEl && changed && !fromSwipe) {
     screenEl.classList.add('screen-entering');
-    setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 450);
+    setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 400);
   }
   if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); loadPresence(); }
-  if (n === 4) { loadFridge(); closeHomeLedPanels(); buildLedGrid(); buildLed2Grid(); buildLed3Grid(); }
-  if (n === 0) { var eb = document.getElementById('layout-edit-btn'); if (eb) eb.style.display='flex'; } else { var eb2 = document.getElementById('layout-edit-btn'); if (eb2) eb2.style.display='none'; if (layoutEditMode) { layoutEditMode=false; removeEditBars(0); saveLayout(); var lb=document.getElementById('layout-edit-btn'); if(lb) lb.style.background='rgba(141,178,85,0.85)'; } }
+  if (n === 4) { loadFridge(); closeHomeLedPanels(); ledRenderAll(); }
+  var eb = document.getElementById('layout-edit-btn');
+  if (eb) eb.classList.toggle('show', n === 0);
+  if (n !== 0 && layoutEditMode) toggleLayoutEdit();
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
-    if (n === 4) { refreshVaatwasser(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+    if (n === 4) { refreshVaatwasser(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); lampsRefresh(); }
     if (n === 5) { refreshSettingsNames(); }
   }
 }
@@ -155,11 +160,115 @@ fetch('/api/network-info').then(function(r) { return r.json(); }).then(function(
 }).catch(function() {});
 
 // ── Helpers ──
-function val(v, dec) { return v != null ? Number(v).toFixed(dec != null ? dec : 3) : '—'; }
+// Getallen staan overal op z'n Nederlands: komma als decimaalteken, punt voor duizendtallen
+function val(v, dec) { return v != null ? nlNum(v, dec != null ? dec : 3) : '—'; }
 function setEl(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
 function setCard(id, v, dec, unit) {
   setEl(id, val(v, dec) + '<span class="card-unit">' + unit + '</span>');
 }
+// Vermogen: onder de kilowatt in hele watts, daarboven in kW met twee decimalen
+function powerParts(kw) {
+  if (kw == null) return ['—', 'kW'];
+  return Math.abs(kw) < 1 ? [nlNum(kw * 1000, 0), 'W'] : [nlNum(kw, 2), 'kW'];
+}
+function powerHtml(kw, unitClass) { var p = powerParts(kw); return p[0] + '<span class="' + (unitClass || 'card-unit') + '">' + p[1] + '</span>'; }
+function powerText(kw) { var p = powerParts(kw); return p[0] + ' ' + p[1]; }
+// Assen en bijschriften van grafieken
+var CHART_TICK = '#7C8AA8';
+
+// ── Meldingen onderin ──
+// Kort bericht na iets wat je zelf deed: een fout die anders onzichtbaar blijft, of een bevestiging
+function toast(msg, kind) {
+  var stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  // dezelfde melding niet stapelen als iemand blijft tikken
+  for (var i = 0; i < stack.children.length; i++) if (stack.children[i].dataset.msg === msg) return;
+  var el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' toast-' + kind : '');
+  el.dataset.msg = msg;
+  el.innerHTML = '<i class="fa-solid ' + (kind === 'error' ? 'fa-circle-exclamation' : kind === 'ok' ? 'fa-circle-check' : 'fa-circle-info') + '"></i><span></span>';
+  el.lastChild.textContent = msg;
+  stack.appendChild(el);
+  el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); setTimeout(function() { el.remove(); }, 250); }, kind === 'error' ? 4500 : 2500);
+}
+// Mislukt iets wat je zelf deed, dan staat dat onderin in plaats van dat er niets gebeurt
+function actionFailed(msg) { return function() { toast(msg || 'Dat lukte niet, probeer het opnieuw', 'error'); }; }
+
+// ── Naam wijzigen op de plek zelf ──
+// De tekst wordt een invulveld; Enter of ergens anders tikken slaat op, Escape breekt af
+function inlineRename(spanEl, save) {
+  if (!spanEl || !spanEl.isConnected) return;
+  var input = document.createElement('input');
+  input.className = 'field rename-input';
+  input.value = spanEl.textContent.trim();
+  input.maxLength = 40;
+  input.setAttribute('aria-label', 'Nieuwe naam');
+  var done = false;
+  function finish(keep) {
+    if (done) return;
+    done = true;
+    var name = input.value.trim();
+    var changed = keep && name !== spanEl.textContent.trim();
+    if (changed && name) spanEl.textContent = name;
+    input.replaceWith(spanEl);
+    if (changed) save(name);
+  }
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); e.stopPropagation(); });
+  input.addEventListener('blur', function() { finish(true); });
+  input.addEventListener('click', function(e) { e.stopPropagation(); });
+  spanEl.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
+// ── Vensters ──
+// Openen onthoudt waar de focus stond en zet hem in het venster; Tab blijft erbinnen en Escape sluit het bovenste
+var modalStack = [];
+function modalFocusable(el) { return Array.prototype.filter.call(el.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'), function(x) { return !x.disabled && x.offsetParent !== null; }); }
+function openModal(id, onClose) {
+  var el = document.getElementById(id);
+  if (!el || el.classList.contains('open')) return;
+  modalStack.push({ el: el, back: document.activeElement, close: onClose });
+  el.classList.add('open');
+  var first = el.querySelector('input,select,textarea') || modalFocusable(el)[0];
+  if (first) first.focus();
+}
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (!el || !el.classList.contains('open')) return;
+  el.classList.remove('open');
+  for (var i = modalStack.length - 1; i >= 0; i--) {
+    if (modalStack[i].el !== el) continue;
+    var back = modalStack[i].back;
+    modalStack.splice(i, 1);
+    if (back && back.isConnected && back.focus) back.focus();
+  }
+}
+function modalDismiss(top) { if (top.close) top.close(); else closeModal(top.el.id); }
+document.addEventListener('keydown', function(e) {
+  var top = modalStack[modalStack.length - 1];
+  if (top) {
+    if (e.key === 'Escape') { e.preventDefault(); modalDismiss(top); return; }
+    if (e.key === 'Tab') {
+      var items = modalFocusable(top.el);
+      if (!items.length) return;
+      var first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      else if (!top.el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    }
+    return;
+  }
+  // kaarten waar je op kunt tikken werken ook met Enter en spatie
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('role') === 'button' && e.target.tagName !== 'BUTTON') { e.preventDefault(); e.target.click(); }
+});
+// een tik naast het venster sluit het
+document.addEventListener('click', function(e) {
+  var top = modalStack[modalStack.length - 1];
+  if (top && e.target === top.el) modalDismiss(top);
+});
 
 // ── Live refresh ──
 var lastPowerVal = null;
@@ -172,13 +281,14 @@ function refresh() {
     var l = d.latest;
     if (!l) return;
     updatePhaseLoad(l);
-    if (lastPowerVal !== null && Math.abs(l.power_delivered_total_kw - lastPowerVal) > 0.01) flashEl('del-total');
+    // alleen een sprong laat het getal oplichten, niet elke kleine schommeling
+    if (lastPowerVal !== null && Math.abs(l.power_delivered_total_kw - lastPowerVal) > Math.max(0.15, lastPowerVal * 0.2)) flashEl('del-total');
     lastPowerVal = l.power_delivered_total_kw;
-    setCard('del-total', l.power_delivered_total_kw, 3, 'kW');
+    setEl('del-total', powerHtml(l.power_delivered_total_kw, 'unit'));
     setCard('gas',       l.gas_m3,                  3, 'm³');
-    setCard('del-l1', l.power_delivered_l1_kw, 3, 'kW');
-    setCard('del-l2', l.power_delivered_l2_kw, 3, 'kW');
-    setCard('del-l3', l.power_delivered_l3_kw, 3, 'kW');
+    setEl('del-l1', powerHtml(l.power_delivered_l1_kw));
+    setEl('del-l2', powerHtml(l.power_delivered_l2_kw));
+    setEl('del-l3', powerHtml(l.power_delivered_l3_kw));
     setCard('v-l1', l.voltage_l1, 1, 'V');
     setCard('v-l2', l.voltage_l2, 1, 'V');
     setCard('v-l3', l.voltage_l3, 1, 'V');
@@ -192,31 +302,24 @@ function refresh() {
     var b1 = document.getElementById('bar-l1'); if (b1) b1.style.width = Math.round(p1/pMax*100) + '%';
     var b2 = document.getElementById('bar-l2'); if (b2) b2.style.width = Math.round(p2/pMax*100) + '%';
     var b3 = document.getElementById('bar-l3'); if (b3) b3.style.width = Math.round(p3/pMax*100) + '%';
-    var updEl = document.getElementById('updated');
+    // Zolang de meter binnenkomt zegt het groene bolletje genoeg; pas bij vertraging staat erbij sinds wanneer
+    var updEl = document.getElementById('updated'), dot = document.getElementById('live-dot');
+    var age = Math.round((Date.now() - new Date(l.received_at).getTime()) / 1000);
+    var stale = age > 60 ? 'off' : age > 30 ? 'slow' : '';
     if (updEl) {
-      var age = Math.round((Date.now() - new Date(l.received_at).getTime()) / 1000);
-      updEl.textContent = new Date(l.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + ' (' + age + 's)';
-      updEl.style.color = age > 60 ? '#F87171' : age > 30 ? '#FBBF24' : '#3D4D6A';
+      updEl.textContent = stale ? 'Laatste meting ' + new Date(l.received_at).toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false}) : '';
+      updEl.className = 'updated-text' + (stale ? ' ' + stale : '');
     }
+    if (dot) { dot.className = 'dot' + (stale ? ' ' + stale : ''); dot.title = stale ? 'Geen recente meting' : 'Live'; }
     var html = '';
     for (var i = 0; i < d.recent.length; i++) {
       var rec = d.recent[i];
       html += '<tr><td>' + new Date(rec.received_at).toLocaleTimeString('nl-NL', {hour12:false}) + '</td>' +
-        '<td>' + val(rec.power_delivered_total_kw) + '</td>' +
+        '<td>' + powerText(rec.power_delivered_total_kw) + '</td>' +
         '<td data-module="gas">' + val(rec.gas_m3) + '</td></tr>';
     }
     setEl('rows', html);
   }).catch(function(e) { console.error('[refresh]', e); });
-  updateHomeLedStatus();
-  updateHomeLed2Status();
-  updateHomeLed3Status();
-  updateRelayGangUI();
 }
 refresh();
 setInterval(refresh, 3000);
-// Pre-load LED/relay states
-fetch('/api/led/state').then(function(r){return r.json();}).then(function(s){ledClientState=s;updateLedUI();updateHomeLedStatus();}).catch(function(){});
-fetch('/api/led/state?device=keuken').then(function(r){return r.json();}).then(function(s){ledClientState2=s;updateLed2UI();updateHomeLed2Status();}).catch(function(){});
-fetch('/api/led/state?device=gang').then(function(r){return r.json();}).then(function(s){ledClientState3=s;updateLed3UI();updateHomeLed3Status();}).catch(function(){});
-fetch('/api/relay/state?device=gang').then(function(r){return r.json();}).then(function(s){relayGangState=s;updateRelayGangUI();}).catch(function(){});
-

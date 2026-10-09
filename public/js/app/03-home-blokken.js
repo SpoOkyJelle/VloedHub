@@ -1,7 +1,7 @@
 // ── Wasmachine ──
-var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } } }); }).catch(function(){}); }
+var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } } }); }).catch(function(){}); }
 
-function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste was: ' + (s.last_finished_at ? shortWhen(s.last_finished_at) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" style="color:var(--dim);padding:0.3rem 0.85rem">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
+function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste was: ' + (s.last_finished_at ? shortWhen(s.last_finished_at) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="table-empty">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
 function esphomeCards(rows, editable) {
   if (!rows.length) return '<div class="esp-card"><div class="esp-head">Nog geen data</div></div>';
   var byDevice = {}, order = [];
@@ -17,9 +17,9 @@ function esphomeCards(rows, editable) {
     var ageText = isNaN(age) ? '' : age < 60 ? age + ' min geleden' : Math.round(age / 60) + ' uur geleden';
     return '<div class="esp-card"><div class="esp-head"><i class="fa-solid fa-microchip"></i><span>' + escHtml(device) + '</span><span class="esp-age">' + ageText + '</span></div>' +
       list.map(function(r) {
-        var valStr = escHtml(r.value != null ? Number(r.value).toFixed(1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'));
-        var pen = editable ? '<i class="fa-solid fa-pen" style="font-size:0.6rem;opacity:0.4;cursor:pointer;flex-shrink:0" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"></i>' : '';
-        return '<div class="esp-row"><span class="esp-name">' + escHtml(r.display_name) + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
+        var valStr = escHtml(r.value != null ? nlNum(r.value, 1) + (r.unit ? ' ' + r.unit : '') : (r.value_text || '—'));
+        var pen = editable ? '<button class="icon-btn icon-btn-sm" aria-label="Naam wijzigen" title="Naam wijzigen" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"><i class="fa-solid fa-pen"></i></button>' : '';
+        return '<div class="esp-row"><span class="esp-name"><span>' + escHtml(r.display_name) + '</span>' + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
       }).join('') + '</div>';
   }).join('');
 }
@@ -46,50 +46,50 @@ var BLOCKS = {
   'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
   'temperature_grid': {label:'Temperatuur',         icon:'fa-temperature-half',dynamic:true,
     render: function(el) { el.innerHTML = '<div class="section-title">Temperatuur</div><div class="temp-grid" id="dyn-temp-grid"></div>'; },
-    refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?Number(r.temp_c).toFixed(1):'—')+'°C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
+    refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?nlNum(r.temp_c,1):'—')+' °C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
   },
   'esphome_grid': {label:'ESPHome Sensoren', icon:'fa-microchip', dynamic:true,
-    render: function(el) { el.innerHTML = '<div class="section-title" style="margin-bottom:0.5rem">ESPHome Sensoren</div><div class="esp-grid" id="dyn-esphome-grid"></div>'; },
+    render: function(el) { el.innerHTML = '<div class="section-title">ESPHome Sensoren</div><div class="esp-grid" id="dyn-esphome-grid"></div>'; },
     refresh: function() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-esphome-grid'); if(g) g.innerHTML=esphomeCards(rows, false); }).catch(function(){}); }
   },
   'sun_times': {label:'Zon',icon:'fa-sun',dynamic:true,
-    render:function(el){el.innerHTML='<div id="blk-sun" class="info-strip" style="grid-template-columns:1fr 1fr"></div>';},
-    refresh:function(){fetch('/api/sun').then(function(r){return r.json();}).then(function(s){var el=document.getElementById('blk-sun');if(!el||!s)return;function fmt(t){if(!t)return'—';var d=new Date(t);return d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}var ms=(s.sunset||0)-(s.sunrise||0);var h=Math.floor(ms/3600000);var m=Math.floor((ms%3600000)/60000);el.innerHTML='<div class="info-card"><div class="info-label">Zonsopgang</div><div class="info-value" style="color:#FBBF24">'+fmt(s.sunrise)+'</div></div><div class="info-card"><div class="info-label">Zonsondergang</div><div class="info-value" style="color:#F97316">'+fmt(s.sunset)+'</div><div class="info-sub">Daglicht '+h+'u'+m+'m</div></div>';}).catch(function(){});}
+    render:function(el){el.innerHTML='<div id="blk-sun" class="info-strip cols-2"></div>';},
+    refresh:function(){fetch('/api/sun').then(function(r){return r.json();}).then(function(s){var el=document.getElementById('blk-sun');if(!el||!s)return;function fmt(t){if(!t)return'—';var d=new Date(t);return d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}var ms=(s.sunset||0)-(s.sunrise||0);var h=Math.floor(ms/3600000);var m=Math.floor((ms%3600000)/60000);el.innerHTML='<div class="info-card"><div class="info-label">Zonsopgang</div><div class="info-value c-yellow">'+fmt(s.sunrise)+'</div></div><div class="info-card"><div class="info-label">Zonsondergang</div><div class="info-value c-orange">'+fmt(s.sunset)+'</div><div class="info-sub">Daglicht '+h+'u'+m+'m</div></div>';}).catch(function(){});}
   },
   'power_price': {label:'Stroomprijs',icon:'fa-tag',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-price" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-price');if(!el)return;var price=p.electricity_eur_kwh;var gas=p.gas_eur_m3;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div style="color:var(--dim);font-size:0.8rem">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';el.innerHTML='<div class="power-label">Stroomprijs</div><div class="power-value" style="color:'+color+';font-size:1.6rem">€'+price.toFixed(4)+'<span class="unit">/kWh</span></div>'+(gas!=null?'<div class="power-sub">Gas: €'+gas.toFixed(4)+'/m³</div>':'');}).catch(function(){});}
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-price');if(!el)return;var price=p.electricity_eur_kwh;var gas=p.gas_eur_m3;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';el.innerHTML='<div class="power-label">Stroomprijs</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div>'+(gas!=null?'<div class="power-sub">Gas: €'+nlNum(gas,2)+'/m³</div>':'');}).catch(function(){});}
   },
   'wasmachine_quick': {label:'Wasmachine',icon:'fa-shirt',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-wash-quick" class="power-hero"></div>';},
-    refresh:function(){Promise.all([fetch('/api/wasmachine/status').then(function(r){return r.json();}),fetch('/api/wasmachine/stats').then(function(r){return r.json();})]).then(function(res){var s=res[0];var st=res[1];var el=document.getElementById('blk-wash-quick');if(!el)return;var state=s.state||'idle';var color=state==='running'?'#FBBF24':state==='done'?'#4ADE80':'var(--dim)';var icon=state==='running'?'fa-rotate':state==='done'?'fa-circle-check':'fa-moon';var label=state==='running'?'In gebruik':state==='done'?'Klaar!':'Inactief';el.innerHTML='<div class="power-label">Wasmachine</div><div class="power-value" style="color:'+color+';font-size:1.4rem"><i class="fa-solid '+icon+'"></i> '+label+'</div><div class="power-sub">Vandaag: '+(st.today||0)+' · Week: '+(st.week||0)+'</div>';}).catch(function(){});}
+    refresh:function(){Promise.all([fetch('/api/wasmachine/status').then(function(r){return r.json();}),fetch('/api/wasmachine/stats').then(function(r){return r.json();})]).then(function(res){var s=res[0];var st=res[1];var el=document.getElementById('blk-wash-quick');if(!el)return;var state=s.state||'idle';var color=state==='running'?'#FBBF24':state==='done'?'#4ADE80':'var(--dim)';var icon=state==='running'?'fa-rotate':state==='done'?'fa-circle-check':'fa-moon';var label=state==='running'?'In gebruik':state==='done'?'Klaar!':'Inactief';el.innerHTML='<div class="power-label">Wasmachine</div><div class="power-value sm" style="color:'+color+'"><i class="fa-solid '+icon+'"></i> '+label+'</div><div class="power-sub">Vandaag: '+(st.today||0)+' · Week: '+(st.week||0)+'</div>';}).catch(function(){});}
   },
   'day_summary': {label:'Dag samenvatting',icon:'fa-chart-pie',dynamic:true,
-    render:function(el){el.innerHTML='<div id="blk-daysummary" class="info-strip" style="grid-template-columns:1fr 1fr"></div>';},
-    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var d=res[0];var el=document.getElementById('blk-daysummary');if(!el)return;var t=d.today?d.today.elec_kwh:null;var ySofar=d.yesterday?d.yesterday.elec_kwh_sofar:null;var yFull=d.yesterday?d.yesterday.elec_kwh:null;var cost=res[1].day?res[1].day.elec_cost:null;var diff=(t!=null&&ySofar!=null)?t-ySofar:null;var col=diff==null?'var(--muted)':diff>0?'#F87171':'#4ADE80';el.innerHTML='<div class="info-card"><div class="info-label">Vandaag</div><div class="info-value" style="color:var(--yellow)">'+(t!=null?t.toFixed(1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(cost!=null?'€'+cost.toFixed(2):'')+'</div></div><div class="info-card"><div class="info-label">t.o.v. gisteren, zelfde tijd</div><div class="info-value" style="color:'+col+'">'+(diff!=null?(diff>0?'↑':'↓')+Math.abs(diff).toFixed(1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(yFull!=null?'Gisteren totaal: '+yFull.toFixed(1)+' kWh':'')+'</div></div>';}).catch(function(){});}
+    render:function(el){el.innerHTML='<div id="blk-daysummary" class="info-strip cols-2"></div>';},
+    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var d=res[0];var el=document.getElementById('blk-daysummary');if(!el)return;var t=d.today?d.today.elec_kwh:null;var ySofar=d.yesterday?d.yesterday.elec_kwh_sofar:null;var yFull=d.yesterday?d.yesterday.elec_kwh:null;var cost=res[1].day?res[1].day.elec_cost:null;var diff=(t!=null&&ySofar!=null)?t-ySofar:null;var col=diff==null?'var(--muted)':diff>0?'#F87171':'#4ADE80';el.innerHTML='<div class="info-card"><div class="info-label">Vandaag</div><div class="info-value c-yellow">'+(t!=null?nlNum(t,1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(cost!=null?'€'+nlNum(cost,2):'')+'</div></div><div class="info-card"><div class="info-label">t.o.v. gisteren, zelfde tijd</div><div class="info-value" style="color:'+col+'">'+(diff!=null?(diff>0?'+':'−')+nlNum(Math.abs(diff),1):'—')+'<span class="card-unit">kWh</span></div><div class="info-sub">'+(yFull!=null?'Gisteren totaal: '+nlNum(yFull,1)+' kWh':'')+'</div></div>';}).catch(function(){});}
   },
   'cheap_hours': {label:'Goedkope uren',icon:'fa-clock',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-cheap" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-cheap');if(!el)return;var price=p.electricity_eur_kwh;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div style="color:var(--dim);font-size:0.8rem">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';var tip=price<0.15?'Goedkoop uur, goed moment!':price<0.25?'Gemiddeld tarief':'Duur uur, wacht indien mogelijk';el.innerHTML='<div class="power-label">Huidig tarief</div><div class="power-value" style="color:'+color+';font-size:1.5rem">€'+price.toFixed(4)+'<span class="unit">/kWh</span></div><div class="power-sub">'+tip+'</div>';}).catch(function(){});}
+    refresh:function(){fetch('/api/prices').then(function(r){return r.json();}).then(function(p){var el=document.getElementById('blk-cheap');if(!el)return;var price=p.electricity_eur_kwh;if(price==null){el.innerHTML='<div class="power-label">Stroomprijs</div><div class="empty-note">Niet beschikbaar</div>';return;}var color=price<0.15?'#4ADE80':price<0.25?'#FBBF24':'#F87171';var tip=price<0.15?'Goedkoop uur, goed moment!':price<0.25?'Gemiddeld tarief':'Duur uur, wacht indien mogelijk';el.innerHTML='<div class="power-label">Huidig tarief</div><div class="power-value sm" style="color:'+color+'">€'+nlNum(price,2)+'<span class="unit">/kWh</span></div><div class="power-sub">'+tip+'</div>';}).catch(function(){});}
   },
   'solar_return': {label:'Teruglevering',icon:'fa-solar-panel',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-solar" class="power-hero"></div>';},
-    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-solar');if(!el)return;var latest=d.latest;var ret=latest?latest.power_returned_total_kw:null;var color=ret>0?'#4ADE80':'var(--dim)';el.innerHTML='<div class="power-label">Teruglevering</div><div class="power-value" style="color:'+color+';font-size:1.6rem">'+(ret!=null?ret.toFixed(3):'—')+'<span class="unit">kW</span></div><div class="power-sub">'+(ret>0?'Zonnepanelen actief':'Geen teruglevering')+'</div>';}).catch(function(){});}
+    refresh:function(){fetch('/api/latest').then(function(r){return r.json();}).then(function(d){var el=document.getElementById('blk-solar');if(!el)return;var latest=d.latest;var ret=latest?latest.power_returned_total_kw:null;var color=ret>0?'#4ADE80':'var(--dim)';el.innerHTML='<div class="power-label">Teruglevering</div><div class="power-value sm" style="color:'+color+'">'+powerHtml(ret,'unit')+'</div><div class="power-sub">'+(ret>0?'Zonnepanelen actief':'Geen teruglevering')+'</div>';}).catch(function(){});}
   },
   'gas_today': {label:'Gas vandaag',icon:'fa-fire',dynamic:true,
     render:function(el){el.innerHTML='<div id="blk-gastoday" class="power-hero"></div>';},
-    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var el=document.getElementById('blk-gastoday');if(!el)return;var m3=res[0].today?res[0].today.gas_used:null;var cost=res[1].day?res[1].day.gas_cost:null;if(m3==null){el.innerHTML='<div class="power-label">Gas vandaag</div><div style="color:var(--dim);font-size:0.8rem">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value gas-c" style="font-size:1.6rem">'+m3.toFixed(3)+'<span class="unit">m³</span></div>'+(cost!=null?'<div class="power-sub">€'+cost.toFixed(2)+'</div>':'');}).catch(function(){});}
+    refresh:function(){Promise.all([fetch('/api/day-comparison').then(function(r){return r.json();}),fetch('/api/costs').then(function(r){return r.json();}).catch(function(){return {};})]).then(function(res){var el=document.getElementById('blk-gastoday');if(!el)return;var m3=res[0].today?res[0].today.gas_used:null;var cost=res[1].day?res[1].day.gas_cost:null;if(m3==null){el.innerHTML='<div class="power-label">Gas vandaag</div><div class="empty-note">Geen data</div>';return;}el.innerHTML='<div class="power-label">Gas vandaag</div><div class="power-value sm gas-c">'+nlNum(m3,2)+'<span class="unit">m³</span></div>'+(cost!=null?'<div class="power-sub">€'+nlNum(cost,2)+'</div>':'');}).catch(function(){});}
   },
   'scenes': {label:'Scènes',icon:'fa-wand-magic-sparkles',dynamic:true,
     render:function(el){el.innerHTML='<div class="card scene-card"><div class="chart-title">Scènes</div><div class="scene-row"></div></div>';},
     refresh:function(){loadScenes();}
   },
   'month_forecast': {label:'Maandprognose',icon:'fa-calendar-days',dynamic:true,
-    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Verwacht deze maand</div><div class="power-value skel" id="blk-forecast-value" style="color:var(--yellow)">—</div><div class="power-sub" id="blk-forecast-sub">&nbsp;</div></div>';},
+    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Verwacht deze maand</div><div class="power-value skel c-yellow" id="blk-forecast-value">—</div><div class="power-sub" id="blk-forecast-sub">&nbsp;</div></div>';},
     refresh:function(){loadForecast();}
   },
   'standby': {label:'Sluipverbruik',icon:'fa-plug',dynamic:true,
-    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Sluipverbruik</div><div class="power-value skel" id="blk-standby-value" style="color:var(--blue)">—</div><div class="power-sub" id="blk-standby-sub">&nbsp;</div></div>';},
+    render:function(el){el.innerHTML='<div class="power-hero"><div class="power-label">Sluipverbruik</div><div class="power-value skel c-blue" id="blk-standby-value">—</div><div class="power-sub" id="blk-standby-sub">&nbsp;</div></div>';},
     refresh:function(){loadStandby();}
   },
   'today_vs_normal': {label:'Vandaag t.o.v. normaal',icon:'fa-scale-balanced',dynamic:true,
@@ -105,55 +105,55 @@ var BLOCKS = {
     refresh:function(){loadFridge();}
   },
   'meldingen': {label:'Meldingen',icon:'fa-bell',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-meldingen"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-meldingen"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadMeldingen();}
   },
   'outages': {label:'Stroomstoringen',icon:'fa-plug-circle-bolt',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-outages"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-outages"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadOutages();}
   },
   'rain': {label:'Regen komende 2 uur',icon:'fa-cloud-rain',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-rain"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-rain"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadRain();}
   },
   'traffic': {label:'Files',icon:'fa-car-side',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-traffic"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-traffic"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadTraffic();}
   },
   'p2000': {label:'112-meldingen',icon:'fa-truck-medical',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-p2000"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-p2000"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadP2000();}
   },
   'ziggo': {label:'Internetstoringen',icon:'fa-wifi',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-ziggo"><div class="outage-line"><span class="skel-line" style="flex:1"></span></div></div>';},
+    render:function(el){el.innerHTML='<div class="card outage-card" id="blk-ziggo"><div class="outage-line"><span class="skel-line grow"></span></div></div>';},
     refresh:function(){loadZiggo();}
   },
   'status': {label:'Status omgeving',icon:'fa-list-check',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card" id="blk-status"><div class="status-chips"><span class="skel-line" style="flex:1"></span></div><div class="fold"><div class="status-detail"></div></div></div>';},
+    render:function(el){el.innerHTML='<div class="card insight-card" id="blk-status"><div class="status-chips"><span class="skel-line grow"></span></div><div class="fold"><div class="status-detail"></div></div></div>';},
     refresh:function(){loadStatus();}
   },
   'internet': {label:'Internetsnelheid',icon:'fa-wifi',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap" style="min-height:0;height:60px"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},
+    render:function(el){el.innerHTML='<div class="card insight-card"><div class="chart-header"><span class="chart-title">Internetsnelheid</span><button class="tab" id="blk-inet-run" onclick="runInternetTest()">Nu meten</button></div><div class="inet-values" id="blk-inet-values"></div><div class="chart-wrap h-60"><canvas id="blk-chart-inet"></canvas></div><div class="power-sub" id="blk-inet-sub">&nbsp;</div></div>';},
     refresh:function(){loadInternet();}
   },
   'camera': {label:'Deurbelcamera',icon:'fa-video',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div><div class="cam-visits" id="blk-cam-visits"></div></div>';},
+    render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" role="button" tabindex="0" aria-label="Beeld van de deurbel vergroten" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div><div class="cam-visits" id="blk-cam-visits"></div></div>';},
     refresh:function(){loadCamera();loadRings();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
-    render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line" style="flex:1"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
+    render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
     refresh:function(){loadAfval();}
   },
   'chart_power': {label:'Elektra verloop',icon:'fa-chart-area',dynamic:true,
-    render:function(el){el.innerHTML='<div class="chart-card" style="min-height:0"><div class="chart-header"><span class="chart-title">Elektra verloop</span><div class="tab-bar"><button class="tab active" data-homerange="day" onclick="loadHomeChart(this)">Dag</button><button class="tab" data-homerange="week" onclick="loadHomeChart(this)">Week</button><button class="tab" data-homerange="month" onclick="loadHomeChart(this)">Maand</button></div></div><div class="chart-wrap" style="min-height:0;height:150px"><canvas id="blk-chart-elektra"></canvas></div></div>';},
+    render:function(el){el.innerHTML='<div class="chart-card compact"><div class="chart-header"><span class="chart-title">Elektra verloop</span><div class="tab-bar"><button class="tab active" data-homerange="day" onclick="loadHomeChart(this)">Dag</button><button class="tab" data-homerange="week" onclick="loadHomeChart(this)">Week</button><button class="tab" data-homerange="month" onclick="loadHomeChart(this)">Maand</button></div></div><div class="chart-wrap h-150"><canvas id="blk-chart-elektra"></canvas></div></div>';},
     refresh:function(){loadHomeChart(document.querySelector('[data-homerange].active'));}
   },
   'chart_power_mini': {label:'Stroomgrafiek',icon:'fa-chart-line',dynamic:true,
-    render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Stroomverbruik vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-power"></canvas></div></div>';},
+    render:function(el){el.innerHTML='<div class="chart-card compact"><div class="chart-header"><span class="chart-title">Stroomverbruik vandaag</span></div><div class="chart-wrap h-120"><canvas id="blk-chart-power"></canvas></div></div>';},
     refresh:function(){fetch('/api/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-power');if(!ctx)return;if(window._blkChartPower)window._blkChartPower.destroy();window._blkChartPower=new Chart(ctx,{type:'line',data:{labels:rows.map(function(r){return r.period.slice(11,16);}),datasets:[{data:rows.map(function(r){return r.del!=null?r.del:null;}),borderColor:'#8DB255',backgroundColor:accentGradient,borderWidth:1.5,pointRadius:0,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   },
   'chart_temp_mini': {label:'Temperatuurgrafiek',icon:'fa-temperature-half',dynamic:true,
-    render:function(el){el.innerHTML='<div class="chart-card" style="margin:0"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap" style="height:120px"><canvas id="blk-chart-temp"></canvas></div></div>';},
+    render:function(el){el.innerHTML='<div class="chart-card compact"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap h-120"><canvas id="blk-chart-temp"></canvas></div></div>';},
     refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
   }
 };
@@ -232,7 +232,7 @@ function loadInternet() {
     }
     setEl('blk-inet-values', val('Download', l && l.download_mbps, 0, 'Mbit/s', 'var(--accent-l)') + val('Upload', l && l.upload_mbps, 0, 'Mbit/s', 'var(--blue)') + val('Ping', l && l.ping_ms, 0, 'ms', 'var(--text)'));
     var sub = l ? 'Gemeten ' + shortWhen(l.measured_at) + (l.isp ? ' · ' + escHtml(l.isp) : '') : 'Nog geen meting';
-    setEl('blk-inet-sub', s.error ? '<span style="color:var(--red)">' + escHtml(s.error) + '</span>' + (l ? ' · laatste meting ' + shortWhen(l.measured_at) : '') : sub);
+    setEl('blk-inet-sub', s.error ? '<span class="c-red">' + escHtml(s.error) + '</span>' + (l ? ' · laatste meting ' + shortWhen(l.measured_at) : '') : sub);
     var ctx = document.getElementById('blk-chart-inet');
     if (!ctx) return;
     if (window._blkChartInet) window._blkChartInet.destroy();
@@ -245,7 +245,7 @@ function loadInternet() {
 function runInternetTest() {
   var btn = document.getElementById('blk-inet-run');
   if (btn) { btn.disabled = true; btn.textContent = 'Bezig…'; }
-  fetch('/api/internet/run', {method:'POST'}).then(loadInternet).catch(loadInternet);
+  fetch('/api/internet/run', {method:'POST'}).then(loadInternet).catch(function() { toast('Meting starten lukte niet', 'error'); loadInternet(); });
 }
 // ── Deurbelcamera ──
 // Het beeld is een momentopname die om de paar seconden ververst, alleen zolang Home open staat.
@@ -456,20 +456,18 @@ function renderScenes() {
     return '<button class="btn btn-ghost' + (s.id === 'disco' ? ' btn-disco' : '') + '" data-scene="' + s.id + '" onclick="runScene(this)"><i class="fa-solid fa-' + s.icon + '"></i> ' + escHtml(s.label) + '</button>';
   }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('.scene-row'), function(el) {
-    el.innerHTML = buttons || '<div class="fridge-msg" style="min-height:0">Nog geen scènes. Maak er een bij Instellingen.</div>';
+    el.innerHTML = buttons || '<div class="empty-note">Nog geen scènes. Maak er een bij Instellingen.</div>';
   });
   var list = document.getElementById('settings-scenes');
   if (!list) return;
-  list.innerHTML = '<div class="power-hero"><div style="display:flex;flex-direction:column;gap:0">' +
-    SCENE_DATA.scenes.map(function(s, i) {
-      var border = i > 0 ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '';
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;' + border + '">' +
-        '<div style="display:flex;align-items:center;gap:0.6rem;min-width:0"><i class="fa-solid fa-' + s.icon + '" style="color:var(--accent-l);width:1rem;text-align:center"></i>' +
-        '<span style="font-size:0.9rem;font-weight:600">' + escHtml(s.label) + '</span></div>' +
-        '<button class="btn btn-ghost" style="padding:0.35rem 0.8rem" data-id="' + s.id + '" onclick="openSceneEditor(this.dataset.id)"><i class="fa-solid fa-pen"></i> Bewerken</button></div>';
+  list.innerHTML = '<div class="setting-card">' +
+    SCENE_DATA.scenes.map(function(s) {
+      return '<div class="setting-row"><i class="fa-solid fa-' + s.icon + ' setting-icon"></i>' +
+        '<div class="setting-text"><div class="setting-title">' + escHtml(s.label) + '</div></div>' +
+        '<button class="btn btn-ghost btn-sm" data-id="' + s.id + '" onclick="openSceneEditor(this.dataset.id)"><i class="fa-solid fa-pen"></i> Bewerken</button></div>';
     }).join('') +
-    '<div style="' + (SCENE_DATA.scenes.length ? 'border-top:1px solid var(--border);padding-top:0.65rem;margin-top:0.65rem' : '') + '"><button class="btn btn-primary" onclick="openSceneEditor(null)"><i class="fa-solid fa-plus"></i> Nieuwe scène</button></div>' +
-    '</div></div>';
+    '<div class="setting-row"><button class="btn btn-primary" onclick="openSceneEditor(null)"><i class="fa-solid fa-plus"></i> Nieuwe scène</button></div>' +
+    '</div>';
 }
 function loadScenes() {
   fetch('/api/scenes').then(function(r){return r.json();}).then(function(d) {
@@ -483,12 +481,11 @@ function runScene(btn) {
   fetch('/api/scenes/run', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({scene: btn.dataset.scene})})
     .then(function(r){return r.json();}).then(function(d) {
       btn.disabled = false;
-      if (!d.ok) return;
+      if (!d.ok) { toast(d.error || 'Scène starten lukte niet', 'error'); return; }
       btn.classList.add('done');
       setTimeout(function() { btn.classList.remove('done'); }, 900);
-      refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState();
-      setTimeout(function() { updateHomeLedStatus(); updateHomeLed2Status(); updateHomeLed3Status(); updateRelayGangUI(); }, 400);
-    }).catch(function() { btn.disabled = false; });
+      lampsRefresh();
+    }).catch(function() { btn.disabled = false; toast('Scène starten lukte niet', 'error'); });
 }
 
 // Scène maken of bewerken
@@ -501,7 +498,7 @@ function openSceneEditor(id) {
   var s = SCENE_DATA.scenes.filter(function(x) { return x.id === id; })[0] || { id: null, label: '', icon: 'lightbulb', led: {}, relay: {} };
   sceneEditId = s.id;
   sceneEditIcon = s.icon;
-  var html = '<div class="scene-field"><label>Naam</label><input class="field" id="scene-name" maxlength="24" placeholder="bijv. Film kijken" value="' + escHtml(s.label) + '"></div>' +
+  var html = '<div class="scene-field"><label for="scene-name">Naam</label><input class="field" id="scene-name" maxlength="24" placeholder="bijv. Film kijken" value="' + escHtml(s.label) + '"></div>' +
     '<div class="scene-field"><label>Icoon</label><div class="scene-icons">' + SCENE_DATA.icons.map(function(ic) {
       return '<button type="button" class="scene-icon' + (ic === s.icon ? ' on' : '') + '" data-icon="' + ic + '" onclick="scenePickIcon(this)" aria-label="' + ic + '"><i class="fa-solid fa-' + ic + '"></i></button>';
     }).join('') + '</div></div>';
@@ -514,7 +511,7 @@ function openSceneEditor(id) {
     html += '<div class="scene-device" data-led="' + dev + '"><div class="scene-device-head"><span>' + escHtml(sceneDeviceName('led::' + dev)) + '</span>' + sceneModeSelect('scene-led-' + dev, mode) + '</div>' +
       '<div class="scene-device-opts">' +
       '<select class="field scene-effect" onchange="sceneEditorSync()">' + LED_EFFECTS.map(function(name, i) { return '<option value="' + i + '"' + (i === effect ? ' selected' : '') + '>' + name + '</option>'; }).join('') + '</select>' +
-      '<label class="scene-bright">Helderheid<input type="range" min="10" max="255" value="' + bright + '" class="scene-brightness" style="accent-color:#8DB255"></label>' +
+      '<label class="scene-bright">Helderheid<input type="range" min="10" max="255" value="' + bright + '" class="scene-brightness"></label>' +
       '<label class="scene-color">Kleur<input type="color" value="' + col + '" class="scene-colorpick"></label>' +
       '</div></div>';
   });
@@ -522,16 +519,16 @@ function openSceneEditor(id) {
     var cfg = (s.relay || {})[dev];
     html += '<div class="scene-device" data-relay="' + dev + '"><div class="scene-device-head"><span>' + escHtml(sceneDeviceName('relay::' + dev)) + '</span>' + sceneModeSelect('scene-relay-' + dev, !cfg ? 'keep' : cfg.on ? 'on' : 'off') + '</div></div>';
   });
-  html += '<div id="scene-error" style="font-size:0.72rem;color:#F87171;min-height:1.2em"></div>' +
-    '<div style="display:flex;gap:0.5rem;align-items:center">' +
-    (s.id ? '<button class="btn" id="scene-delete" style="background:rgba(248,113,113,0.1);border-color:rgba(248,113,113,0.4);color:#F87171" onclick="deleteScene(this)">Verwijderen</button>' : '') +
-    '<span style="flex:1"></span><button class="btn btn-ghost" onclick="closeSceneEditor()">Annuleren</button><button class="btn btn-primary" onclick="saveScene()">Opslaan</button></div>';
+  html += '<div class="form-error" id="scene-error" role="alert"></div>' +
+    '<div class="modal-actions">' +
+    (s.id ? '<button class="btn btn-danger" id="scene-delete" onclick="deleteScene(this)">Verwijderen</button>' : '') +
+    '<span class="spacer"></span><button class="btn btn-quiet" onclick="closeSceneEditor()">Annuleren</button><button class="btn btn-primary" onclick="saveScene()">Opslaan</button></div>';
   document.getElementById('scene-modal-title').textContent = s.id ? 'Scène bewerken' : 'Nieuwe scène';
   document.getElementById('scene-modal-body').innerHTML = html;
-  document.getElementById('scene-modal-overlay').style.display = 'flex';
   sceneEditorSync();
+  openModal('scene-modal-overlay', closeSceneEditor);
 }
-function closeSceneEditor() { document.getElementById('scene-modal-overlay').style.display = 'none'; }
+function closeSceneEditor() { closeModal('scene-modal-overlay'); }
 function scenePickIcon(btn) {
   sceneEditIcon = btn.dataset.icon;
   Array.prototype.forEach.call(document.querySelectorAll('.scene-icon'), function(b) { b.classList.toggle('on', b === btn); });
@@ -569,13 +566,14 @@ function saveScene() {
       if (!d.ok) { document.getElementById('scene-error').textContent = d.error || 'Opslaan mislukt'; return; }
       closeSceneEditor();
       loadScenes();
+      toast('Scène opgeslagen', 'ok');
     }).catch(function() { document.getElementById('scene-error').textContent = 'Verbindingsfout'; });
 }
 function deleteScene(btn) {
   // eerste tik vraagt om bevestiging, de tweede verwijdert
   if (!btn.dataset.sure) { btn.dataset.sure = '1'; btn.textContent = 'Zeker weten?'; return; }
   fetch('/api/scenes/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: sceneEditId})})
-    .then(function(r){return r.json();}).then(function() { closeSceneEditor(); loadScenes(); })
+    .then(function(r){return r.json();}).then(function() { closeSceneEditor(); loadScenes(); toast('Scène verwijderd', 'ok'); })
     .catch(function() { document.getElementById('scene-error').textContent = 'Verbindingsfout'; });
 }
 loadScenes();

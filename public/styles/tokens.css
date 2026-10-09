@@ -1,0 +1,64 @@
+/* Gedeelde basis voor alle pagina's (dashboard, flows, pin, debug): lettertype, kleuren, lettergroottes en hoeken.
+   Wie een kleur of maat nodig heeft pakt hem hier, zodat de pagina's niet uit elkaar gaan lopen. */
+@font-face {
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('/vendor/poppins/poppins-latin-400.woff2') format('woff2')}
+@font-face {
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:500;
+  font-display:swap;
+  src:url('/vendor/poppins/poppins-latin-500.woff2') format('woff2')}
+@font-face {
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:600;
+  font-display:swap;
+  src:url('/vendor/poppins/poppins-latin-600.woff2') format('woff2')}
+@font-face {
+  font-family:'Poppins';
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src:url('/vendor/poppins/poppins-latin-700.woff2') format('woff2')}
+:root {
+  /* vlakken */
+  --bg:#0C0F1D;
+  --surface:#141728;
+  --surface2:#1A1E35;
+  --border:rgba(255,255,255,0.07);
+  --border-strong:rgba(255,255,255,0.14);
+  /* tekst: --muted voor toelichting, --dim voor labels en kopjes; beide halen 4,5:1 op --surface */
+  --text:#F1F5F9;
+  --muted:#94A3B8;
+  --dim:#7C8AA8;
+  /* merk en status */
+  --accent:#8DB255;
+  --accent-l:#BBDD8C;
+  --accent-rgb:141,178,85;
+  --on-accent:#16210A;
+  --green:#22C55E;
+  --orange:#F97316;
+  --blue:#38BDF8;
+  --yellow:#FBBF24;
+  --red:#F87171;
+  --red-rgb:248,113,113;
+  /* lettergroottes: niets onder 11 px */
+  --fs-2xs:0.6875rem;
+  --fs-xs:0.75rem;
+  --fs-sm:0.8125rem;
+  --fs-md:0.875rem;
+  --fs-lg:1rem;
+  --fs-xl:1.25rem;
+  --fs-2xl:1.5rem;
+  /* hoeken: klein (velden, chips), middel (kaarten in een kaart, knoppen), groot (kaarten), pil */
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --r-pill:999px;
+  /* kleinste maat van iets waar je op tikt */
+  --tap:44px;
+  --ease:cubic-bezier(0.4,0,0.2,1)}

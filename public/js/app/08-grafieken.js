@@ -4,18 +4,18 @@ function refreshCheapHours() {
     var grid = document.getElementById('cheap-hours-grid');
     if (!grid) return;
     var hours = (p.hours || []).filter(function(h) { return h.elec != null; });
-    if (!hours.length) { grid.innerHTML = '<div style="font-size:0.7rem;color:#94A3B8">Uurprijzen niet beschikbaar</div>'; return; }
+    if (!hours.length) { grid.innerHTML = '<div class="empty-note">Uurprijzen niet beschikbaar</div>'; return; }
     var nowH = new Date().getHours();
     var sorted = hours.map(function(h) { return h.elec; }).sort(function(a, b) { return a - b; });
     var cheapMax = sorted[Math.floor(sorted.length / 3)], expMin = sorted[Math.floor(sorted.length * 2 / 3)];
     function hh(h) { return parseInt(h.hour.slice(11), 10); }
     var rest = hours.filter(function(h) { return hh(h) >= nowH; }).sort(function(a, b) { return a.elec - b.elec; }).slice(0, 3).sort(function(a, b) { return hh(a) - hh(b); });
-    var html = '<div style="font-size:0.7rem;color:#94A3B8;width:100%">Goedkoopst vanaf nu: <strong style="color:#4ADE80">' +
-      rest.map(function(h) { return hh(h) + ':00 (€' + h.elec.toFixed(2) + ')'; }).join(', ') + '</strong></div>';
+    var html = '<div class="cheap-summary">Goedkoopst vanaf nu: <strong>' +
+      rest.map(function(h) { return hh(h) + ':00 (€' + nlNum(h.elec, 2) + ')'; }).join(', ') + '</strong></div>';
     html += hours.map(function(h) {
       var cls = h.elec <= cheapMax ? 'hour-cheap' : h.elec >= expMin ? 'hour-exp' : 'hour-mid';
-      var style = hh(h) < nowH ? 'opacity:0.35' : hh(h) === nowH ? 'outline:2px solid var(--text);outline-offset:1px' : '';
-      return '<span class="' + cls + '" style="' + style + '" title="€' + h.elec.toFixed(4) + '/kWh">' + hh(h) + 'u · ' + h.elec.toFixed(2) + '</span>';
+      var when = hh(h) < nowH ? ' past' : hh(h) === nowH ? ' now' : '';
+      return '<span class="' + cls + when + '" title="€' + nlNum(h.elec, 4) + '/kWh">' + hh(h) + 'u · ' + nlNum(h.elec, 2) + '</span>';
     }).join('');
     grid.innerHTML = html;
   }).catch(function(){});
@@ -38,7 +38,7 @@ function loadWeekdayChart() {
     chartWeekday = new Chart(document.getElementById('chart-weekday'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gem. verbruik (kW)', data: data, backgroundColor: ['rgba(141,178,85,0.4)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.6)','rgba(141,178,85,0.4)'], borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 11, weight: '600' } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
     });
   }).catch(function(){});
 }
@@ -57,7 +57,7 @@ function loadHeatmap(range, btn) {
     });
     if (maxVal === 0) maxVal = 1;
     var html = '<div class="hm-label"></div>';
-    for (var h = 0; h < 24; h++) html += '<div class="hm-hour-label">' + h + '</div>';
+    for (var h = 0; h < 24; h++) html += '<div class="hm-hour-label">' + (h % 3 === 0 ? h : '') + '</div>';
     for (var d = 0; d < 7; d++) {
       html += '<div class="hm-label">' + dayNames[d] + '</div>';
       for (var h = 0; h < 24; h++) {
@@ -65,7 +65,7 @@ function loadHeatmap(range, btn) {
         var ratio = v / maxVal;
         var alpha = 0.08 + ratio*0.87;
         var bg = 'rgba(141,178,85,'+alpha.toFixed(2)+')';
-        html += '<div class="hm-cell" style="background:'+bg+'" title="'+dayNames[d]+' '+h+':00 — '+v.toFixed(3)+' kW"></div>';
+        html += '<div class="hm-cell" style="background:'+bg+'" title="'+dayNames[d]+' '+h+':00 — '+powerText(v)+'"></div>';
       }
     }
     var hmEl = document.getElementById('heatmap'); if (hmEl) hmEl.innerHTML = html;
@@ -86,7 +86,7 @@ function loadCostsDaily() {
         { label: 'Stroom (€)', data: elecD, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
         { label: 'Gas (€)',    data: gasD,  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
       ].filter(function(ds, i) { return i === 0 || moduleOn('gas'); })},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
     });
   }).catch(function(){});
 }
@@ -115,18 +115,18 @@ function loadCostsOverview() {
     setEl('kost-fc-month-sub', a ? 'nog ' + left + (left === 1 ? ' dag' : ' dagen') + ' te gaan' : 'na één volle dag meten');
     setEl('kost-avg-day', a ? eur(a.total) : '—');
     setEl('kost-avg-day-sub', a ? 'over ' + a.days + (a.days === 1 ? ' dag' : ' dagen') : '');
-    setEl('kost-fc-year', o.forecast_year != null ? '€' + o.forecast_year.toFixed(0) : '—');
+    setEl('kost-fc-year', o.forecast_year != null ? '€' + nlNum(o.forecast_year, 0) : '—');
     setEl('kost-fc-year-sub', a ? 'als elke dag zo is als nu' : '');
 
     var sb = r.standby;
-    setEl('kost-standby', sb && sb.cost_year != null ? '€' + sb.cost_year.toFixed(0) : '—');
+    setEl('kost-standby', sb && sb.cost_year != null ? '€' + nlNum(sb.cost_year, 0) : '—');
     setEl('kost-standby-sub', sb ? (sb.kw * 1000).toFixed(0) + ' W continu' + (r.elec_cost ? ' · ' + (sb.cost / r.elec_cost * 100).toFixed(0) + '% van je stroom' : '') : '');
     var phases = r.phases.filter(function(p) { return p.kwh > 0; });
     var phaseKwh = phases.reduce(function(t, p) { return t + p.kwh; }, 0);
     var top = phases.slice().sort(function(x, y) { return y.kwh - x.kwh; })[0];
     setEl('kost-top-phase', top ? top.label : '—');
     setEl('kost-top-phase-sub', top ? (top.kwh / phaseKwh * 100).toFixed(0) + '% van je stroom' : '');
-    setEl('kost-paid', r.paid_per_kwh != null ? '€' + r.paid_per_kwh.toFixed(3) + '<span class="stat-unit">/kWh</span>' : '—');
+    setEl('kost-paid', r.paid_per_kwh != null ? '€' + nlNum(r.paid_per_kwh, 3) + '<span class="stat-unit">/kWh</span>' : '—');
     if (r.paid_per_kwh != null && r.avg_price) {
       var diff = (r.paid_per_kwh - r.avg_price) / r.avg_price * 100;
       setEl('kost-paid-sub', Math.abs(diff) < 0.5 ? 'gelijk aan de gem. uurprijs' : Math.abs(diff).toFixed(0) + '% ' + (diff < 0 ? 'onder' : 'boven') + ' de gem. uurprijs');
@@ -155,7 +155,7 @@ function loadCostsOverview() {
       data: { labels: nights.map(function(n) { return nlDate(n.day, {weekday:'short', day:'numeric'}); }), datasets: [
         { label: 'Gem. vermogen (W)', data: nights.map(function(n) { return (n.kw * 1000).toFixed(0); }), backgroundColor: 'rgba(248,113,113,0.45)', borderColor: '#F87171', borderWidth: 1, borderRadius: 3 }
       ]},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.parsed.y + ' W gemiddeld'; }, afterLabel: function(c) { var n = nights[c.dataIndex]; return num(n.kwh, 2) + ' kWh' + (n.cost != null ? ' · ' + eur(n.cost) : ''); } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 45, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.parsed.y + ' W gemiddeld'; }, afterLabel: function(c) { var n = nights[c.dataIndex]; return num(n.kwh, 2) + ' kWh' + (n.cost != null ? ' · ' + eur(n.cost) : ''); } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
     });
 
     var partial = o.months.length && o.months[0].first_day.slice(8) !== '01';
@@ -167,7 +167,7 @@ function loadCostsOverview() {
         { label: 'Stroom (€)', data: o.months.map(function(m) { return m.elec_cost != null ? m.elec_cost.toFixed(2) : 0; }), backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 3, stack: 'cost' },
         { label: 'Gas (€)',    data: o.months.map(function(m) { return m.gas_cost != null ? m.gas_cost.toFixed(2) : 0; }),  backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, stack: 'cost' }
       ].filter(function(ds, i) { return i === 0 || moduleOn('gas'); })},
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: '#3D4D6A', font: { size: 9 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, stacked: true }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return '€'+v; } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true, stacked: true } } }
     });
   }).catch(function(){});
 }
@@ -180,11 +180,11 @@ function refreshGasStats() {
     fetch('/api/prices').then(function(r){return r.json();}).catch(function(){return {};})
   ]).then(function(res) {
     var c = res[0], costs = res[1], p = res[2];
-    function m3(v) { return (v != null ? num(v, 3) : '—') + '<span class="stat-unit">m³</span>'; }
+    function m3(v) { return (v != null ? num(v, 2) : '—') + '<span class="stat-unit">m³</span>'; }
     setEl('gas-today', m3(c.today && c.today.gas_used));
     setEl('gas-yesterday', m3(c.yesterday && c.yesterday.gas_used));
     setEl('gas-today-cost', costs.day && costs.day.gas_cost != null ? eur(costs.day.gas_cost) : '—');
-    setEl('gas-price-now', (p.gas_eur_m3 != null ? Number(p.gas_eur_m3).toFixed(4) : '—') + '<span class="stat-unit">€/m³</span>');
+    setEl('gas-price-now', eur(p.gas_eur_m3) + '<span class="stat-unit">/m³</span>');
   }).catch(function(){});
 }
 
@@ -201,7 +201,7 @@ function loadGasMonthly() {
     chartGasMonthly = new Chart(document.getElementById('chart-gas-monthly'), {
       type: 'bar',
       data: { labels: labels, datasets: [{ label: 'Gas (m³)', data: data, backgroundColor: 'rgba(249,115,22,0.55)', borderColor: '#F97316', borderWidth: 1, borderRadius: 4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true } } }
     });
   }).catch(function(){});
 }
@@ -210,7 +210,7 @@ function loadGasMonthly() {
 setInterval(function() {
   if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshComparison(); refreshSafety(); }
   if (currentScreen === 2) { refreshGasStats(); loadGasDaily(); }
-  if (currentScreen === 4) { refreshVaatwasser(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); refreshLedState(); refreshLed2State(); refreshLed3State(); refreshRelayGangState(); }
+  if (currentScreen === 4) { refreshVaatwasser(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); lampsRefresh(); }
   if (currentScreen === 5) { refreshSettingsNames(); }
 }, 60000);
 setInterval(function() {

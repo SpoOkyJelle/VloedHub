@@ -19,14 +19,9 @@ function homeBlocks() { return Array.prototype.slice.call(document.querySelector
 // Het uitklappaneel van een lamp bestaat maar één keer. Op Home lenen we het van de Thuis-pagina:
 // het komt als eigen rij onder de rij van de lampkaart en gaat bij inklappen weer terug.
 var ledPanelOrigin = {};
-var LED_PANEL_SETUP = {
-  'default': function() { buildLedGrid(); updateLedUI(); },
-  'keuken':  function() { buildLed2Grid(); updateLed2UI(); },
-  'gang':    function() { buildLed3Grid(); updateLed3UI(); }
-};
 function returnLedPanel(panel) {
   var card = panel._homeBlock;
-  if (card) { card.classList.remove('open'); var arrow = card.querySelector('.home-lamp-arrow'); if (arrow) arrow.textContent = '▾'; }
+  if (card) { card.classList.remove('open'); var arrow = card.querySelector('.lamp-more'); if (arrow) arrow.setAttribute('aria-expanded', 'false'); }
   panel.style.display = 'none';
   panel.classList.remove('home-open');
   panel._homeBlock = null;
@@ -53,8 +48,8 @@ function toggleHomeLedPanel(id, btn) {
   var origin = ledPanelOrigin[panel.id];
   origin.classList.remove('open');
   var thuisArrow = origin.querySelector('button[onclick^="toggleLedPanel"]');
-  if (thuisArrow) thuisArrow.textContent = '▾';
-  if (LED_PANEL_SETUP[id]) LED_PANEL_SETUP[id]();
+  if (thuisArrow) thuisArrow.setAttribute('aria-expanded', 'false');
+  ledRender(id);
   // laatste blok in dezelfde rij: daarachter komt het paneel, zodat de rij zelf blijft staan
   var last = block;
   for (var sib = block.nextElementSibling; sib; sib = sib.nextElementSibling) {
@@ -68,7 +63,7 @@ function toggleHomeLedPanel(id, btn) {
     panel.style.display = 'block';
     panel._homeBlock = block;
     block.classList.add('open');
-    btn.textContent = '▴';
+    btn.setAttribute('aria-expanded', 'true');
   });
   if (!noMotion && panel.animate) panel.animate([{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 280, easing: EASE });
 }
@@ -84,7 +79,7 @@ function toggleLedPanel(id, btn) {
   }
   function apply() {
     panel.style.display = open ? 'none' : 'block';
-    btn.textContent = open ? '▾' : '▴';
+    btn.setAttribute('aria-expanded', !open);
     if (blk) blk.classList.toggle('open', !open);
   }
   if (noMotion || !panel.animate) { apply(); return; }
@@ -95,10 +90,8 @@ function toggleLedPanel(id, btn) {
     panel.animate([{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 280, easing: EASE });
   }
 }
-function deviceRename(key, defaultName, iconEl) { var spanEl = iconEl.previousElementSibling; var current = deviceNamesCache[key] || defaultName; var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.85rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.4rem;width:10rem;font-family:inherit;font-weight:700'; spanEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/device-names', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:key, name:val}) }).then(function(){ loadDeviceNames(); }); } input.addEventListener('keydown', function(e){ if (e.key==='Enter') { input.blur(); } if (e.key==='Escape') loadDeviceNames(); }); input.addEventListener('blur', commit); }
-loadDeviceNames();
-loadLayout();
-function esphomeRename(deviceEnc, sensorEnc, iconEl) { var device = decodeURIComponent(deviceEnc); var sensor = decodeURIComponent(sensorEnc); var nameEl = iconEl.parentElement; var current = nameEl.childNodes[0].textContent.trim(); var input = document.createElement('input'); input.value = current; input.style.cssText = 'font-size:0.75rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:inherit;padding:0.1rem 0.3rem;width:8rem;font-family:inherit'; nameEl.replaceWith(input); input.focus(); input.select(); function commit() { var val = input.value.trim(); fetch('/api/esphome/rename', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device:device, sensor_name:sensor, display_name:val}) }).then(function(){ refreshEsphome(); }); } input.addEventListener('keydown', function(e) { if (e.key === 'Enter') commit(); if (e.key === 'Escape') refreshEsphome(); }); input.addEventListener('blur', commit); }
+function deviceRename(key, defaultName, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveDeviceName(key, name); }); }
+function esphomeRename(deviceEnc, sensorEnc, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveEsphomeName(decodeURIComponent(deviceEnc), decodeURIComponent(sensorEnc), name); }); }
 function shortWhen(v) {
   var d = new Date(v);
   if (isNaN(d.getTime())) return '—';
@@ -117,6 +110,6 @@ function refreshTemperature() { fetch('/api/temperature/latest').then(function(r
   }).join('') + '</div>';
 }).catch(function(){}); }
 var chartTemp = null;
-function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); }), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 10 } } } }, scales: { x: { ticks: { color: '#3D4D6A', maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#3D4D6A', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } }); }).catch(function(){}); }
+function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); }), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#94A3B8', boxWidth: 12, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } }); }).catch(function(){}); }
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? shortWhen(s.since) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
 

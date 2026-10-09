@@ -10,26 +10,25 @@
 <meta name='theme-color' content='#0C0F1D'>
 <link rel='icon' href='/icons/icon-192.png' type='image/png'>
 <link rel='apple-touch-icon' href='/icons/icon-180.png'>
-<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'>
-<link rel='preconnect' href='https://fonts.googleapis.com'>
-<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
-<link href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' rel='stylesheet'>
+<link rel='preload' href='/vendor/poppins/poppins-latin-600.woff2' as='font' type='font/woff2' crossorigin>
+<link rel='stylesheet' href='/styles/tokens.css'>
+<link rel='stylesheet' href='/vendor/fontawesome/css/all.min.css'>
 <link rel='stylesheet' href='/styles/main.css'>
-<script src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'></script>
+<script src='/vendor/chartjs/chart.umd.min.js'></script>
 <script id='modules-data' type='application/json'>__MODULES_JSON__</script>
 </head>
 <body>
 <script src='/js/boot.js'></script>
 <header class='app-header'>
-  <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot'></span></div>
+  <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot' id='live-dot' title='Live'></span></div>
   <div class='header-right'>
-    <span class='updated-text' id='updated'>Wachten op data…</span>
-    <button class='icon-link meld-bell' title='Meldingen' aria-label='Meldingen' onclick='toggleMeldPanel(event)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg><span class='meld-badge'></span></button>
-    <button class='icon-link' title='Instellingen' onclick='showScreen(5,null)' style='background:none;border:none;cursor:pointer;padding:0'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
+    <span class='updated-text' id='updated' role='status'>Wachten op data…</span>
+    <button class='icon-link meld-bell' title='Meldingen' aria-label='Meldingen' onclick='toggleMeldPanel(event)'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg><span class='meld-badge'></span></button>
+    <button class='icon-link' id='header-settings' title='Instellingen' aria-label='Instellingen' onclick='showScreen(5,null)'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>
   </div>
 </header>
 <div class='meld-panel outage-card' id='meld-panel' role='dialog' aria-label='Meldingen'></div>
-<div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><span class='kiosk-buttons'><button onclick="toggleLayoutEdit();this.classList.toggle('on',layoutEditMode)" title='Indeling van de tablet aanpassen' aria-label='Indeling van de tablet aanpassen'><i class='fa-solid fa-pen'></i></button><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'>✕</button></span></div>
+<div class='kiosk-bar'><div><div id='kiosk-clock'>--:--</div><div id='kiosk-date'></div></div><span class='kiosk-buttons'><button onclick="toggleLayoutEdit();this.classList.toggle('on',layoutEditMode)" title='Indeling van de tablet aanpassen' aria-label='Indeling van de tablet aanpassen'><i class='fa-solid fa-pen'></i></button><button onclick='exitKiosk()' title='Tabletweergave sluiten' aria-label='Tabletweergave sluiten'><i class='fa-solid fa-xmark'></i></button></span></div>
 <div id='conn-banner' role='status' hidden><i class='fa-solid fa-triangle-exclamation'></i><span id='conn-text'></span></div>
 <div class='screens-outer' id='screens-outer'>
 <div class='screens-track' id='screens-track'>
@@ -50,32 +49,27 @@
   <div class='info-strip'>
     <div class='info-card'>
       <div class='info-label'>Kosten vandaag</div>
-      <div class='info-value' style='color:var(--yellow)' id='hero-cost-today'>—<span class='card-unit'>€</span></div>
+      <div class='info-value c-yellow' id='hero-cost-today'>—<span class='card-unit'>€</span></div>
     </div>
     <div class='info-card' data-module='gas'>
       <div class='info-label'>Gas</div>
       <div class='info-value gas-c' id='gas'>—<span class='card-unit'>m³</span></div>
       <div class='info-sub' id='price-gas'>— €/m³</div>
     </div>
-    <div class='info-card'>
-      <div class='info-label'>Metingen</div>
-      <div class='info-value' id='stat-readings'>—</div>
-      <div class='info-sub'>vandaag</div>
-    </div>
     <div class='info-card' data-module='temperature'><div class='info-label'>Huistemp</div><div class='info-value' id='home-temp'>—<span class='card-unit'>°C</span></div></div>
   </div>
   </div>
   <div class='layout-block' data-block='led_default'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card home-lamp' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledQuickToggle()'><button class='home-lamp-arrow' title='Uitklappen' onclick='event.stopPropagation();toggleHomeLedPanel("default",this)'>▾</button><div class='info-label' id='homelabel-led-default'>LED Strip</div><div class='info-value' id='home-led-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='card home-lamp' role='button' tabindex='0' aria-labelledby='homelabel-led-default' onclick='ledToggle("default")'><div class='lamp-head'><div class='info-label' id='homelabel-led-default'>LED Strip</div><span class='mod-switch' id='home-led-status-switch' aria-hidden='true'></span></div><div class='lamp-state' id='home-led-status'>—</div><button class='lamp-more' aria-expanded='false' onclick='event.stopPropagation();toggleHomeLedPanel("default",this)'>Aanpassen<i class='fa-solid fa-chevron-down'></i></button></div>
   </div>
   <div class='layout-block' data-block='led_keuken'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card home-lamp' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledKeukenQuickToggle()'><button class='home-lamp-arrow' title='Uitklappen' onclick='event.stopPropagation();toggleHomeLedPanel("keuken",this)'>▾</button><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><div class='info-value' id='home-led-keuken-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='card home-lamp' role='button' tabindex='0' aria-labelledby='homelabel-led-keuken' onclick='ledToggle("keuken")'><div class='lamp-head'><div class='info-label' id='homelabel-led-keuken'>Ledstrip Keuken</div><span class='mod-switch' id='home-led-keuken-status-switch' aria-hidden='true'></span></div><div class='lamp-state' id='home-led-keuken-status'>—</div><button class='lamp-more' aria-expanded='false' onclick='event.stopPropagation();toggleHomeLedPanel("keuken",this)'>Aanpassen<i class='fa-solid fa-chevron-down'></i></button></div>
   </div>
   <div class='layout-block' data-block='led_gang'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card home-lamp' style='cursor:pointer;border-color:rgba(141,178,85,0.3)' onclick='ledGangQuickToggle()'><button class='home-lamp-arrow' title='Uitklappen' onclick='event.stopPropagation();toggleHomeLedPanel("gang",this)'>▾</button><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><div class='info-value' id='home-led-gang-status' style='color:var(--accent-l)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='card home-lamp' role='button' tabindex='0' aria-labelledby='homelabel-led-gang' onclick='ledToggle("gang")'><div class='lamp-head'><div class='info-label' id='homelabel-led-gang'>Ledstrip Gang</div><span class='mod-switch' id='home-led-gang-status-switch' aria-hidden='true'></span></div><div class='lamp-state' id='home-led-gang-status'>—</div><button class='lamp-more' aria-expanded='false' onclick='event.stopPropagation();toggleHomeLedPanel("gang",this)'>Aanpassen<i class='fa-solid fa-chevron-down'></i></button></div>
   </div>
   <div class='layout-block' data-block='relay_gang'>
-  <div class='info-strip' style='grid-template-columns:1fr'><div class='info-card' style='cursor:pointer;border-color:rgba(34,197,94,0.3)' onclick='relayGangQuickToggle()'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><div class='info-value' id='home-relay-gang-status' style='color:var(--green)'>—</div><div class='info-sub'>Tik om te wisselen</div></div></div>
+  <div class='card home-lamp' role='button' tabindex='0' aria-labelledby='homelabel-relay-gang' onclick='relayToggle()'><div class='lamp-head'><div class='info-label' id='homelabel-relay-gang'>Lamp Gang</div><span class='mod-switch' id='home-relay-gang-status-switch' aria-hidden='true'></span></div><div class='lamp-state' id='home-relay-gang-status'>—</div></div>
   </div>
   <div class='layout-block' data-block='phases'>
   <div class='phase-row'>
@@ -122,17 +116,17 @@
   <div class='safety-grid'>
     <div class='stat-card'><div class='stat-label'>Gem. verbruik vandaag</div><div class='stat-value delivered' id='stat-avg-del'>—<span class='stat-unit'>kW</span></div></div>
     <div class='stat-card'><div class='stat-label'>Piekverbruik vandaag</div><div class='stat-value delivered' id='stat-max-del'>—<span class='stat-unit'>kW</span></div></div>
-    <div class='stat-card'><div class='stat-label'>Sluipverbruik 's nachts (7 dgn)</div><div class='stat-value' style='color:var(--accent)' id='saf-night'>—<span class='stat-unit'>kW</span></div></div>
+    <div class='stat-card'><div class='stat-label'>Sluipverbruik 's nachts (7 dgn)</div><div class='stat-value c-accent' id='saf-night'>—<span class='stat-unit'>kW</span></div></div>
     <div class='stat-card'><div class='stat-label'>CO₂ vandaag (schatting)</div><div class='stat-value' id='saf-co2'>—<span class='stat-unit'>kg</span></div></div>
   </div>
   <div class='card'>
-    <div class='section-title' style='margin-bottom:0.5rem'>Verbruik vergeleken</div>
+    <div class='section-title'>Verbruik vergeleken</div>
     <table class='cost-table compare-table'>
       <thead><tr><th></th><th class='num'>Vandaag</th><th class='num'>Gisteren</th><th class='num'>Week geleden</th></tr></thead>
       <tbody>
         <tr><td>Stroom</td><td class='num' id='cmp-today-elec'>—</td><td class='num' id='cmp-yest-elec'>—</td><td class='num' id='cmp-week-elec'>—</td></tr>
         <tr data-module='gas'><td>Gas</td><td class='num' id='cmp-today-gas'>—</td><td class='num' id='cmp-yest-gas'>—</td><td class='num' id='cmp-week-gas'>—</td></tr>
-        <tr><td>Verwacht</td><td class='num' id='cmp-today-exp' style='color:var(--yellow)'>—</td><td></td><td></td></tr>
+        <tr><td>Verwacht</td><td class='num c-yellow' id='cmp-today-exp'>—</td><td></td><td></td></tr>
       </tbody>
     </table>
   </div>
@@ -158,7 +152,7 @@
     <div class='chart-wrap'><canvas id='chart-weekday'></canvas></div>
   </div>
   <div class='card'>
-    <div style='display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem'>
+    <div class='chart-header'>
       <span class='section-title'>Heatmap (uur × weekdag)</span>
       <div class='tab-bar'>
         <button class='tab active' data-hm='alltime' onclick='loadHeatmap("alltime",this)'>Alles</button>
@@ -173,7 +167,7 @@
   <div class='section-title'>Net en fasen</div>
   <div class='safety-grid'>
     <div class='stat-card'><div class='stat-label'>Spanning vandaag</div><div class='stat-value voltage' id='stat-voltage'>—<span class='stat-unit'>V</span></div></div>
-    <div class='stat-card'><div class='stat-label'>Spanningsafwijkingen (7 dgn)</div><div class='stat-value' id='saf-dips' style='color:var(--red)'>—</div></div>
+    <div class='stat-card'><div class='stat-label'>Spanningsafwijkingen (7 dgn)</div><div class='stat-value' id='saf-dips'>—</div></div>
     <div class='stat-card'><div class='stat-label'>Zwaarst belaste fase vandaag</div><div class='stat-value voltage' id='stat-top-phase'>—</div></div>
     <div class='stat-card'><div class='stat-label'>Max stroom L1/L2/L3 (7 dgn)</div><div class='stat-value voltage' id='saf-max-amp'>—</div></div>
   </div>
@@ -189,7 +183,7 @@
 
   <div class='stats-grid'>
     <div class='stat-card'><div class='stat-label'>Gas vandaag</div><div class='stat-value gas-c' id='gas-today'>—<span class='stat-unit'>m³</span></div></div>
-    <div class='stat-card'><div class='stat-label'>Kosten vandaag</div><div class='stat-value' style='color:var(--yellow)' id='gas-today-cost'>—</div></div>
+    <div class='stat-card'><div class='stat-label'>Kosten vandaag</div><div class='stat-value c-yellow' id='gas-today-cost'>—</div></div>
     <div class='stat-card'><div class='stat-label'>Gasprijs nu</div><div class='stat-value' id='gas-price-now'>—<span class='stat-unit'>€/m³</span></div></div>
     <div class='stat-card'><div class='stat-label'>Gisteren</div><div class='stat-value gas-c' id='gas-yesterday'>—<span class='stat-unit'>m³</span></div></div>
   </div>
@@ -210,16 +204,16 @@
 
   <div class='section-title'>Overzicht</div>
   <div class='safety-grid'>
-    <div class='stat-card'><div class='stat-label'>Deze maand tot nu toe</div><div class='stat-value' style='color:var(--yellow)' id='kost-month'>—</div><div class='power-sub' id='kost-month-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Deze maand tot nu toe</div><div class='stat-value c-yellow' id='kost-month'>—</div><div class='power-sub' id='kost-month-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Verwacht deze maand</div><div class='stat-value' id='kost-fc-month'>—</div><div class='power-sub' id='kost-fc-month-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Gemiddeld per dag</div><div class='stat-value' id='kost-avg-day'>—</div><div class='power-sub' id='kost-avg-day-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Verwacht per jaar</div><div class='stat-value' id='kost-fc-year'>—</div><div class='power-sub' id='kost-fc-year-sub'></div></div>
   </div>
   <div class='card'>
-    <div class='section-title' style='margin-bottom:0.5rem'>Geschatte kosten <span style='color:var(--dim);font-size:0.55rem;font-weight:400'>(stroom per uurprijs<span data-module='gas'> · gas per dagprijs</span>, zonder vaste kosten)</span></div>
+    <div class='section-title'>Geschatte kosten <span class='title-note'>(stroom per uurprijs<span data-module='gas'> · gas per dagprijs</span>, zonder vaste kosten)</span></div>
     <table class='cost-table'>
       <thead><tr><th>Periode</th><th class='num'>kWh</th><th class='num'>Stroom €</th><th class='num' data-module='gas'>m³</th><th class='num' data-module='gas'>Gas €</th></tr></thead>
-      <tbody id='cost-rows'><tr><td colspan='5' style='color:var(--dim);padding:0.3rem 0.5rem'>Laden…</td></tr></tbody>
+      <tbody id='cost-rows'><tr><td colspan='5' class='table-empty'>Laden…</td></tr></tbody>
     </table>
   </div>
   <div class='chart-card'>
@@ -233,7 +227,7 @@
 
   <div class='section-title'>Waar gaat het heen (laatste 30 dagen)</div>
   <div class='safety-grid'>
-    <div class='stat-card'><div class='stat-label'>Sluipverbruik per jaar</div><div class='stat-value' style='color:var(--red)' id='kost-standby'>—</div><div class='power-sub' id='kost-standby-sub'></div></div>
+    <div class='stat-card'><div class='stat-label'>Sluipverbruik per jaar</div><div class='stat-value c-red' id='kost-standby'>—</div><div class='power-sub' id='kost-standby-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Zwaarste fase</div><div class='stat-value voltage' id='kost-top-phase'>—</div><div class='power-sub' id='kost-top-phase-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Betaald per kWh</div><div class='stat-value' id='kost-paid'>—</div><div class='power-sub' id='kost-paid-sub'></div></div>
     <div class='stat-card'><div class='stat-label'>Duurste dag</div><div class='stat-value' id='kost-priciest'>—</div><div class='power-sub' id='kost-priciest-sub'></div></div>
@@ -266,12 +260,7 @@
 <!-- SCREEN 4: THUIS -->
 <div class='screen' id='screen-4'>
 <div data-module='lights' class='section-title'>Verlichting</div>
-<div data-module='lights' class='lamp-grid'>
-<div class='lamp-block'><span id='sname-led-default' hidden>LED Strip</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-default' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-default'>LED Strip</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::default","LED Strip",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led-onoff' onclick='ledToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("default",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div></div><div id='led-panel-default' class='lamp-panel' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led-brightness' oninput='ledBrightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led-brightness-val'>180</span></div></div><div id='led-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led-color' value='#ffffff' oninput='ledSetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led-btn-0' onclick='ledSetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led-btn-1' onclick='ledSetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led-btn-2' onclick='ledSetEffect(2)' class='effect-btn'>Rainbow</button><button id='led-btn-3' onclick='ledSetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led-btn-4' onclick='ledSetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led-btn-5' onclick='ledSetEffect(5)' class='effect-btn'>Confetti</button><button id='led-btn-6' onclick='ledSetEffect(6)' class='effect-btn'>Vuur</button><button id='led-btn-7' onclick='ledSetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led-btn-8' onclick='ledSetEffect(8)' class='effect-btn'>Twinkle</button><button id='led-btn-9' onclick='ledSetEffect(9)' class='effect-btn'>Politielichten</button><button id='led-btn-10' onclick='ledSetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
-<div class='lamp-block'><span id='sname-led-keuken' hidden>Ledstrip Keuken</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-keuken' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-keuken'>Ledstrip Keuken</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::keuken","Ledstrip Keuken",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led2-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led2-onoff' onclick='led2Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("keuken",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div></div><div id='led-panel-keuken' class='lamp-panel' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led2-brightness' oninput='led2Brightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led2-brightness-val'>180</span></div></div><div id='led2-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led2-color' value='#ffffff' oninput='led2SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led2-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led2-btn-0' onclick='led2SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led2-btn-1' onclick='led2SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led2-btn-2' onclick='led2SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led2-btn-3' onclick='led2SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led2-btn-4' onclick='led2SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led2-btn-5' onclick='led2SetEffect(5)' class='effect-btn'>Confetti</button><button id='led2-btn-6' onclick='led2SetEffect(6)' class='effect-btn'>Vuur</button><button id='led2-btn-7' onclick='led2SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led2-btn-8' onclick='led2SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led2-btn-9' onclick='led2SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led2-btn-10' onclick='led2SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
-<div class='lamp-block'><span id='sname-led-gang' hidden>Ledstrip Gang</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-led-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-led-gang'>Ledstrip Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("led::gang","Ledstrip Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700;color:var(--accent-l)' id='led3-effect-name'>—</div></div><div style='display:flex;align-items:center;gap:0.5rem'><button id='led3-onoff' onclick='led3Toggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>AAN</button><button onclick='toggleLedPanel("gang",this)' style='padding:0.45rem 0.7rem;border-radius:20px;border:1px solid rgba(141,178,85,0.3);background:rgba(141,178,85,0.08);color:var(--accent-l);font-family:inherit;cursor:pointer;font-size:1rem;line-height:1'>▾</button></div></div></div></div><div id='led-panel-gang' class='lamp-panel' style='display:none'><div class='power-hero' style='margin-top:0.5rem'><div style='display:flex;align-items:center;gap:0.75rem'><span style='font-size:0.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Helderheid</span><input type='range' min='10' max='255' value='180' id='led3-brightness' oninput='led3Brightness(this.value)' style='flex:1;accent-color:#8DB255'><span style='font-size:0.7rem;color:var(--muted);font-weight:600;min-width:2rem;text-align:right' id='led3-brightness-val'>180</span></div></div><div id='led3-color-row' style='display:none;align-items:center;gap:0.75rem;margin-bottom:0.6rem'><span style='font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;white-space:nowrap'>Kleur</span><input type='color' id='led3-color' value='#ffffff' oninput='led3SetColor(this.value)' style='width:2.4rem;height:2.4rem;border:1px solid var(--border);border-radius:8px;background:none;padding:0;cursor:pointer'></div><div class='section-title' style='padding:0 0.1rem'>Effect kiezen</div><div id='led3-effects-grid' style='display:grid;grid-template-columns:1fr 1fr;gap:0.5rem'><button id='led3-btn-0' onclick='led3SetEffect(0)' class='effect-btn'>Warm Wit</button><button id='led3-btn-1' onclick='led3SetEffect(1)' class='effect-btn'>Ijs Wit</button><button id='led3-btn-2' onclick='led3SetEffect(2)' class='effect-btn'>Rainbow</button><button id='led3-btn-3' onclick='led3SetEffect(3)' class='effect-btn'>Rainbow Wave</button><button id='led3-btn-4' onclick='led3SetEffect(4)' class='effect-btn'>Fade Aan/Uit</button><button id='led3-btn-5' onclick='led3SetEffect(5)' class='effect-btn'>Confetti</button><button id='led3-btn-6' onclick='led3SetEffect(6)' class='effect-btn'>Vuur</button><button id='led3-btn-7' onclick='led3SetEffect(7)' class='effect-btn'>Meteor Regen</button><button id='led3-btn-8' onclick='led3SetEffect(8)' class='effect-btn'>Twinkle</button><button id='led3-btn-9' onclick='led3SetEffect(9)' class='effect-btn'>Politielichten</button><button id='led3-btn-10' onclick='led3SetEffect(10)' class='effect-btn'>Eigen kleur</button></div></div>
-<div class='lamp-block'><span id='sname-relay-gang' hidden>Lamp Gang</span><div class='power-hero'><div style='display:flex;justify-content:space-between;align-items:center'><div><div class='power-label' id='plabel-relay-gang' style='display:flex;align-items:center;gap:0.4rem'><span id='rename-relay-gang'>Lamp Gang</span><i class='fa-solid fa-pen' style='font-size:0.7rem;opacity:0.5;cursor:pointer' onclick='deviceRename("relay::gang","Lamp Gang",this)'></i></div><div style='font-size:1.4rem;font-weight:700' id='relay-gang-status-text' style='color:var(--green)'>UIT</div></div><button id='relay-gang-onoff' onclick='relayGangToggle()' style='padding:0.45rem 1.1rem;border-radius:20px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#4ADE80;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'>UIT</button></div></div></div>
-</div>
+<div data-module='lights' class='lamp-grid' id='lamp-grid'></div>
 <div data-module='fridge' class='section-title'>Koelkast</div>
 <div data-module='fridge' class='card fridge-card fridge-slot'></div>
 <div data-module='esphome' class='section-title'>ESPHome Sensoren</div>
@@ -279,10 +268,10 @@
 <div data-module='temperature' class='section-title'>Temperatuur</div>
 <div data-module='temperature' class='esp-grid' id='temp-grid'></div><div data-module='temperature' class='chart-card'><div class='chart-header'><span class='chart-title'>Temperatuurverloop</span><div class='tab-bar'><button class='tab active' data-temprange='day' onclick='loadTempChart("day",this)'>Dag</button><button class='tab' data-temprange='week' onclick='loadTempChart("week",this)'>Week</button><button class='tab' data-temprange='month' onclick='loadTempChart("month",this)'>Maand</button></div></div><div class='chart-wrap'><canvas id='chart-temp'></canvas></div></div>
 <div data-module='vaatwasser' class='section-title'>Vaatwasser</div>
-<div data-module='vaatwasser' class='card wash-card dish-card' onclick='toggleDishStats()'><div class='chart-header'><div class='wash-status-pill idle' id='dish-status-pill'><i class='fa-solid fa-moon' id='dish-status-icon'></i><span id='dish-status-text'>Laden…</span></div><div class='dish-alerts' id='dish-alerts'></div></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Programma</div><div class='fridge-temp' id='dish-program'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Resterend</div><div class='fridge-temp' id='dish-remaining'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Klaar om</div><div class='fridge-temp' id='dish-finish'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Deur</div><div class='fridge-temp' id='dish-door'>—</div></div></div><div class='phase-bar-track'><div class='phase-bar-fill' id='dish-progress' style='width:0%'></div></div><div class='power-sub dish-best' id='dish-best'></div><div class='dish-toggle'><span id='dish-last'></span><span>Statistieken <i class='fa-solid fa-chevron-down' id='dish-chevron'></i></span></div><div class='dish-collapse'><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' id='dish-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' id='dish-month'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Gem. duur</div><div class='fridge-temp' id='dish-avg-duration'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Meest gebruikt</div><div class='fridge-temp' id='dish-top-program'>—</div></div></div></div></div>
+<div data-module='vaatwasser' class='card wash-card dish-card' role='button' tabindex='0' aria-expanded='false' onclick='toggleDishStats()'><div class='chart-header'><div class='wash-status-pill idle' id='dish-status-pill'><i class='fa-solid fa-moon' id='dish-status-icon'></i><span id='dish-status-text'>Laden…</span></div><div class='dish-alerts' id='dish-alerts'></div></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Programma</div><div class='fridge-temp' id='dish-program'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Resterend</div><div class='fridge-temp' id='dish-remaining'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Klaar om</div><div class='fridge-temp' id='dish-finish'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Deur</div><div class='fridge-temp' id='dish-door'>—</div></div></div><div class='phase-bar-track'><div class='phase-bar-fill' id='dish-progress' style='width:0%'></div></div><div class='power-sub dish-best' id='dish-best'></div><div class='dish-toggle'><span id='dish-last'></span><span>Statistieken <i class='fa-solid fa-chevron-down' id='dish-chevron'></i></span></div><div class='dish-collapse'><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' id='dish-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' id='dish-month'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Gem. duur</div><div class='fridge-temp' id='dish-avg-duration'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Meest gebruikt</div><div class='fridge-temp' id='dish-top-program'>—</div></div></div></div></div>
 <div data-module='vaatwasser' class='dish-collapse'><div class='log-card'><div class='log-header'><span class='section-title'>Recente vaatwasbeurten</span><span class='power-sub' id='dish-avg-forecast'></span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Klaar</th><th>Programma</th><th>Duur</th><th>Energie</th><th>Water</th><th>Stroom</th></tr></thead><tbody id='dish-rows'></tbody></table></div></div></div>
 <div data-module='wasmachine' class='section-title'>Wasmachine</div>
-<div data-module='wasmachine' class='card wash-card'><div class='chart-header'><div class='wash-status-pill idle' id='wash-status-pill'><i class='fa-solid fa-moon' id='wash-status-icon'></i><span id='wash-status-text'>Laden…</span></div><span class='power-sub' id='wash-last'>Laatste: —</span></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Totaal</div><div class='fridge-temp' id='wash-total'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Vandaag</div><div class='fridge-temp' style='color:var(--text)' id='wash-today'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' style='color:var(--text)' id='wash-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' style='color:var(--text)' id='wash-month'>—</div></div></div></div><div data-module='wasmachine' class='chart-card'><div class='chart-header'><span class='chart-title'>Wasbeurten per weekdag</span></div><div class='chart-wrap'><canvas id='chart-wash-weekday'></canvas></div></div><div data-module='wasmachine' class='log-card'><div class='log-header'><span class='section-title'>Recente wasbeurten</span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Tijd</th><th>Apparaat</th></tr></thead><tbody id='wash-rows'></tbody></table></div></div>
+<div data-module='wasmachine' class='card wash-card'><div class='chart-header'><div class='wash-status-pill idle' id='wash-status-pill'><i class='fa-solid fa-moon' id='wash-status-icon'></i><span id='wash-status-text'>Laden…</span></div><span class='power-sub' id='wash-last'>Laatste: —</span></div><div class='fridge-row'><div class='fridge-cell'><div class='fridge-label'>Totaal</div><div class='fridge-temp' id='wash-total'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Vandaag</div><div class='fridge-temp' id='wash-today'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Week</div><div class='fridge-temp' id='wash-week'>—</div></div><div class='fridge-cell'><div class='fridge-label'>Maand</div><div class='fridge-temp' id='wash-month'>—</div></div></div></div><div data-module='wasmachine' class='chart-card'><div class='chart-header'><span class='chart-title'>Wasbeurten per weekdag</span></div><div class='chart-wrap'><canvas id='chart-wash-weekday'></canvas></div></div><div data-module='wasmachine' class='log-card'><div class='log-header'><span class='section-title'>Recente wasbeurten</span></div><div class='log-table-wrap'><table class='log-table'><thead><tr><th>Tijd</th><th>Apparaat</th></tr></thead><tbody id='wash-rows'></tbody></table></div></div>
 </div>
 <!-- SCREEN 5: INSTELLINGEN -->
 <div class='screen' id='screen-5'>
@@ -300,10 +289,10 @@
 </div>
 <div class='set-section'>
 <div class='section-title'>Weergave</div>
-<div class='power-hero'>
-  <div style='display:flex;justify-content:space-between;align-items:center;gap:0.75rem'>
-    <div><div class='power-label'>Wandtablet-weergave</div><div style='font-size:0.72rem;color:var(--dim)'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>
-    <a href='/?kiosk=1' class='btn btn-ghost' style='text-decoration:none;white-space:nowrap'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
+<div class='setting-card'>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Wandtablet-weergave</div><div class='setting-desc'>Alleen Home, schermvullend, met klok en grotere cijfers. Sluiten met het kruisje rechtsboven.</div></div>
+    <a href='/?kiosk=1' class='btn btn-ghost'><i class='fa-solid fa-tablet-screen-button'></i> Openen</a>
   </div>
 </div>
 </div>
@@ -314,72 +303,64 @@
 <div id='settings-device-status'></div>
 </div>
 <div class='set-section' data-module='lights'>
-<div class='section-title' data-module='lights'>Apparaatnamen</div>
-<div id='settings-device-names' data-module='lights'></div>
+<div class='section-title'>Apparaatnamen</div>
+<div id='settings-device-names'></div>
 </div>
 <div class='set-section' data-module='esphome'>
-<div class='section-title' data-module='esphome'>ESPHome sensornamen</div>
-<div id='settings-esphome-names' data-module='esphome'></div>
+<div class='section-title'>ESPHome sensornamen</div>
+<div id='settings-esphome-names'></div>
 </div>
 <div class='set-section' data-module='lights'>
-<div class='section-title' data-module='lights'>Scènes</div>
-<div id='settings-scenes' data-module='lights'></div>
+<div class='section-title'>Scènes</div>
+<div id='settings-scenes'></div>
 </div>
 </div>
 <div class='set-group' data-set='koppelingen'>
 <div class='set-section'>
 <div class='section-title'>Discord</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div><div class='power-label'>Webhook</div><div style='font-size:0.72rem;color:var(--dim)' id='discord-status'>Laden…</div></div>
-    <div class='discord-form'>
-      <input class='field' id='discord-webhook' type='password' autocomplete='off' placeholder='https://discord.com/api/webhooks/…'>
-      <button class='btn btn-primary' onclick='saveDiscordWebhook()'>Opslaan</button>
-      <button class='btn btn-ghost' onclick='testDiscordWebhook(this)'>Test</button>
-    </div>
+<div class='setting-card'>
+  <div class='setting-text'><div class='setting-title'>Webhook</div><div class='setting-desc' id='discord-status'>Laden…</div></div>
+  <div class='discord-form'>
+    <input class='field' id='discord-webhook' type='password' autocomplete='off' aria-label='Discord-webhook' placeholder='https://discord.com/api/webhooks/…'>
+    <button class='btn btn-primary' onclick='saveDiscordWebhook()'>Opslaan</button>
+    <button class='btn btn-ghost' onclick='testDiscordWebhook(this)'>Test</button>
   </div>
 </div>
 </div>
 <div class='set-section' data-module='camera'>
 <div class='section-title'>Deurbelcamera (Reolink)</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div><div class='power-label'>Camera</div><div style='font-size:0.72rem;color:var(--dim)' id='camera-status'>Laden…</div></div>
-    <div class='cam-form'>
-      <input class='field' id='camera-host' autocomplete='off' placeholder='IP-adres, bijv. 192.168.178.50'>
-      <input class='field' id='camera-user' autocomplete='off' placeholder='Gebruiker (leeg = admin)'>
-      <input class='field' id='camera-password' type='password' autocomplete='new-password' placeholder='Wachtwoord (leeg als er geen is)'>
-      <button class='btn btn-primary' onclick='saveCameraConfig(this)'>Opslaan</button>
-    </div>
+<div class='setting-card'>
+  <div class='setting-text'><div class='setting-title'>Camera</div><div class='setting-desc' id='camera-status'>Laden…</div></div>
+  <div class='cam-form'>
+    <input class='field' id='camera-host' autocomplete='off' aria-label='IP-adres van de camera' placeholder='IP-adres, bijv. 192.168.178.50'>
+    <input class='field' id='camera-user' autocomplete='off' aria-label='Gebruiker' placeholder='Gebruiker (leeg = admin)'>
+    <input class='field' id='camera-password' type='password' autocomplete='new-password' aria-label='Wachtwoord' placeholder='Wachtwoord (leeg als er geen is)'>
+    <button class='btn btn-primary' onclick='saveCameraConfig(this)'>Opslaan</button>
   </div>
 </div>
 </div>
 <div class='set-section' data-module='vaatwasser'>
-<div class='section-title' data-module='vaatwasser'>Vaatwasser (Home Connect)</div>
-<div class='power-hero' data-module='vaatwasser'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div><div class='power-label'>Koppeling</div><div style='font-size:0.72rem;color:var(--dim)' id='hc-status'>Laden…</div></div>
-    <div class='hc-pending' id='hc-pending'></div>
-    <div class='hc-form'>
-      <input class='field' id='hc-client-id' type='password' autocomplete='off' placeholder='Client-ID'>
-      <input class='field' id='hc-client-secret' type='password' autocomplete='off' placeholder='Client secret (optioneel)'>
-      <button class='btn btn-primary' onclick='saveHcConfig()'>Opslaan</button>
-      <button class='btn btn-ghost' id='hc-link-btn' onclick='linkHc()' disabled>Koppelen</button>
-    </div>
+<div class='section-title'>Vaatwasser (Home Connect)</div>
+<div class='setting-card'>
+  <div class='setting-text'><div class='setting-title'>Koppeling</div><div class='setting-desc' id='hc-status'>Laden…</div></div>
+  <div class='hc-pending' id='hc-pending'></div>
+  <div class='hc-form'>
+    <input class='field' id='hc-client-id' type='password' autocomplete='off' aria-label='Client-ID' placeholder='Client-ID'>
+    <input class='field' id='hc-client-secret' type='password' autocomplete='off' aria-label='Client secret' placeholder='Client secret (optioneel)'>
+    <button class='btn btn-primary' onclick='saveHcConfig()'>Opslaan</button>
+    <button class='btn btn-ghost' id='hc-link-btn' onclick='linkHc()' disabled>Koppelen</button>
   </div>
 </div>
 </div>
 <div class='set-section' data-module='afval'>
-<div class='section-title' data-module='afval'>Afvalkalender</div>
-<div class='power-hero' data-module='afval'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div><div class='power-label'>Adres</div><div style='font-size:0.72rem;color:var(--dim)' id='afval-address-status'>Vul je postcode en huisnummer in (gemeente Breda)</div></div>
-    <div class='afval-form'>
-      <input class='field' id='afval-postcode' placeholder='Postcode' maxlength='7' autocomplete='postal-code' autocapitalize='characters'>
-      <input class='field' id='afval-huisnummer' placeholder='Nr.' inputmode='numeric' maxlength='5'>
-      <input class='field' id='afval-toevoeging' placeholder='Toev.' maxlength='6'>
-      <button class='btn btn-primary' onclick='saveAfvalAddress()'>Opslaan</button>
-    </div>
+<div class='section-title'>Afvalkalender</div>
+<div class='setting-card'>
+  <div class='setting-text'><div class='setting-title'>Adres</div><div class='setting-desc' id='afval-address-status'>Vul je postcode en huisnummer in (gemeente Breda)</div></div>
+  <div class='afval-form'>
+    <input class='field' id='afval-postcode' aria-label='Postcode' placeholder='Postcode' maxlength='7' autocomplete='postal-code' autocapitalize='characters'>
+    <input class='field' id='afval-huisnummer' aria-label='Huisnummer' placeholder='Nr.' inputmode='numeric' maxlength='5'>
+    <input class='field' id='afval-toevoeging' aria-label='Toevoeging' placeholder='Toev.' maxlength='6'>
+    <button class='btn btn-primary' onclick='saveAfvalAddress()'>Opslaan</button>
   </div>
 </div>
 </div>
@@ -387,17 +368,15 @@
 <div class='set-group' data-set='aanwezig'>
 <div class='set-section' data-module='aanwezigheid'>
 <div class='section-title'>Wie is thuis</div>
-<div class='power-hero'><div class='presence-list' id='presence-list'><div class='outage-sub'>Laden…</div></div></div>
+<div class='setting-card'><div class='presence-list' id='presence-list'><div class='outage-sub'>Laden…</div></div></div>
 </div>
 <div class='set-section' data-module='aanwezigheid'>
 <div class='section-title'>Deze telefoon aanmelden</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div style='font-size:0.72rem;color:var(--dim)' id='presence-me-status'>Laden…</div>
-    <div class='presence-form'>
-      <input class='field' id='presence-name' autocomplete='off' maxlength='30' placeholder='Naam, bijv. Jelle'>
-      <button class='btn btn-primary' id='presence-claim' onclick='claimPresence(this)'>Dit is mijn telefoon</button>
-    </div>
+<div class='setting-card'>
+  <div class='setting-desc' id='presence-me-status'>Laden…</div>
+  <div class='presence-form'>
+    <input class='field' id='presence-name' autocomplete='off' maxlength='30' aria-label='Naam' placeholder='Naam, bijv. Jelle'>
+    <button class='btn btn-primary' id='presence-claim' onclick='claimPresence(this)'>Dit is mijn telefoon</button>
   </div>
 </div>
 </div>
@@ -405,46 +384,40 @@
 <div class='set-group' data-set='aanwezig'>
 <div class='set-section' data-module='aanwezigheid'>
 <div class='section-title'>Waar de gegevens vandaan komen</div>
-<div class='power-hero'><div class='presence-list' id='presence-sources'><div class='outage-sub'>Laden…</div></div></div>
+<div class='setting-card'><div class='presence-list' id='presence-sources'><div class='outage-sub'>Laden…</div></div></div>
 </div>
 <div class='set-section' data-module='aanwezigheid'>
 <div class='section-title'>Nu op het netwerk</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div class='presence-form'><div style='font-size:0.72rem;color:var(--dim)'>Zoekt het thuisnetwerk af en laat zien welke apparaten nu antwoorden. Elk apparaat kun je een naam geven of negeren; een telefoon die VloedHub heeft geopend kun je bijhouden.</div><button class='btn btn-ghost' onclick='scanPresence(this)'>Netwerk scannen</button></div>
-    <div class='presence-list' id='presence-scan'></div>
-  </div>
+<div class='setting-card'>
+  <div class='presence-form'><div class='setting-desc'>Zoekt het thuisnetwerk af en laat zien welke apparaten nu antwoorden. Elk apparaat kun je een naam geven of negeren; een telefoon die VloedHub heeft geopend kun je bijhouden.</div><button class='btn btn-ghost' onclick='scanPresence(this)'>Netwerk scannen</button></div>
+  <div class='presence-list' id='presence-scan'></div>
 </div>
 </div>
 </div>
 <div class='set-group' data-set='systeem'>
 <div class='set-section'>
 <div class='section-title'>Beveiliging</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div style='display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>PIN wijzigen</div><div style='font-size:0.72rem;color:var(--dim)'>Verander je 4-cijferige PIN-code</div></div>
-      <button onclick='showPinModal()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(141,178,85,0.5);background:rgba(141,178,85,0.15);color:var(--accent-l);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-lock'></i> Wijzigen</button>
-    </div>
-    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Uitloggen</div><div style='font-size:0.72rem;color:var(--dim)'>Sessie beëindigen</div></div>
-      <button onclick='logout()' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.1);color:#F87171;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
-    </div>
+<div class='setting-card'>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>PIN wijzigen</div><div class='setting-desc'>Verander je 4-cijferige PIN-code</div></div>
+    <button class='btn btn-ghost' onclick='showPinModal()'><i class='fa-solid fa-lock'></i> Wijzigen</button>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Uitloggen</div><div class='setting-desc'>Sessie beëindigen</div></div>
+    <button class='btn btn-danger' onclick='logout()'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
   </div>
 </div>
 </div>
 <div class='set-section'>
-<div class='section-title'>Navigatie</div>
-<div class='power-hero'>
-  <div style='display:flex;flex-direction:column;gap:0.75rem'>
-    <div style='display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Automatisering</div><div style='font-size:0.72rem;color:var(--dim)'>Flows aanmaken en beheren</div></div>
-      <a href='/flows' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.1);color:#818CF8;font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-diagram-project'></i> Flows</a>
-    </div>
-    <div style='border-top:1px solid var(--border);padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center'>
-      <div><div class='power-label'>Debug</div><div style='font-size:0.72rem;color:var(--dim)'>Serverinfo, logs en diagnostiek</div></div>
-      <a href='/debug' style='padding:0.5rem 1.1rem;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--muted);font-weight:700;font-family:inherit;cursor:pointer;font-size:0.85rem;text-decoration:none'><i class='fa-solid fa-bug'></i> Debug</a>
-    </div>
+<div class='section-title'>Meer</div>
+<div class='setting-card'>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Automatisering</div><div class='setting-desc'>Flows aanmaken en beheren</div></div>
+    <a href='/flows' class='btn btn-ghost'><i class='fa-solid fa-diagram-project'></i> Flows</a>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Debug</div><div class='setting-desc'>Serverinfo, logs en diagnostiek</div></div>
+    <a href='/debug' class='btn btn-quiet'><i class='fa-solid fa-bug'></i> Debug</a>
   </div>
 </div>
 </div>
@@ -488,48 +461,37 @@
 <script id='layout-data' type='application/json'>__LAYOUT_JSON__</script>
 <script src='/js/app.js'></script>
 
-<!-- PIN wijzigen modal -->
-<div id="pin-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:center;justify-content:center">
-  <div style="background:#141728;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.5rem;width:90%;max-width:320px;font-family:'Poppins',sans-serif;color:#F1F5F9">
-    <div style="font-size:0.95rem;font-weight:700;margin-bottom:1rem">🔒 PIN wijzigen</div>
-    <div id="pin-modal-body">
-      <div style="margin-bottom:0.75rem">
-        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Huidige PIN</label>
-        <input id="pin-current" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
-          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
-      </div>
-      <div style="margin-bottom:0.75rem">
-        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Nieuwe PIN (4 cijfers)</label>
-        <input id="pin-new" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
-          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
-      </div>
-      <div style="margin-bottom:1rem">
-        <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:#4A5880;display:block;margin-bottom:0.3rem">Herhaal nieuwe PIN</label>
-        <input id="pin-confirm" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="••••"
-          style="width:100%;background:#1A1E35;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#F1F5F9;padding:0.5rem 0.75rem;font-size:1rem;font-family:inherit;outline:none;letter-spacing:0.3em;text-align:center">
-      </div>
-      <div id="pin-modal-error" style="font-size:0.72rem;color:#F87171;min-height:1.2em;margin-bottom:0.75rem"></div>
-      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
-        <button onclick="closePinModal()" class="btn btn-ghost">Annuleren</button>
-        <button onclick="savePinModal()" class="btn btn-primary">Opslaan</button>
+<!-- PIN wijzigen -->
+<div class='modal-overlay' id='pin-modal-overlay'>
+  <div class='modal modal-narrow' role='dialog' aria-modal='true' aria-labelledby='pin-modal-title'>
+    <div class='modal-head'><div class='modal-title' id='pin-modal-title'><i class='fa-solid fa-lock'></i> PIN wijzigen</div><button class='icon-btn' onclick='closePinModal()' aria-label='Sluiten'><i class='fa-solid fa-xmark'></i></button></div>
+    <div class='modal-body' id='pin-modal-body'>
+      <div class='form-field'><label for='pin-current'>Huidige PIN</label><input class='field pin-field' id='pin-current' type='password' inputmode='numeric' maxlength='4' pattern='\d{4}' placeholder='••••' autocomplete='current-password'></div>
+      <div class='form-field'><label for='pin-new'>Nieuwe PIN (4 cijfers)</label><input class='field pin-field' id='pin-new' type='password' inputmode='numeric' maxlength='4' pattern='\d{4}' placeholder='••••' autocomplete='new-password'></div>
+      <div class='form-field'><label for='pin-confirm'>Herhaal nieuwe PIN</label><input class='field pin-field' id='pin-confirm' type='password' inputmode='numeric' maxlength='4' pattern='\d{4}' placeholder='••••' autocomplete='new-password'></div>
+      <div class='form-error' id='pin-modal-error' role='alert'></div>
+      <div class='modal-actions'>
+        <button onclick='closePinModal()' class='btn btn-quiet'>Annuleren</button>
+        <button onclick='savePinModal()' class='btn btn-primary'>Opslaan</button>
       </div>
     </div>
   </div>
 </div>
 
 <script src='/js/modals.js'></script>
-<button id='layout-edit-btn' onclick='toggleLayoutEdit()' style='position:fixed;bottom:calc(var(--nav-h) + var(--nav-safe) + 0.75rem);right:0.85rem;width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(141,178,85,0.85);border:none;color:#16210A;font-size:0.9rem;cursor:pointer;z-index:200;display:none;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(141,178,85,0.4)'><i class='fa-solid fa-pen-to-square'></i></button>
-<div id='scene-modal-overlay' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;padding:1rem'>
-  <div class='scene-modal'>
-    <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem'><div id='scene-modal-title' style='font-size:0.95rem;font-weight:700'>Scène</div><button onclick='closeSceneEditor()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem' aria-label='Sluiten'>✕</button></div>
+<button class='fab show' id='layout-edit-btn' onclick='toggleLayoutEdit()' title='Indeling aanpassen' aria-label='Indeling van Home aanpassen' aria-pressed='false'><i class='fa-solid fa-pen-to-square'></i></button>
+<div class='modal-overlay' id='scene-modal-overlay'>
+  <div class='modal scene-modal' role='dialog' aria-modal='true' aria-labelledby='scene-modal-title'>
+    <div class='modal-head'><div class='modal-title' id='scene-modal-title'>Scène</div><button class='icon-btn' onclick='closeSceneEditor()' aria-label='Sluiten'><i class='fa-solid fa-xmark'></i></button></div>
     <div id='scene-modal-body'></div>
   </div>
 </div>
-<div id='block-picker' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:flex-end;justify-content:center'>
-  <div style='background:#141728;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:480px;max-height:70vh;overflow-y:auto'>
-    <div style='font-size:0.85rem;font-weight:700;margin-bottom:1rem;display:flex;justify-content:space-between'>Blok toevoegen<button onclick='closeBlockPicker()' style='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem'>✕</button></div>
-    <div id='block-picker-list' style='display:flex;flex-direction:column;gap:0.5rem'></div>
+<div class='modal-overlay modal-overlay-sheet' id='block-picker'>
+  <div class='modal sheet' role='dialog' aria-modal='true' aria-labelledby='block-picker-title'>
+    <div class='modal-head'><div class='modal-title' id='block-picker-title'>Blok toevoegen</div><button class='icon-btn' onclick='closeBlockPicker()' aria-label='Sluiten'><i class='fa-solid fa-xmark'></i></button></div>
+    <div class='block-picker-list' id='block-picker-list'></div>
   </div>
 </div>
+<div class='toast-stack' id='toast-stack' role='status' aria-live='polite'></div>
 </body>
 </html>
