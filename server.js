@@ -39,6 +39,7 @@ var routes = [
   require("./routes/afval"),
   require("./routes/insights"),
   require("./routes/scenes"),
+  require("./routes/party"),
   require("./routes/monitor"),
   require("./routes/internet"),
   require("./routes/camera"),

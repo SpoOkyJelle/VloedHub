@@ -289,6 +289,16 @@
 <div id='settings-modules'></div>
 </div>
 <div class='set-section'>
+<div class='section-title'>Feest</div>
+<div class='setting-card'>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Feeststand</div><div class='setting-desc'>Voor een avond met gasten: een proostknop bij de scènes, de gang verwelkomt wie aanbelt, en VloedHub houdt bij hoe de avond verloopt. Aanzetten begint een nieuw feest.</div></div>
+    <button class='mod-switch' role='switch' aria-checked='false' aria-label='Feeststand' id='party-on' onclick='toggleParty(this)'></button>
+  </div>
+  <div class='setting-row party-row'><div class='setting-text'><div class='setting-title'>Het feest in cijfers</div><div class='party-stats'><div class='empty-note'>Laden…</div></div></div></div>
+</div>
+</div>
+<div class='set-section'>
 <div class='section-title'>Weergave</div>
 <div class='setting-card'>
   <div class='setting-row setting-row-wrap'>
@@ -508,6 +518,8 @@
 <div class='disco-lights' aria-hidden='true'><i></i><i></i><i></i><i></i></div>
 <button class='disco-pill' onclick='stopDisco()' aria-label='Discostand van de app stoppen'><i class='fa-solid fa-music'></i> Disco <span>Stoppen</span></button>
 <div class='night-overlay' id='night-overlay' onclick='nightWake()'><div class='night-clock' id='night-clock'><div id='night-time'></div><div id='night-date'></div></div><div class='night-hint'>Tik om het scherm te wekken</div></div>
+<canvas class='confetti' id='confetti' aria-hidden='true'></canvas>
+<div class='confetti-word' id='confetti-word' role='status'></div>
 <div class='toast-stack' id='toast-stack' role='status' aria-live='polite'></div>
 </body>
 </html>

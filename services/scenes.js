@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var state = require("../utils/state");
+var party = require("./party");
 
 // Scènes zetten meerdere lampen in één keer. Ze zijn aan te passen bij Instellingen
 // en staan in data/scenes.json; tot er iets is opgeslagen gelden de vier standaardscènes.
@@ -103,6 +104,7 @@ function run(id) {
   var scene = list().filter(function(s) { return s.id === id; })[0];
   if (!scene) return false;
   active = { id: id, at: Date.now() };
+  party.sceneStarted(id);
   Object.keys(scene.led || {}).forEach(function(d) { Object.assign(state.getLedState(d), scene.led[d]); });
   Object.keys(scene.relay || {}).forEach(function(d) { Object.assign(state.getRelayState(d), scene.relay[d]); });
   state.saveState();

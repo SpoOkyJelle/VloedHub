@@ -315,7 +315,7 @@ function openCamOverlay(ring) {
   }
   if (!ring) return;
   nightWake(CAM_RING_OPEN);
-  if (!ov.querySelector('.cam-ring')) ov.insertAdjacentHTML('beforeend', '<div class="cam-ring"><i class="fa-solid fa-bell"></i>Er wordt aangebeld</div>');
+  if (!ov.querySelector('.cam-ring')) ov.insertAdjacentHTML('beforeend', '<div class="cam-ring"><i class="fa-solid fa-bell"></i>' + (typeof partyState !== 'undefined' && partyState.on ? 'Nieuwe gast!' : 'Er wordt aangebeld') + '</div>');
   clearTimeout(camOvClose);
   camOvClose = setTimeout(closeCamOverlay, CAM_RING_OPEN);
 }
@@ -522,6 +522,8 @@ function renderScenes() {
   var buttons = SCENE_DATA.scenes.map(function(s) {
     return '<button class="btn btn-ghost' + (s.id === 'disco' ? ' btn-disco' : '') + '" data-scene="' + s.id + '" onclick="runScene(this)"><i class="fa-solid fa-' + s.icon + '"></i> ' + escHtml(s.label) + '</button>';
   }).join('');
+  // in de feeststand staat de proostknop bij de scènes
+  if (typeof partyState !== 'undefined' && partyState.on) buttons += '<button class="btn btn-proost" onclick="proost(this)"><i class="fa-solid fa-champagne-glasses"></i> Proost</button>';
   Array.prototype.forEach.call(document.querySelectorAll('.scene-row'), function(el) {
     el.innerHTML = buttons || '<div class="empty-note">Nog geen scènes. Maak er een bij Instellingen.</div>';
   });

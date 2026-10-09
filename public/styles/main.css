@@ -1046,7 +1046,7 @@ to {
   font-variant-numeric:tabular-nums}
 .scene-row {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));
   gap:0.5rem}
 .scene-row .btn {
   display:flex;
@@ -3105,3 +3105,93 @@ body.disco .screen.current :is(.stat-card,.info-card,.phase-card,.chart-card,.ca
 @keyframes disco-hue {
   to { filter:hue-rotate(360deg) }
 }
+
+/* Feeststand: proostknop, confetti en het feest in cijfers */
+.scene-row .btn-proost {
+  border-color:rgba(251,191,36,0.6);
+  background:rgba(251,191,36,0.14);
+  color:var(--yellow-l)}
+.scene-row .btn-proost i {
+  color:var(--yellow)}
+.confetti {
+  position:fixed;
+  inset:0;
+  z-index:2050;
+  width:100%;
+  height:100%;
+  display:none;
+  pointer-events:none}
+.confetti.show {
+  display:block}
+.confetti-word {
+  position:fixed;
+  left:50%;
+  top:38%;
+  z-index:2060;
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  padding:0.9rem 1.6rem;
+  border-radius:var(--r-pill);
+  background:var(--surface-raised);
+  border:1px solid var(--border-strong);
+  box-shadow:var(--shadow);
+  color:var(--text);
+  font-size:clamp(1.5rem,6vw,2.75rem);
+  font-weight:700;
+  white-space:nowrap;
+  opacity:0;
+  visibility:hidden;
+  transform:translate(-50%,-50%) scale(0.6);
+  pointer-events:none;
+  transition:opacity 0.3s,transform 0.4s cubic-bezier(0.2,1.4,0.4,1),visibility 0s 0.3s}
+.confetti-word.show {
+  opacity:1;
+  visibility:visible;
+  transform:translate(-50%,-50%) scale(1);
+  transition:opacity 0.2s,transform 0.4s cubic-bezier(0.2,1.4,0.4,1)}
+.confetti-word i {
+  color:var(--yellow)}
+.party-row .setting-text {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}
+.party-when {
+  display:flex;
+  align-items:center;
+  gap:0.45rem;
+  font-size:var(--fs-xs);
+  color:var(--muted)}
+.party-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));
+  gap:0.5rem}
+.party-tile {
+  min-width:0;
+  padding:0.65rem 0.75rem;
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  background:rgba(var(--overlay-rgb),0.03)}
+.party-tile > i {
+  color:var(--accent-l);
+  font-size:var(--fs-md)}
+.party-value {
+  margin-top:0.3rem;
+  font-size:var(--fs-xl);
+  font-weight:700;
+  letter-spacing:-0.02em;
+  font-variant-numeric:tabular-nums}
+.party-label {
+  font-size:var(--fs-2xs);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--dim)}
+.party-sub {
+  margin-top:0.15rem;
+  font-size:var(--fs-2xs);
+  color:var(--muted)}
+.party-stats {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}

@@ -4,6 +4,7 @@ var fs = require("fs");
 var path = require("path");
 var discord = require("./discord");
 var modules = require("./modules");
+var party = require("./party");
 
 // Beeld van de Reolink-deurbel: een momentopname (JPEG) via de HTTP-API van de camera.
 // Het adres en de inloggegevens staan in data/camera.json (niet in git) en zijn in te stellen bij
@@ -168,6 +169,8 @@ function checkBell() {
     bell.pressed = !!pressed;
     if (!rising || (bell.ringAt && Date.now() - bell.ringAt < BELL_QUIET)) return;
     bell.ringAt = Date.now();
+    // in de feeststand telt dit als een gast en verwelkomt de gang hem
+    party.ring(bell.ringAt);
     var at = bell.ringAt, message = "🔔 **Er wordt aangebeld**";
     // meteen een nieuwe opname, niet die van een eerdere kijker; lukt dat niet, dan gaat de melding zonder foto weg
     fetchSnapshot(function(snapErr, image) {

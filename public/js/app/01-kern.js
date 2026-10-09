@@ -77,7 +77,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 400);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); loadPresence(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); ledRenderAll(); }
   var eb = document.getElementById('layout-edit-btn');
   if (eb) eb.classList.toggle('show', n === 0);
