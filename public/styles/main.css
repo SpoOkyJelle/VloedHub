@@ -3056,3 +3056,17 @@ body.disco .app-logo,body.disco .nav-logo {
   .disco-pill {
   bottom:1.25rem}
 }
+
+/* Discostand: knoppen, tabbladen en schakelaars naast elkaar krijgen elk een andere tint, zodat ze tegen elkaar
+   afsteken en bij elke kleurwissel zichtbaar verspringen in plaats van samen te vervagen. */
+body.disco :is(.btn:not(.btn-danger),.tab,.effect-btn,.nav-item,.status-chip,.info-card,.hour-cheap,.hour-mid,.hour-exp):nth-child(3n+2) {
+  filter:hue-rotate(120deg)}
+body.disco :is(.btn:not(.btn-danger),.tab,.effect-btn,.nav-item,.status-chip,.info-card,.hour-cheap,.hour-mid,.hour-exp):nth-child(3n) {
+  filter:hue-rotate(240deg)}
+body.disco :is(.layout-block,.lamp-block,.setting-row):nth-child(3n+2) :is(.mod-switch,.lamp-state,.lamp-more) {
+  filter:hue-rotate(120deg)}
+body.disco :is(.layout-block,.lamp-block,.setting-row):nth-child(3n) :is(.mod-switch,.lamp-state,.lamp-more) {
+  filter:hue-rotate(240deg)}
+/* de wissel zelf is kort en strak */
+body.disco :is(.btn,.tab,.effect-btn,.mod-switch,.nav-item,.lamp-state,.tab-indicator),body.disco .mod-switch::after {
+  transition-duration:0.12s}

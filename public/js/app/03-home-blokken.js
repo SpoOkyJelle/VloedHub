@@ -651,8 +651,11 @@ loadScenes();
 // ── Discostand van de app ──
 // Start iemand de scène Disco, dan doet de app zelf mee: de merkkleur loopt de regenboog rond en er schuiven
 // gekleurde lichtvlekken over het scherm. De server onthoudt welke scène het laatst is gestart, dus elk open
-// scherm (ook de wandtablet) gaat binnen een paar tellen mee. Bewust zonder flitsen: alles beweegt langzaam.
+// scherm (ook de wandtablet) gaat binnen een paar tellen mee. De kleur verspringt op de maat (twee keer per seconde)
+// naar een duidelijk andere tint; de helderheid blijft gelijk, dus het flitst niet.
 var DISCO_SCENE = 'disco', DISCO_POLL = 4000;
+var DISCO_BEAT = 500;   // ms per kleurwissel: 120 tellen per minuut
+var DISCO_JUMP = 137;   // graden op de kleurcirkel per wissel; zo ligt elke kleur ver van de vorige en herhaalt het lang niet
 var discoOn = false, discoTimer = null, discoHue = 90;
 var DISCO_VARS = ['--accent', '--accent-l', '--accent-text', '--accent-hover', '--accent-rgb'];
 function hslRgb(h, s, l) {
@@ -661,7 +664,7 @@ function hslRgb(h, s, l) {
   return [f(0), f(8), f(4)];
 }
 function discoStep() {
-  discoHue = (discoHue + 3) % 360;
+  discoHue = (discoHue + DISCO_JUMP) % 360;
   var light = document.documentElement.dataset.theme === 'light', st = document.documentElement.style;
   function rgb(l, sat) { return 'rgb(' + hslRgb(discoHue, sat || 0.75, l).join(',') + ')'; }
   var base = hslRgb(discoHue, 0.75, light ? 0.45 : 0.6);
@@ -681,7 +684,7 @@ function setDisco(on) {
   if (on) {
     discoStep();
     // wie minder beweging wil krijgt één feestkleur, zonder verloop
-    if (!noMotion) discoTimer = setInterval(discoStep, 120);
+    if (!noMotion) discoTimer = setInterval(discoStep, DISCO_BEAT);
   } else {
     DISCO_VARS.forEach(function(v) { document.documentElement.style.removeProperty(v); });
   }
