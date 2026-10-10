@@ -322,6 +322,8 @@ function openCamOverlay(ring) {
 function closeCamOverlay() {
   var ov = document.getElementById('cam-overlay');
   if (!ov || !ov.classList.contains('open')) return;
+  var ringsOv = document.getElementById('rings-overlay');
+  if (ringsOv) ringsOv.style.pointerEvents = 'none';
   clearTimeout(camOvTimer);
   clearTimeout(camOvClose);
   ov.classList.remove('open');
@@ -329,6 +331,7 @@ function closeCamOverlay() {
   setTimeout(function() {
     ov.remove();
     if (camOvUrl) { URL.revokeObjectURL(camOvUrl); camOvUrl = null; }
+    if (ringsOv) ringsOv.style.pointerEvents = '';
   }, 280);
 }
 // ── Bezoekers ──
@@ -371,7 +374,7 @@ function openRingsHistory() {
     if (!grid) return;
     if (!list.length) { grid.innerHTML = '<p class="rings-empty">Geen foto\'s bewaard</p>'; return; }
     grid.innerHTML = list.map(function(at) {
-      return '<div class="rings-item"><button class="cam-visit" onclick="openCamStill(' + at + ');closeRingsHistory()" aria-label="Foto van ' + shortWhen(at) + '"><img loading="lazy" alt="" src="/api/camera/rings/' + at + '.jpg"><span>' + shortWhen(at) + '</span></button>' +
+      return '<div class="rings-item"><button class="cam-visit" onclick="openCamStill(' + at + ')" aria-label="Foto van ' + shortWhen(at) + '"><img loading="lazy" alt="" src="/api/camera/rings/' + at + '.jpg"><span>' + shortWhen(at) + '</span></button>' +
         '<button class="rings-delete" onclick="deleteRingFromHistory(' + at + ',this)" aria-label="Verwijder foto"><i class="fa-solid fa-trash"></i></button></div>';
     }).join('');
   }).catch(function(){});
