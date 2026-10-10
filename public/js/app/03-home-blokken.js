@@ -423,10 +423,9 @@ function checkBell() {
     if (!d.ring_at || d.ring_at === bellSeen) return;
     bellSeen = d.ring_at;
     if (d.age_ms > BELL_FRESH) return;
-    openCamOverlay(true);
+    openCamStill(d.ring_at);
     loadMeldingen();
-    // de foto wordt direct na het aanbellen gemaakt en is er een paar tellen later
-    setTimeout(loadRings, 4000);
+    loadRings();
   }).catch(function(){});
 }
 setInterval(checkBell, BELL_POLL);
