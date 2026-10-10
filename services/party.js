@@ -11,11 +11,10 @@ var prices = require("./prices");
 // De stand en de tellers staan in data/party.json, zodat een herstart midden op de avond niets wist.
 var PARTY_FILE = path.join(__dirname, "../data/party.json");
 
-var LED_DEVICES = ["default", "keuken", "gang"];
+var LED_DEVICES = ["default", "keuken", "gang", "tv-meubel"];
 var CONFETTI = 5, RAINBOW = 2;      // effectnummers van de ledstrips
 var PROOST_MS = 10000;              // zo lang staan de strips op confetti
-var WELCOME_MS = 6000;              // zo lang verwelkomt de gang een gast
-var WELCOME_DEVICE = "gang";
+var WELCOME_MS = 6000;              // zo lang verwelkomen alle strips een gast
 
 var party = { on: false, started_at: null, ended_at: null, rings: [], proosts: 0, discos: 0 };
 try {
@@ -68,7 +67,9 @@ function ring(at) {
   party.rings.push(at);
   write();
   lastWelcome = at;
-  flash(WELCOME_DEVICE, { on: true, effect: RAINBOW, brightness: Math.max(state.getLedState(WELCOME_DEVICE).brightness || 0, 200) }, WELCOME_MS);
+  LED_DEVICES.forEach(function(d) {
+    flash(d, { on: true, effect: RAINBOW, brightness: Math.max(state.getLedState(d).brightness || 0, 200) }, WELCOME_MS);
+  });
   state.saveState();
 }
 

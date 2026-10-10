@@ -1559,6 +1559,109 @@ to {
   transition:opacity 0.2s ease}
 .cam-overlay.open .cam-close {
   opacity:1}
+/* Meer-knop in het bezoekersraster */
+.cam-visit-more {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0.3rem;
+  background:rgba(255,255,255,0.06);
+  color:var(--text-sub,#8a94a6);
+  font-size:0.72rem}
+.cam-visit-more i {
+  font-size:1.1rem}
+/* Verwijderknop op foto in de overlay */
+.cam-delete {
+  position:absolute;
+  bottom:calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  right:calc(0.8rem + env(safe-area-inset-right, 0px));
+  width:2.4rem;
+  height:2.4rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(200,50,50,0.75);
+  color:#fff;
+  font-size:0.95rem;
+  opacity:0;
+  transition:opacity 0.2s ease}
+.cam-overlay.open .cam-delete {
+  opacity:1}
+/* Geschiedenis-overlay */
+.rings-overlay {
+  position:fixed;
+  inset:0;
+  z-index:1100;
+  background:rgba(0,0,0,0);
+  display:flex;
+  align-items:flex-end;
+  transition:background 0.25s ease}
+.rings-overlay.open {
+  background:rgba(0,0,0,0.7)}
+.rings-overlay-inner {
+  width:100%;
+  max-height:90dvh;
+  background:var(--card-bg,#1a1f2e);
+  border-radius:1.2rem 1.2rem 0 0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  transform:translateY(100%);
+  transition:transform 0.25s cubic-bezier(0.2,0.8,0.2,1)}
+.rings-overlay.open .rings-overlay-inner {
+  transform:translateY(0)}
+.rings-overlay-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:1rem 1rem 0.75rem;
+  font-size:0.95rem;
+  font-weight:600;
+  color:var(--text,#e8ecf4);
+  border-bottom:1px solid rgba(255,255,255,0.07)}
+.rings-close {
+  width:2rem;
+  height:2rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,0.08);
+  color:var(--text,#e8ecf4);
+  font-size:0.9rem}
+.rings-grid {
+  overflow-y:auto;
+  padding:0.75rem;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0.4rem}
+.rings-item {
+  position:relative;
+  transition:opacity 0.2s}
+.rings-delete {
+  position:absolute;
+  top:0.25rem;
+  right:0.25rem;
+  width:1.8rem;
+  height:1.8rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(200,50,50,0.8);
+  color:#fff;
+  font-size:0.75rem;
+  opacity:0;
+  transition:opacity 0.15s}
+.rings-item:hover .rings-delete,.rings-item:focus-within .rings-delete {
+  opacity:1}
+.rings-loading,.rings-empty {
+  grid-column:1/-1;
+  text-align:center;
+  padding:2rem;
+  color:var(--text-sub,#8a94a6)}
 @media (prefers-reduced-motion:reduce) {
   .cam-pill.live i {
   animation:none}
@@ -1566,6 +1669,8 @@ to {
   transition:none}
   .cam-ring i {
   animation:none}
+  .rings-overlay,.rings-overlay-inner {
+  transition:none}
 }
 .cam-form {
   display:grid;

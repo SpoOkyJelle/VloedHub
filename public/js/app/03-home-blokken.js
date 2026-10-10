@@ -338,10 +338,58 @@ function loadRings() {
   var el = document.getElementById('blk-cam-visits');
   if (!el) return;
   fetch('/api/camera/rings').then(function(r){return r.json();}).then(function(list) {
-    el.innerHTML = list.slice(0, CAM_VISITS).map(function(at) {
+    var show = list.slice(0, list.length > CAM_VISITS ? CAM_VISITS - 1 : CAM_VISITS);
+    var html = show.map(function(at) {
       return '<button class="cam-visit" onclick="openCamStill(' + at + ')" aria-label="Foto van ' + shortWhen(at) + '"><img loading="lazy" alt="" src="/api/camera/rings/' + at + '.jpg"><span>' + shortWhen(at) + '</span></button>';
     }).join('');
+    if (list.length > CAM_VISITS) {
+      html += '<button class="cam-visit cam-visit-more" onclick="openRingsHistory()" aria-label="Alle foto\'s bekijken"><i class="fa-solid fa-images"></i><span>+' + (list.length - (CAM_VISITS - 1)) + ' meer</span></button>';
+    }
+    el.innerHTML = html;
   }).catch(function(){});
+}
+function deleteRing(at, cb) {
+  fetch('/api/camera/rings/' + at + '.jpg', { method: 'DELETE' }).then(function(r){return r.json();}).then(function(d) {
+    if (d.ok) { loadRings(); if (cb) cb(); }
+  }).catch(function(){});
+}
+function openRingsHistory() {
+  if (document.getElementById('rings-overlay')) return;
+  var ov = document.createElement('div');
+  ov.id = 'rings-overlay';
+  ov.className = 'rings-overlay';
+  ov.innerHTML = '<div class="rings-overlay-inner" onclick="event.stopPropagation()">' +
+    '<div class="rings-overlay-header"><span>Bezoekersgeschiedenis</span><button class="rings-close" onclick="closeRingsHistory()"><i class="fa-solid fa-xmark"></i></button></div>' +
+    '<div class="rings-grid" id="rings-grid"><div class="rings-loading"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>' +
+    '</div>';
+  ov.onclick = closeRingsHistory;
+  document.body.appendChild(ov);
+  ov.offsetWidth;
+  ov.classList.add('open');
+  fetch('/api/camera/rings').then(function(r){return r.json();}).then(function(list) {
+    var grid = document.getElementById('rings-grid');
+    if (!grid) return;
+    if (!list.length) { grid.innerHTML = '<p class="rings-empty">Geen foto\'s bewaard</p>'; return; }
+    grid.innerHTML = list.map(function(at) {
+      return '<div class="rings-item"><button class="cam-visit" onclick="openCamStill(' + at + ');closeRingsHistory()" aria-label="Foto van ' + shortWhen(at) + '"><img loading="lazy" alt="" src="/api/camera/rings/' + at + '.jpg"><span>' + shortWhen(at) + '</span></button>' +
+        '<button class="rings-delete" onclick="deleteRingFromHistory(' + at + ',this)" aria-label="Verwijder foto"><i class="fa-solid fa-trash"></i></button></div>';
+    }).join('');
+  }).catch(function(){});
+}
+function closeRingsHistory() {
+  var ov = document.getElementById('rings-overlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  setTimeout(function() { ov.remove(); }, 250);
+}
+function deleteRingFromHistory(at, btn) {
+  var item = btn.closest('.rings-item');
+  if (item) item.style.opacity = '0.4';
+  deleteRing(at, function() {
+    if (item) item.remove();
+    var grid = document.getElementById('rings-grid');
+    if (grid && !grid.querySelector('.rings-item')) grid.innerHTML = '<p class="rings-empty">Geen foto\'s bewaard</p>';
+  });
 }
 function openCamStill(at) {
   if (layoutEditMode || document.getElementById('cam-overlay')) return;
@@ -351,7 +399,8 @@ function openCamStill(at) {
   ov.dataset.still = '1';
   ov.onclick = closeCamOverlay;
   ov.innerHTML = '<img alt="Foto van de deurbel" src="/api/camera/rings/' + at + '.jpg"><span class="cam-close"><i class="fa-solid fa-xmark"></i></span>' +
-    '<div class="cam-ring still"><i class="fa-solid fa-bell"></i>Aangebeld ' + shortWhen(at) + '</div>';
+    '<div class="cam-ring still"><i class="fa-solid fa-bell"></i>Aangebeld ' + shortWhen(at) + '</div>' +
+    '<button class="cam-delete" onclick="event.stopPropagation();deleteRing(' + at + ',closeCamOverlay)" aria-label="Foto verwijderen"><i class="fa-solid fa-trash"></i></button>';
   camShrink(ov.firstChild);
   document.body.appendChild(ov);
   ov.offsetWidth;

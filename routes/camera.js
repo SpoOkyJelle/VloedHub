@@ -41,6 +41,14 @@ module.exports = function(req, res) {
     return true;
   }
 
+  var delRing = req.method === "DELETE" && req.url.match(/^\/api\/camera\/rings\/(\d{13})\.jpg$/);
+  if (delRing) {
+    var delErr = camera.deleteRing(delRing[1]);
+    if (delErr) return json(res, 404, { ok: false, error: delErr });
+    json(res, 200, { ok: true });
+    return true;
+  }
+
   var ring = req.method === "GET" && req.url.match(/^\/api\/camera\/rings\/(\d{13})\.jpg$/);
   if (ring) {
     camera.ringImage(ring[1], function(err, image) {

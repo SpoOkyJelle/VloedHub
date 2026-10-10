@@ -57,7 +57,7 @@ const char* LED_GROUP  = "tv-meubel";            // groep-naam in de LED-API
 #define COLOR_ORDER  GRB
 
 // --- Polling & reconnect ---
-const unsigned long POLL_INTERVAL      = 500;    // ms tussen server-polls
+const unsigned long POLL_INTERVAL      = 100;    // ms tussen server-polls
 const unsigned long RECONNECT_INTERVAL = 30000;  // ms voor WiFi-herverbinding
 
 // --- Film Modus (effect 11) ---

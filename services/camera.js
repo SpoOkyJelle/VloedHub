@@ -202,6 +202,11 @@ function ringImage(id, cb) {
   fs.readFile(path.join(RINGS_DIR, id + ".jpg"), function(err, image) { cb(err ? "Foto niet gevonden" : null, image); });
 }
 
+function deleteRing(id) {
+  if (!/^\d{13}$/.test(String(id))) return "Onbekende foto";
+  try { fs.unlinkSync(path.join(RINGS_DIR, id + ".jpg")); return null; } catch (e) { return "Foto niet gevonden"; }
+}
+
 // Voor de browser: wanneer er voor het laatst is aangebeld en hoe lang dat geleden is
 function getBell() {
   return { ring_at: bell.ringAt, age_ms: bell.ringAt ? Date.now() - bell.ringAt : null, supported: bell.supported };
@@ -211,4 +216,4 @@ function start() {
   setInterval(checkBell, BELL_INTERVAL);
 }
 
-module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost, getBell: getBell, listRings: listRings, ringImage: ringImage, start: start };
+module.exports = { getStatus: getStatus, setConfig: setConfig, snapshot: snapshot, parseHost: parseHost, getBell: getBell, listRings: listRings, ringImage: ringImage, deleteRing: deleteRing, start: start };
