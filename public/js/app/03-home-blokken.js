@@ -424,6 +424,7 @@ function checkBell() {
     bellSeen = d.ring_at;
     if (d.age_ms > BELL_FRESH) return;
     openCamStill(d.ring_at);
+    setTimeout(closeCamOverlay, 5000);
     loadMeldingen();
     loadRings();
   }).catch(function(){});
