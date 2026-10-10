@@ -49,7 +49,7 @@
       "default": { "on": true, "effect": 3 },
       "keuken": { "on": true, "effect": 3 },
       "gang": { "on": true, "effect": 2 },
-      "tv-meubel": { "on": true, "effect": 12 }
+      "tv-meubel": { "on": true, "effect": 3 }
     },
     "relay": {
       "gang": { "on": false }

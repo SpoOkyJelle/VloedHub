@@ -22,7 +22,7 @@ var DEFAULTS = [
   { id: "all_on", label: "Alles aan", icon: "lightbulb",
     led: { "default": { on: true }, "keuken": { on: true }, "gang": { on: true }, "tv-meubel": { on: true } }, relay: { "gang": { on: true } } },
   { id: "disco", label: "Disco", icon: "music",
-    led: { "default": { on: true, effect: 3 }, "keuken": { on: true, effect: 3 }, "gang": { on: true, effect: 2 }, "tv-meubel": { on: true, effect: 12 } }, relay: { "gang": { on: false } } },
+    led: { "default": { on: true, effect: 3 }, "keuken": { on: true, effect: 3 }, "gang": { on: true, effect: 2 }, "tv-meubel": { on: true, effect: 3 } }, relay: { "gang": { on: false } } },
   { id: "film", label: "Film", icon: "film",
     led: { "default": { on: false }, "keuken": { on: false }, "gang": { on: false }, "tv-meubel": { on: true, effect: 11, brightness: 120 } }, relay: { "gang": { on: false } } },
   { id: "gaming", label: "Gaming", icon: "star",
