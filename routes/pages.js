@@ -3,6 +3,7 @@ var path = require("path");
 var discord = require("../services/discord");
 var layout = require("./layout");
 var modules = require("../services/modules");
+var auth = require("../services/auth");
 
 var PUBLIC_DIR = path.join(__dirname, "../public");
 var HTML_TEMPLATE = fs.readFileSync(path.join(PUBLIC_DIR, "index.html"), "utf8");
@@ -20,8 +21,11 @@ var MIME_TYPES = {
 module.exports = function(req, res) {
   if (req.method === "GET" && req.url.split("?")[0] === "/") {
     var layoutJson = JSON.stringify(layout.load()).replace(/</g, "\\u003c");
+    // wie er is ingelogd (null zolang iedereen de gedeelde PIN gebruikt); de pagina verbergt daarmee wat alleen de beheerder mag
+    var me = auth.sessionUser(auth.getSessionToken(req));
     var html = HTML_TEMPLATE.replace(/__LOCAL_IP__/g, discord.LOCAL_IP).replace("__LAYOUT_JSON__", function() { return layoutJson; })
-      .replace("__MODULES_JSON__", function() { return JSON.stringify(modules.getMap()); });
+      .replace("__MODULES_JSON__", function() { return JSON.stringify(modules.getMap()); })
+      .replace("__USER_JSON__", function() { return JSON.stringify(me ? { id: me.id, name: me.name, role: me.role } : null).replace(/</g, "\\u003c"); });
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(html);
     return true;

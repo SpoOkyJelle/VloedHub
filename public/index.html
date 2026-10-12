@@ -17,6 +17,7 @@
 <link rel='stylesheet' href='/styles/main.css'>
 <script src='/vendor/chartjs/chart.umd.min.js'></script>
 <script id='modules-data' type='application/json'>__MODULES_JSON__</script>
+<script id='user-data' type='application/json'>__USER_JSON__</script>
 </head>
 <body>
 <script src='/js/boot.js'></script>
@@ -282,12 +283,12 @@
 <div class='tab-bar set-tabs tab-slide' id='settings-tabs' role='tablist'>
   <button class='tab active' role='tab' data-set='algemeen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-sliders'></i> Algemeen</button>
   <button class='tab' role='tab' data-set='apparaten' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-microchip'></i> Apparaten</button>
-  <button class='tab' role='tab' data-set='koppelingen' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
+  <button class='tab' role='tab' data-set='koppelingen' data-admin onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-link'></i> Koppelingen</button>
   <button class='tab' role='tab' data-set='aanwezig' data-module='aanwezigheid' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-house-user'></i> Wie is thuis</button>
   <button class='tab' role='tab' data-set='systeem' onclick='showSettingsTab(this.dataset.set)'><i class='fa-solid fa-server'></i> Systeem</button>
 </div>
 <div class='set-group active' data-set='algemeen'>
-<div class='set-section'>
+<div class='set-section' data-admin>
 <div class='section-title'>Modules</div>
 <div id='settings-modules'></div>
 </div>
@@ -333,7 +334,7 @@
 <div id='settings-scenes'></div>
 </div>
 </div>
-<div class='set-group' data-set='koppelingen'>
+<div class='set-group' data-set='koppelingen' data-admin>
 <div class='set-section'>
 <div class='section-title'>Discord</div>
 <div class='setting-card'>
@@ -418,6 +419,7 @@
 <div class='setting-card'>
   <div class='setting-desc' id='users-status'>Laden…</div>
   <div class='presence-list' id='users-list'></div>
+  <input type='file' id='user-photo-file' accept='image/*' hidden onchange='userPhotoChosen(this)'>
   <div class='users-form' id='users-form' hidden>
     <input class='field' id='user-name' autocomplete='off' maxlength='30' aria-label='Naam' placeholder='Naam, bijv. Jelle'>
     <input class='field' id='user-pin' type='password' inputmode='numeric' maxlength='4' autocomplete='new-password' aria-label='PIN van 4 cijfers' placeholder='PIN'>
@@ -438,7 +440,7 @@
   </div>
 </div>
 </div>
-<div class='set-section'>
+<div class='set-section' data-admin>
 <div class='section-title'>Meer</div>
 <div class='setting-card'>
   <div class='setting-row'>

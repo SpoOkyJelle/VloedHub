@@ -228,6 +228,7 @@
       width: 3rem;
       height: 3rem;
       border-radius: 50%;
+      object-fit: cover;
       background: rgba(var(--accent-rgb),0.15);
       color: var(--accent);
       font-size: 1.3rem;
@@ -343,10 +344,12 @@
       var box = document.getElementById('pin-users'), last = null;
       try { last = localStorage.getItem('vh-user'); } catch (e) {}
       d.users.forEach(function(u) {
-        var btn = document.createElement('button'), initial = document.createElement('span');
+        // de profielfoto, of anders de eerste letter van de naam
+        var btn = document.createElement('button'), initial = document.createElement(u.photo ? 'img' : 'span');
         btn.className = 'pin-user';
         initial.className = 'pin-user-initial';
-        initial.textContent = u.name.charAt(0).toUpperCase();
+        if (u.photo) { initial.src = '/api/auth/avatar/' + u.id + '?v=' + u.photo; initial.alt = ''; }
+        else initial.textContent = u.name.charAt(0).toUpperCase();
         btn.appendChild(initial);
         btn.appendChild(document.createTextNode(u.name));
         btn.addEventListener('click', function() { pickUser(u); });

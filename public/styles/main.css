@@ -2127,6 +2127,15 @@ body.kiosk .meld-panel {
   gap:0.4rem}
 .users-form[hidden] {
   display:none}
+.user-avatar {
+  flex-shrink:0;
+  width:2.2rem;
+  height:2.2rem;
+  border-radius:50%;
+  object-fit:cover}
+/* Alleen voor de beheerder: een bewoner ziet het niet (de server weigert het ook) */
+body.not-admin [data-admin] {
+  display:none !important}
 /* Status omgeving: een knop per onderdeel, met het bijbehorende blok uitklapbaar eronder */
 .status-chips {
   display:grid;

@@ -143,12 +143,25 @@ module.exports = function(req, res) {
     var tok = auth.getSessionToken(req);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     var who = auth.sessionUser(tok);
-    // het inlogscherm laat de namen zien om uit te kiezen, dus die zijn zonder inlog op te vragen
+    // het inlogscherm laat de namen en foto's zien om uit te kiezen, dus die zijn zonder inlog op te vragen
     res.end(JSON.stringify({
       loggedIn: auth.isValidSession(tok), pinSet: auth.pinIsSet(),
-      users: auth.listUsers().map(function(u) { return { id: u.id, name: u.name }; }),
-      user: who ? { id: who.id, name: who.name, admin: !!who.admin } : null
+      users: auth.listUsers().map(function(u) { return { id: u.id, name: u.name, photo: u.photo }; }),
+      user: who ? { id: who.id, name: who.name, role: who.role } : null
     }));
+    return true;
+  }
+
+  // ── Profielfoto ──────────────────────────────────────────────────────────
+  // Ook zonder inlog, voor het inlogscherm. Het adres krijgt het moment van opslaan mee (?v=), dus de browser
+  // mag de foto lang bewaren: een nieuwe foto heeft een nieuw adres.
+  var avatar = req.method === 'GET' && req.url.match(/^\/api\/auth\/avatar\/([a-f0-9]{12})(?:\?.*)?$/);
+  if (avatar) {
+    var file = auth.photoFile(avatar[1]), image = null;
+    try { image = file && fs.readFileSync(file); } catch(e) {}
+    if (!image) { send(res, 404, { error: 'not found' }); return true; }
+    res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=31536000, immutable' });
+    res.end(image);
     return true;
   }
 
@@ -163,8 +176,8 @@ module.exports = function(req, res) {
     readBody(req, function(err, body) {
       if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
       var token = auth.getSessionToken(req), me = auth.sessionUser(token), first = !auth.hasUsers();
-      if (!first && !(me && me.admin)) return send(res, 403, { ok: false, error: 'Alleen een beheerder kan gebruikers toevoegen' });
-      var added = auth.addUser(body.name, body.pin, first);
+      if (!first && !auth.isAdmin(me)) return send(res, 403, { ok: false, error: 'Alleen de beheerder kan gebruikers toevoegen' });
+      var added = auth.addUser(body.name, body.pin);
       if (added.error) return send(res, 400, { ok: false, error: added.error });
       if (first) auth.bindSession(token, added.user.id);
       send(res, 200, usersReply(req));
@@ -172,21 +185,46 @@ module.exports = function(req, res) {
     return true;
   }
 
-  // Naam wijzigen kan iedereen bij zichzelf; een nieuwe PIN of de beheerdersrol geeft een beheerder aan een ander
+  // Naam wijzigen kan iedereen bij zichzelf; een nieuwe PIN geeft de beheerder aan een ander
   if (req.method === 'POST' && req.url === '/api/auth/users/update') {
     readBody(req, function(err, body) {
       if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
       var me = auth.sessionUser(auth.getSessionToken(req)), self = !!me && body.id === me.id;
-      var others = body.pin !== undefined || body.admin !== undefined;
-      if (!me || (others ? !me.admin : !me.admin && !self)) return send(res, 403, { ok: false, error: 'Dat kan alleen een beheerder' });
-      if (others && self) return send(res, 400, { ok: false, error: body.pin !== undefined ? 'Je eigen PIN wijzig je bij Beveiliging' : 'Je eigen beheerdersrol kun je niet aanpassen' });
+      var newPin = body.pin !== undefined;
+      if (!me || (!auth.isAdmin(me) && (newPin || !self))) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
+      if (newPin && self) return send(res, 400, { ok: false, error: 'Je eigen PIN wijzig je bij Beveiliging' });
       var changes = {};
       if (body.name !== undefined) changes.name = body.name;
-      if (body.pin !== undefined) changes.pin = body.pin;
-      if (body.admin !== undefined) changes.admin = !!body.admin;
+      if (newPin) changes.pin = body.pin;
       var failed = auth.updateUser(body.id, changes);
       if (failed) return send(res, 400, { ok: false, error: failed });
-      if (changes.pin !== undefined) auth.destroyUserSessions(body.id);
+      if (newPin) auth.destroyUserSessions(body.id);
+      send(res, 200, usersReply(req));
+    });
+    return true;
+  }
+
+  // Een profielfoto zetten of weghalen (image: null): bij jezelf, of de beheerder bij een ander
+  if (req.method === 'POST' && req.url === '/api/auth/users/photo') {
+    readBody(req, function(err, body) {
+      if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
+      var me = auth.sessionUser(auth.getSessionToken(req));
+      if (!me || (!auth.isAdmin(me) && body.id !== me.id)) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
+      var failed = auth.setPhoto(body.id, body.image);
+      if (failed) return send(res, 400, { ok: false, error: failed });
+      send(res, 200, usersReply(req));
+    });
+    return true;
+  }
+
+  // Er is één beheerder; die kan het beheer aan een ander geven en wordt dan zelf bewoner
+  if (req.method === 'POST' && req.url === '/api/auth/users/transfer') {
+    readBody(req, function(err, body) {
+      if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
+      var me = auth.sessionUser(auth.getSessionToken(req));
+      if (!auth.isAdmin(me)) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
+      var failed = auth.transferAdmin(body.id);
+      if (failed) return send(res, 400, { ok: false, error: failed });
       send(res, 200, usersReply(req));
     });
     return true;
@@ -196,8 +234,7 @@ module.exports = function(req, res) {
     readBody(req, function(err, body) {
       if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
       var me = auth.sessionUser(auth.getSessionToken(req));
-      if (!me || !me.admin) return send(res, 403, { ok: false, error: 'Dat kan alleen een beheerder' });
-      if (body.id === me.id) return send(res, 400, { ok: false, error: 'Je kunt jezelf niet verwijderen' });
+      if (!auth.isAdmin(me)) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
       var failed = auth.removeUser(body.id);
       if (failed) return send(res, 400, { ok: false, error: failed });
       send(res, 200, usersReply(req));

@@ -40,18 +40,26 @@ function hashMatches(hash, pin) {
 }
 
 // ── Gebruikers ────────────────────────────────────────────────────────────
-// Iedere huisgenoot heeft een eigen naam en PIN. Ze staan in data/users.json (niet in git). De eerste
-// gebruiker wordt beheerder; alleen een beheerder kan anderen toevoegen, verwijderen of een nieuwe PIN geven.
+// Iedere huisgenoot heeft een eigen naam en PIN. Ze staan in data/users.json (niet in git), de profielfoto's
+// in data/avatars/. Iedereen heeft een rol: er is precies één beheerder ("admin"), de rest is bewoner. De eerste
+// gebruiker wordt beheerder; alleen die kan anderen toevoegen, verwijderen of een nieuwe PIN geven, en het
+// beheer overdragen aan een ander. Wat verder alleen de beheerder mag staat in server.js.
 // Zolang er nog geen gebruikers zijn werkt de gedeelde PIN uit config.json zoals voorheen; daarna niet meer.
 var USERS_PATH = path.join(__dirname, '../data/users.json');
+var AVATAR_DIR = path.join(__dirname, '../data/avatars');
 var MAX_USERS = 10;
-var users = loadUsers();   // [{ id, name, pinHash, admin }]
+var MAX_PHOTO = 300 * 1024;   // de browser verkleint de foto eerst; een echte is een paar tientallen kB
+var users = loadUsers();   // [{ id, name, pinHash, role, photo }]: photo is het moment van opslaan, of ontbreekt
 
 function loadUsers() {
-  try {
-    var list = JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')).users;
-    return Array.isArray(list) ? list.filter(function(u) { return u && u.id && u.name && u.pinHash; }) : [];
-  } catch(e) { return []; }
+  var list;
+  try { list = JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')).users; } catch(e) { return []; }
+  if (!Array.isArray(list)) return [];
+  list = list.filter(function(u) { return u && u.id && u.name && u.pinHash; });
+  // precies één beheerder: de eerste die zo staat aangemerkt, anders de eerste gebruiker
+  var boss = list.filter(function(u) { return u.role === 'admin' || u.admin; })[0] || list[0];
+  list.forEach(function(u) { u.role = u === boss ? 'admin' : 'bewoner'; delete u.admin; });
+  return list;
 }
 
 function saveUsers() {
@@ -70,7 +78,11 @@ function getUser(id) {
 
 // Voor de browser; de PIN blijft op de server
 function listUsers() {
-  return users.map(function(u) { return { id: u.id, name: u.name, admin: !!u.admin }; });
+  return users.map(function(u) { return { id: u.id, name: u.name, role: u.role, photo: u.photo || null }; });
+}
+
+function isAdmin(user) {
+  return !!user && user.role === 'admin';
 }
 
 function validPin(pin) {
@@ -85,28 +97,24 @@ function checkName(name, exceptId) {
   return taken ? { error: 'Er is al een gebruiker met die naam' } : { name: name };
 }
 
-function adminCount() {
-  return users.filter(function(u) { return u.admin; }).length;
-}
-
 function userPinIsCorrect(id, pin) {
   var u = getUser(id);
   return !!u && pin != null && hashMatches(u.pinHash, pin);
 }
 
 // { user } of { error }
-function addUser(name, pin, admin) {
+function addUser(name, pin) {
   if (users.length >= MAX_USERS) return { error: 'Er zijn al ' + MAX_USERS + ' gebruikers' };
   var n = checkName(name);
   if (n.error) return n;
   if (!validPin(pin)) return { error: 'Voer een geldige 4-cijferige pincode in' };
-  var u = { id: crypto.randomBytes(6).toString('hex'), name: n.name, pinHash: hashPin(pin), admin: !!admin };
+  var u = { id: crypto.randomBytes(6).toString('hex'), name: n.name, pinHash: hashPin(pin), role: users.length ? 'bewoner' : 'admin' };
   users.push(u);
   saveUsers();
   return { user: u };
 }
 
-// changes: { name, pin, admin }, elk optioneel. Geeft een foutmelding terug, of null.
+// changes: { name, pin }, elk optioneel. Geeft een foutmelding terug, of null.
 function updateUser(id, changes) {
   var u = getUser(id), n = null;
   if (!u) return 'Onbekende gebruiker';
@@ -115,10 +123,17 @@ function updateUser(id, changes) {
     if (n.error) return n.error;
   }
   if (changes.pin !== undefined && !validPin(changes.pin)) return 'Voer een geldige 4-cijferige pincode in';
-  if (changes.admin === false && u.admin && adminCount() < 2) return 'Er moet minstens één beheerder blijven';
   if (n) u.name = n.name;
   if (changes.pin !== undefined) u.pinHash = hashPin(changes.pin);
-  if (changes.admin !== undefined) u.admin = !!changes.admin;
+  saveUsers();
+  return null;
+}
+
+// De beheerder geeft het beheer aan een ander en wordt zelf bewoner
+function transferAdmin(toId) {
+  var to = getUser(toId);
+  if (!to) return 'Onbekende gebruiker';
+  users.forEach(function(u) { u.role = u === to ? 'admin' : 'bewoner'; });
   saveUsers();
   return null;
 }
@@ -126,10 +141,41 @@ function updateUser(id, changes) {
 function removeUser(id) {
   var u = getUser(id);
   if (!u) return 'Onbekende gebruiker';
-  if (u.admin && adminCount() < 2) return 'Er moet minstens één beheerder blijven';
+  if (isAdmin(u)) return 'De beheerder kan niet verwijderd worden; draag het beheer eerst over';
   users = users.filter(function(x) { return x.id !== id; });
   saveUsers();
+  try { fs.unlinkSync(path.join(AVATAR_DIR, id + '.jpg')); } catch(e) {}
   destroyUserSessions(id);
+  return null;
+}
+
+// ── Profielfoto's ─────────────────────────────────────────────────────────
+// Het bestand van de foto van deze gebruiker, of null als die er geen heeft
+function photoFile(id) {
+  var u = getUser(id);
+  return u && u.photo ? path.join(AVATAR_DIR, u.id + '.jpg') : null;
+}
+
+// image: een data-URL met een JPEG (de browser snijdt en verkleint de foto eerst), of null om hem weg te halen.
+// Geeft een foutmelding terug, of null.
+function setPhoto(id, image) {
+  var u = getUser(id);
+  if (!u) return 'Onbekende gebruiker';
+  var file = path.join(AVATAR_DIR, u.id + '.jpg');
+  if (image == null) {
+    try { fs.unlinkSync(file); } catch(e) {}
+    delete u.photo;
+    saveUsers();
+    return null;
+  }
+  var m = String(image).match(/^data:image\/jpeg;base64,([A-Za-z0-9+\/]+=*)$/);
+  var data = m && Buffer.from(m[1], 'base64');
+  if (!data || data.length < 4 || data[0] !== 0xFF || data[1] !== 0xD8 || data[2] !== 0xFF) return 'Dat is geen geldige foto';
+  if (data.length > MAX_PHOTO) return 'De foto is te groot';
+  if (!fs.existsSync(AVATAR_DIR)) fs.mkdirSync(AVATAR_DIR, { recursive: true });
+  fs.writeFileSync(file, data);
+  u.photo = Date.now();
+  saveUsers();
   return null;
 }
 
@@ -247,4 +293,4 @@ setInterval(function() {
   Object.keys(attempts).forEach(function(ip) { if (now - attempts[ip].last > 24 * 3600000) delete attempts[ip]; });
 }, 3600000);
 
-module.exports = { readConfig, writeConfig, pinIsSet, pinIsCorrect, setPin, loginWait, loginFailed, loginSucceeded, hasUsers, listUsers, userPinIsCorrect, addUser, updateUser, removeUser, createSession, isValidSession, sessionUser, bindSession, destroySession, destroyUserSessions, getSessionToken, sessionCookie, clearCookie };
+module.exports = { readConfig, writeConfig, pinIsSet, pinIsCorrect, setPin, loginWait, loginFailed, loginSucceeded, hasUsers, listUsers, userPinIsCorrect, isAdmin, addUser, updateUser, transferAdmin, removeUser, photoFile, setPhoto, createSession, isValidSession, sessionUser, bindSession, destroySession, destroyUserSessions, getSessionToken, sessionCookie, clearCookie };

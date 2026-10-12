@@ -12,6 +12,20 @@ var LOCAL_API_PREFIXES = ['/api/p1', '/api/led', '/api/relay', '/api/temperature
 // Bedoeld om van buitenaf aangeroepen te worden; het token in het adres is de sleutel
 var PUBLIC_API_PREFIXES = ['/api/webhook/'];
 
+// Het inlogscherm toont de profielfoto's, dus die zijn zonder inlog op te vragen
+var PUBLIC_AVATARS = '/api/auth/avatar/';
+
+// Alleen voor de beheerder: de flows en de debugpagina (alles daaronder), en het instellen van modules en
+// koppelingen. Zolang er nog geen gebruikers zijn (iedereen deelt één PIN) geldt dit niet.
+var ADMIN_PREFIXES = ['/flows', '/debug', '/api/flows', '/api/debug'];
+var ADMIN_POSTS = ['/api/modules', '/api/discord', '/api/discord/test', '/api/camera', '/api/vaatwasser/config', '/api/vaatwasser/link', '/api/vaatwasser/unlink', '/api/afval/address'];
+
+function adminOnly(req) {
+  var urlPath = req.url.split("?")[0];
+  if (req.method === "POST" && ADMIN_POSTS.indexOf(urlPath) !== -1) return true;
+  return ADMIN_PREFIXES.some(function(p) { return urlPath === p || urlPath.indexOf(p + "/") === 0; });
+}
+
 var MAX_BODY = 1024 * 1024; // 1 MB; de grootste echte aanvraag (een flow opslaan) is een fractie daarvan
 
 function isLocalAddress(addr) {
@@ -64,7 +78,7 @@ var path = require("path");
 
 function isPublic(url, remoteAddress) {
   var urlPath = url.split("?")[0];
-  if (PUBLIC_PATHS.indexOf(urlPath) !== -1) return true;
+  if (PUBLIC_PATHS.indexOf(urlPath) !== -1 || urlPath.indexOf(PUBLIC_AVATARS) === 0) return true;
   for (var i = 0; i < PUBLIC_API_PREFIXES.length; i++) {
     if (urlPath.startsWith(PUBLIC_API_PREFIXES[i])) return true;
   }
@@ -105,6 +119,17 @@ var server = http.createServer(function(req, res) {
       }
       return;
     }
+  }
+
+  if (auth.hasUsers() && adminOnly(req) && !auth.isAdmin(auth.sessionUser(auth.getSessionToken(req)))) {
+    if (req.url.startsWith("/api/")) {
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: false, error: "Dat kan alleen de beheerder" }));
+    } else {
+      res.writeHead(302, { "Location": "/" });
+      res.end();
+    }
+    return;
   }
 
   presence.sawRequest(req);

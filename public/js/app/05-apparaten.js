@@ -246,7 +246,8 @@ function moveTabIndicator(bar) {
 }
 function moveTabIndicators() { Array.prototype.forEach.call(document.querySelectorAll('.tab-slide'), moveTabIndicator); }
 function showSettingsTab(name) {
-  if (!document.querySelector('.set-group[data-set="' + name + '"]')) name = 'algemeen';
+  var group = document.querySelector('.set-group[data-set="' + name + '"]');
+  if (!group || (group.hasAttribute('data-admin') && document.body.classList.contains('not-admin'))) name = 'algemeen';
   // de inhoud komt binnen vanaf de kant waar je naartoe gaat
   var order = Array.prototype.map.call(document.querySelectorAll('#settings-tabs .tab'), function(t) { return t.dataset.set; });
   var current = document.querySelector('#settings-tabs .tab.active');
