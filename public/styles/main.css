@@ -75,7 +75,7 @@ body {
   position:relative}
 .screens-track {
   display:flex;
-  width:600%;
+  width:700%;
   height:100%;
   transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);
   will-change:transform}
@@ -1329,6 +1329,9 @@ to {
 .mod-off-esphome [data-module~='esphome'],
 .mod-off-wasmachine [data-module~='wasmachine'],
 .mod-off-vaatwasser [data-module~='vaatwasser'],
+.mod-off-eetpoll [data-module~='eetpoll'],
+.mod-off-boodschappen [data-module~='boodschappen'],
+.mod-off-samen [data-module~='samen'],
 .mod-off-thuis [data-module~='thuis'] {
   display:none !important}
 .mod-switch {
@@ -2120,6 +2123,12 @@ body.kiosk .meld-panel {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:0.4rem}
+/* Samen: de eetpoll en de boodschappenlijst naast elkaar, op een telefoon onder elkaar */
+.samen-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr));
+  align-items:start;
+  gap:0.6rem}
 /* Eetpoll: vandaag bovenaan (aantal eters en wie), daaronder de week als tabel met een bolletje per dag */
 .eet-card {
   display:flex;
@@ -2132,7 +2141,7 @@ body.kiosk .meld-panel {
   font-size:var(--fs-2xs);
   color:var(--dim);
   font-variant-numeric:tabular-nums}
-#blk-eetpoll {
+.eet-body {
   display:flex;
   flex-direction:column;
   gap:0.6rem}
@@ -2429,9 +2438,9 @@ button.bood-row {
   text-transform:uppercase;
   letter-spacing:0.06em;
   color:var(--dim)}
-/* op een breed scherm blijft het blok even hoog als zijn buren; op een telefoon schuift gewoon de pagina */
+/* als blok op Home blijft de lijst op een breed scherm even hoog als zijn buren; op de eigen pagina en op een telefoon schuift gewoon de pagina */
 @media (min-width:720px) {
-  .bood-list {
+  .layout-block .bood-list {
     max-height:24rem;
     overflow-y:auto}
 }

@@ -114,6 +114,14 @@
   </div>
 </div>
 
+<!-- SCREEN 6: SAMEN (eetpoll en boodschappen). Staat direct na Home; de volgorde van de schermen staat in SCREEN_ORDER -->
+<div class='screen' id='screen-6'>
+<div class='samen-grid'>
+  <div data-module='eetpoll' data-samen='eetpoll'></div>
+  <div data-module='boodschappen' data-samen='boodschappen'></div>
+</div>
+</div>
+
 <!-- SCREEN 1: ELEKTRA -->
 <div class='screen' id='screen-1'>
 
@@ -469,6 +477,9 @@
   <img class='nav-logo' src='/icons/icon-192.png' alt='VloedHub'>
   <button class='nav-item active' data-screen='0' onclick='showScreen(0,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'/></svg></span><span class='nav-label'>Home</span>
+  </button>
+  <button class='nav-item' data-module='samen' data-screen='6' onclick='showScreen(6,this)'>
+    <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 3v7a3 3 0 0 0 3 3v8M4 3v5M10 3v5M17 21v-7h-2V8a5 5 0 0 1 3-5v18'/></svg></span><span class='nav-label'>Samen</span>
   </button>
   <button class='nav-item' data-screen='1' onclick='showScreen(1,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M13 2L4 14h7l-1 8 9-12h-7z'/></svg></span><span class='nav-label'>Elektra</span>

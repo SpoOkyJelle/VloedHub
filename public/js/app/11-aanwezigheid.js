@@ -125,6 +125,10 @@ function removePresence(id, btn) {
 // alleen bijwerken zolang Instellingen open staat
 setInterval(function() { if (currentScreen === 5 && !document.hidden && presenceRemoveArmed === null && !presenceForm) loadPresence(); }, 30000);
 
+// ── Samen ──
+// De pagina met de eetpoll en de boodschappenlijst: dezelfde kaarten als de blokken van Home
+document.querySelectorAll('[data-samen]').forEach(function(el) { BLOCKS[el.dataset.samen].render(el); });
+
 // ── Start ──
 // Home pas indelen als alle delen hierboven geladen zijn: de blokken gebruiken functies en lijsten uit latere
 // bestanden, en eerder indelen liep daarop stuk waarna de indeling een tweede keer van de server moest komen.

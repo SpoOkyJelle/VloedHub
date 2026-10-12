@@ -27,3 +27,5 @@ var KIOSK = (function() {
 if (KIOSK) document.body.classList.add('kiosk');
 // de Thuis-pagina verdwijnt als alles wat erop staat uit is
 if (!['lights','fridge','esphome','temperature','wasmachine','vaatwasser'].some(moduleOn)) document.body.classList.add('mod-off-thuis');
+// en de Samen-pagina als de eetpoll en de boodschappenlijst allebei uit staan
+if (!['eetpoll','boodschappen'].some(moduleOn)) document.body.classList.add('mod-off-samen');

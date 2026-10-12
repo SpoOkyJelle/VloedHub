@@ -9,7 +9,9 @@ var LAYOUT_FILE = path.join(__dirname, "../data/layout.json");
 var USER_FILE = path.join(__dirname, "../data/user-layouts.json");
 var MAX_SIZE = 50 * 1024;
 
-// "0" is Home; "kiosk" is Home in de tabletweergave (/?kiosk=1), met alleen wat je aan de wand wilt zien
+// "0" is Home; "kiosk" is Home in de tabletweergave (/?kiosk=1), met alleen wat je aan de wand wilt zien.
+// De eetpoll en de boodschappenlijst hebben hun eigen pagina (Samen); de tabletweergave heeft alleen Home, dus
+// daar staan ze als blok.
 var DEFAULT_LAYOUT = {
   "0": [
     {type:"weather",size:"2"},
@@ -20,8 +22,6 @@ var DEFAULT_LAYOUT = {
     {type:"led_gang",size:"1"},
     {type:"relay_gang",size:"1"},
     {type:"scenes",size:"4"},
-    {type:"eetpoll",size:"2"},
-    {type:"boodschappen",size:"2"},
     {type:"status",size:"2"},
     {type:"camera",size:"2"},
     {type:"today_vs_normal",size:"2"},

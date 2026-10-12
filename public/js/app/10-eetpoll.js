@@ -1,5 +1,6 @@
 // ── Eetpoll ──
-// Blok op Home: wie eet welke dag mee. Elke maandag om 08:00 begint de server een nieuwe week.
+// Op de Samen-pagina (en als blok op Home voor wie dat wil, zoals op de wandtablet): wie eet welke dag mee.
+// Elke maandag om 08:00 begint de server een nieuwe week.
 // Het stemmen is bewust simpel: tik op je bolletje op de dagen dat je mee-eet, en anders niet.
 // Bovenaan staat vandaag, want dat is wat de kok wil weten: hoeveel er mee-eten en wie. Daaronder de hele week als
 // tabel: een kolom per huisgenoot (altijd op dezelfde plek) en een rij per dag.
@@ -18,12 +19,18 @@ function eetTodayHtml(d, i) {
     '<span>' + EET_DAYS_LONG[i] + ' ' + eetDate(d.days[i].date) + '</span></div>' +
     '<div class="eet-today-faces">' + eaters.map(function(u) { return '<span class="eet-face" title="' + escHtml(u.name) + ' eet mee">' + eetAvatar(u) + '</span>'; }).join('') + '</div></div></div>';
 }
+// De poll kan op meer plekken tegelijk staan (de Samen-pagina en een blok op Home): alle kaarten krijgen hetzelfde
+function eetFill(weekText, html) {
+  document.querySelectorAll('.eet-card').forEach(function(card) {
+    card.querySelector('.eet-week').textContent = weekText;
+    card.querySelector('.eet-body').innerHTML = html;
+  });
+}
 function showEetpoll(d, error) {
-  var el = document.getElementById('blk-eetpoll'), week = document.getElementById('blk-eetpoll-week');
-  if (!el || !d) return;
+  if (!d) return;
   eetData = d;
-  if (week) week.textContent = eetDate(d.days[0].date) + ' – ' + eetDate(d.days[6].date);
-  if (!d.users.length) { el.innerHTML = '<div class="afval-empty">Voor de eetpoll heeft iedereen een eigen account nodig<button class="btn btn-ghost" onclick="showScreen(5,null)">Gebruikers aanmaken</button></div>'; return; }
+  var weekText = eetDate(d.days[0].date) + ' – ' + eetDate(d.days[6].date);
+  if (!d.users.length) return eetFill(weekText, '<div class="afval-empty">Voor de eetpoll heeft iedereen een eigen account nodig<button class="btn btn-ghost" onclick="showScreen(5,null)">Gebruikers aanmaken</button></div>');
   var today = -1;
   d.days.forEach(function(day, i) { if (day.today) today = i; });
   var html = error ? '<div class="outage-sub c-red">' + escHtml(error) + '</div>' : '';
@@ -44,10 +51,10 @@ function showEetpoll(d, error) {
     return '<tr class="' + (day.past ? 'past' : '') + (day.today ? ' today' : '') + '"><th scope="row"><b>' + EET_DAYS[i] + '</b><span>' + (day.today ? 'vandaag' : eetDate(day.date)) + '</span></th>' + cells + '<td class="eet-count">' + n + '</td></tr>';
   }).join('') + '</tbody></table></div>';
   if (d.me) html += '<div class="eet-hint">Tik op je bolletje op de dagen dat je mee-eet.</div>';
-  el.innerHTML = html;
+  eetFill(weekText, html);
 }
 function loadEetpoll() {
-  if (!moduleOn('eetpoll') || !document.getElementById('blk-eetpoll')) return;
+  if (!moduleOn('eetpoll') || !document.querySelector('.eet-card')) return;
   fetch('/api/eetpoll').then(function(r){return r.json();}).then(function(d) { showEetpoll(d); }).catch(function(){});
 }
 // Je bolletje aan of uit; het scherm loopt alvast vooruit op het antwoord van de server
@@ -63,5 +70,5 @@ function eetToggle(day) {
       showEetpoll(eetData, d.error || 'Opslaan mislukt');
     }).catch(function() { mine[day] = !eat; showEetpoll(eetData, 'Verbindingsfout'); });
 }
-// de keuzes van de anderen komen vanzelf binnen zolang Home open staat
-setInterval(function() { if (currentScreen === 0 && !document.hidden) loadEetpoll(); }, 30000);
+// de keuzes van de anderen komen vanzelf binnen zolang de pagina (of Home) open staat
+setInterval(function() { if ((currentScreen === 6 || currentScreen === 0) && !document.hidden) loadEetpoll(); }, 30000);
