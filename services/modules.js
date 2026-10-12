@@ -16,6 +16,7 @@ var MODULES = [
   { key: "camera",      label: "Deurbelcamera",          hint: "Beeld van de Reolink-deurbel als blok op Home en een melding als er wordt aangebeld" },
   { key: "aanwezigheid", label: "Wie is thuis",         hint: "Zoekt de aangemelde telefoons op het thuisnetwerk; in te stellen bij Instellingen > Wie is thuis" },
   { key: "eetpoll",     label: "Eetpoll",                hint: "Elke maandag om 08:00 een nieuwe poll op Home: wie eet welke dag mee" },
+  { key: "boodschappen", label: "Boodschappenlijst",     hint: "Gezamenlijke lijst als blok op Home, met erbij wie wat heeft toegevoegd" },
   { key: "afval",       label: "Afvalkalender",          hint: "Blok op Home en de herinnering via Discord" },
   { key: "lights",      label: "Verlichting en scènes",  hint: "Ledstrips, lamp en scèneknoppen" },
   { key: "fridge",      label: "Koelkast",               hint: "Koelkastkaart en offline-melding" },

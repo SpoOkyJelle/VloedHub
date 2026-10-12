@@ -52,6 +52,7 @@ var routes = [
   require("./routes/weather"),
   require("./routes/afval"),
   require("./routes/eetpoll"),
+  require("./routes/boodschappen"),
   require("./routes/insights"),
   require("./routes/scenes"),
   require("./routes/party"),

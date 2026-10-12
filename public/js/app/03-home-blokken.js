@@ -31,7 +31,7 @@ var layoutEditMode = false;
 function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', eetpoll:'eetpoll', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', eetpoll:'eetpoll', boodschappen:'boodschappen', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -144,6 +144,10 @@ var BLOCKS = {
   'eetpoll': {label:'Wie eet mee',icon:'fa-utensils',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<7;i++)rows+='<div class="eet-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card eet-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-utensils"></i>Wie eet mee</span><span class="eet-week" id="blk-eetpoll-week"></span></div><div id="blk-eetpoll">'+rows+'</div></div>';},
     refresh:function(){loadEetpoll();}
+  },
+  'boodschappen': {label:'Boodschappen',icon:'fa-basket-shopping',dynamic:true,
+    render:function(el){el.innerHTML='<div class="card bood-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-basket-shopping"></i>Boodschappen</span><span class="eet-week" id="blk-bood-count"></span></div><form class="bood-form" id="blk-bood-form" onsubmit="boodAdd();return false"><input class="field" id="blk-bood-input" maxlength="60" autocomplete="off" enterkeyhint="done" aria-label="Boodschap toevoegen" placeholder="Wat moet er gehaald worden?"><button class="btn btn-primary" aria-label="Toevoegen"><i class="fa-solid fa-plus"></i></button></form><div class="bood-list" id="blk-bood-list"><div class="bood-row"><span class="skel-line grow"></span></div><div class="bood-row"><span class="skel-line grow"></span></div></div></div>';},
+    refresh:function(){loadBoodschappen();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},

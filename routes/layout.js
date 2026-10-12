@@ -15,6 +15,7 @@ var DEFAULT_LAYOUT = {
     {type:"relay_gang",size:"1"},
     {type:"scenes",size:"4"},
     {type:"eetpoll",size:"2"},
+    {type:"boodschappen",size:"2"},
     {type:"status",size:"2"},
     {type:"camera",size:"2"},
     {type:"today_vs_normal",size:"2"},
@@ -33,6 +34,7 @@ var DEFAULT_LAYOUT = {
     {type:"relay_gang",size:"1"},
     {type:"scenes",size:"4"},
     {type:"eetpoll",size:"2"},
+    {type:"boodschappen",size:"2"},
     {type:"camera",size:"2"},
     {type:"status",size:"2"}
   ]

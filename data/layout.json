@@ -37,6 +37,10 @@
       "size": "2"
     },
     {
+      "type": "boodschappen",
+      "size": "2"
+    },
+    {
       "type": "status",
       "size": "2"
     },
@@ -100,6 +104,10 @@
     },
     {
       "type": "eetpoll",
+      "size": "2"
+    },
+    {
+      "type": "boodschappen",
       "size": "2"
     },
     {
