@@ -414,6 +414,18 @@
 </div>
 <div class='set-group' data-set='systeem'>
 <div class='set-section'>
+<div class='section-title'>Gebruikers</div>
+<div class='setting-card'>
+  <div class='setting-desc' id='users-status'>Laden…</div>
+  <div class='presence-list' id='users-list'></div>
+  <div class='users-form' id='users-form' hidden>
+    <input class='field' id='user-name' autocomplete='off' maxlength='30' aria-label='Naam' placeholder='Naam, bijv. Jelle'>
+    <input class='field' id='user-pin' type='password' inputmode='numeric' maxlength='4' autocomplete='new-password' aria-label='PIN van 4 cijfers' placeholder='PIN'>
+    <button class='btn btn-primary' onclick='addUser(this)'>Toevoegen</button>
+  </div>
+</div>
+</div>
+<div class='set-section'>
 <div class='section-title'>Beveiliging</div>
 <div class='setting-card'>
   <div class='setting-row'>
@@ -421,7 +433,7 @@
     <button class='btn btn-ghost' onclick='showPinModal()'><i class='fa-solid fa-lock'></i> Wijzigen</button>
   </div>
   <div class='setting-row'>
-    <div class='setting-text'><div class='setting-title'>Uitloggen</div><div class='setting-desc'>Sessie beëindigen</div></div>
+    <div class='setting-text'><div class='setting-title'>Uitloggen</div><div class='setting-desc' id='logout-desc'>Sessie beëindigen</div></div>
     <button class='btn btn-danger' onclick='logout()'><i class='fa-solid fa-right-from-bracket'></i> Uitloggen</button>
   </div>
 </div>

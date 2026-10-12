@@ -2120,6 +2120,13 @@ body.kiosk .meld-panel {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:0.4rem}
+/* Gebruikers (Instellingen): naam, PIN en de knop op één rij */
+.users-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 5rem auto;
+  gap:0.4rem}
+.users-form[hidden] {
+  display:none}
 /* Status omgeving: een knop per onderdeel, met het bijbehorende blok uitklapbaar eronder */
 .status-chips {
   display:grid;

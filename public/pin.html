@@ -86,6 +86,7 @@
       color: var(--muted);
       text-align: center;
     }
+    .pin-subtitle:empty { display: none; }
 
     /* Dots */
     .pin-dots {
@@ -190,6 +191,64 @@
       transition: opacity 0.2s;
     }
 
+    /* Wie ben je: een tegel per huisgenoot; pas na het kiezen komt het toetsenblok */
+    .pin-users {
+      display: none;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 360px;
+    }
+    .picking .pin-users { display: grid; }
+    .picking .pin-dots, .picking .pin-error, .picking .pin-numpad-fit { display: none; }
+    .pin-user {
+      min-height: 44px;
+      padding: 1rem 0.5rem;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-wrap: anywhere;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pin-user:active {
+      background: rgba(var(--accent-rgb),0.15);
+      border-color: rgba(var(--accent-rgb),0.4);
+    }
+    .pin-user-initial {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background: rgba(var(--accent-rgb),0.15);
+      color: var(--accent);
+      font-size: 1.3rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pin-switch {
+      display: none;
+      min-height: 44px;
+      padding: 0 1rem;
+      border: none;
+      background: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: var(--fs-xs);
+      cursor: pointer;
+    }
+    .has-users:not(.picking) .pin-switch { display: block; }
+
     /* First-time setup notice */
     .pin-setup-notice {
       font-size: var(--fs-xs);
@@ -214,6 +273,10 @@
   <div id="setup-notice" class="pin-setup-notice" style="display:none">
     Geen pincode ingesteld.<br>Kies een nieuwe 4-cijferige code.
   </div>
+
+  <div class="pin-subtitle" id="pin-subtitle"></div>
+
+  <div class="pin-users" id="pin-users"></div>
 
   <div class="pin-dots" id="pin-dots">
     <div class="pin-dot" id="d0"></div>
@@ -241,15 +304,58 @@
   </div>
   </div>
 
+  <button class="pin-switch" id="pin-switch">Iemand anders</button>
+
 </div>
 <script>
   var pin = '';
   var mode = 'login'; // 'login' | 'setup'
   var setupFirst = '';
+  var userId = null;  // wie er inlogt, zodra er gebruikers zijn
+
+  function setSubtitle(text) {
+    document.getElementById('pin-subtitle').textContent = text;
+  }
+
+  // Het apparaat onthoudt wie er het laatst op inlogde, zodat je meestal meteen je PIN kunt intikken
+  function pickUser(u) {
+    userId = u.id;
+    try { localStorage.setItem('vh-user', u.id); } catch (e) {}
+    pin = '';
+    updateDots();
+    clearError();
+    document.body.classList.remove('picking');
+    setSubtitle('Hoi ' + u.name);
+  }
+
+  function showUsers() {
+    userId = null;
+    pin = '';
+    document.body.classList.add('picking');
+    setSubtitle('Wie ben je?');
+  }
+
+  document.getElementById('pin-switch').addEventListener('click', showUsers);
 
   // Check if PIN is set
   fetch('/api/auth/status').then(function(r) { return r.json(); }).then(function(d) {
-    if (!d.pinSet) {
+    if (d.users && d.users.length) {
+      var box = document.getElementById('pin-users'), last = null;
+      try { last = localStorage.getItem('vh-user'); } catch (e) {}
+      d.users.forEach(function(u) {
+        var btn = document.createElement('button'), initial = document.createElement('span');
+        btn.className = 'pin-user';
+        initial.className = 'pin-user-initial';
+        initial.textContent = u.name.charAt(0).toUpperCase();
+        btn.appendChild(initial);
+        btn.appendChild(document.createTextNode(u.name));
+        btn.addEventListener('click', function() { pickUser(u); });
+        box.appendChild(btn);
+        if (u.id === last) last = u;
+      });
+      document.body.classList.add('has-users');
+      if (last && last.id) pickUser(last); else showUsers();
+    } else if (!d.pinSet) {
       mode = 'setup';
       document.getElementById('setup-notice').style.display = '';
       document.getElementById('pin-subtitle').textContent = 'Kies een nieuwe pincode';
@@ -257,7 +363,7 @@
   });
 
   function pressKey(digit) {
-    if (pin.length >= 4) return;
+    if (pin.length >= 4 || document.body.classList.contains('picking')) return;
     pin += digit;
     updateDots();
     if (pin.length === 4) submit();
@@ -340,7 +446,7 @@
     fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: pin })
+      body: JSON.stringify(userId ? { pin: pin, user: userId } : { pin: pin })
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.ok) {
         updateDots('success');
