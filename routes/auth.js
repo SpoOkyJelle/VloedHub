@@ -1,6 +1,8 @@
 var fs   = require('fs');
 var path = require('path');
 var auth = require('../services/auth');
+var notifications = require('../services/notifications');
+var layout = require('./layout');
 
 var PIN_PAGE = fs.readFileSync(path.join(__dirname, '../public/pin.html'), 'utf8');
 
@@ -185,20 +187,28 @@ module.exports = function(req, res) {
     return true;
   }
 
-  // Naam wijzigen kan iedereen bij zichzelf; een nieuwe PIN geeft de beheerder aan een ander
+  // Naam wijzigen kan iedereen bij zichzelf; een nieuwe PIN of een andere rol geeft de beheerder aan een ander
   if (req.method === 'POST' && req.url === '/api/auth/users/update') {
     readBody(req, function(err, body) {
       if (err) return send(res, 400, { ok: false, error: 'Ongeldige aanvraag' });
       var me = auth.sessionUser(auth.getSessionToken(req)), self = !!me && body.id === me.id;
-      var newPin = body.pin !== undefined;
-      if (!me || (!auth.isAdmin(me) && (newPin || !self))) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
+      var newPin = body.pin !== undefined, newRole = body.role !== undefined;
+      if (!me || (!auth.isAdmin(me) && (newPin || newRole || !self))) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
       if (newPin && self) return send(res, 400, { ok: false, error: 'Je eigen PIN wijzig je bij Beveiliging' });
+      if (newRole) {
+        var refused = auth.setRole(body.id, body.role);
+        if (refused) return send(res, 400, { ok: false, error: refused });
+        notifications.add('systeem', '👤 **Je rol is nu ' + auth.roleLabel(body.role) + '** — aangepast door ' + me.name + '.', body.id);
+      }
       var changes = {};
       if (body.name !== undefined) changes.name = body.name;
       if (newPin) changes.pin = body.pin;
       var failed = auth.updateUser(body.id, changes);
       if (failed) return send(res, 400, { ok: false, error: failed });
-      if (newPin) auth.destroyUserSessions(body.id);
+      if (newPin) {
+        auth.destroyUserSessions(body.id);
+        notifications.add('systeem', '🔑 **Je hebt een nieuwe PIN gekregen** — ingesteld door ' + me.name + '. Kies zelf een nieuwe bij Instellingen > Systeem > Beveiliging.', body.id);
+      }
       send(res, 200, usersReply(req));
     });
     return true;
@@ -225,6 +235,7 @@ module.exports = function(req, res) {
       if (!auth.isAdmin(me)) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
       var failed = auth.transferAdmin(body.id);
       if (failed) return send(res, 400, { ok: false, error: failed });
+      if (body.id !== me.id) notifications.add('systeem', '🛡️ **Je bent nu de beheerder** — ' + me.name + ' heeft het beheer aan jou overgedragen.', body.id);
       send(res, 200, usersReply(req));
     });
     return true;
@@ -237,6 +248,8 @@ module.exports = function(req, res) {
       if (!auth.isAdmin(me)) return send(res, 403, { ok: false, error: 'Dat kan alleen de beheerder' });
       var failed = auth.removeUser(body.id);
       if (failed) return send(res, 400, { ok: false, error: failed });
+      notifications.forget(body.id);
+      layout.forget(body.id);
       send(res, 200, usersReply(req));
     });
     return true;

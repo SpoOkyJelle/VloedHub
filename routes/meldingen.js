@@ -1,5 +1,6 @@
 var notifications = require("../services/notifications");
 var modules = require("../services/modules");
+var auth = require("../services/auth");
 var homeconnect = require("../services/homeconnect");
 var warnings = require("../services/warnings");
 var outages = require("../services/outages");
@@ -49,12 +50,28 @@ module.exports = function(req, res) {
 
   if (req.method === "GET" && req.url.split("?")[0] === "/api/meldingen") {
     var m = req.url.match(/[?&]limit=(\d+)/);
-    notifications.list(m ? m[1] : 50, function(rows) { json(res, rows); });
+    // seen: tot welke melding deze gebruiker ze gezien heeft; zonder account houdt de browser dat zelf bij
+    var me = auth.sessionUser(auth.getSessionToken(req));
+    notifications.list(m ? m[1] : 50, me && me.id, function(rows, seen) { json(res, { rows: rows, seen: seen, account: !!me }); });
     return true;
   }
 
   if (req.method === "POST" && req.url === "/api/meldingen/clear") {
-    notifications.clear(function() { json(res, { ok: true }); });
+    var who = auth.sessionUser(auth.getSessionToken(req));
+    notifications.clear(who && who.id, function() { json(res, { ok: true }); });
+    return true;
+  }
+
+  // Het paneel is bekeken: alles tot en met deze melding geldt voor deze gebruiker als gezien
+  if (req.method === "POST" && req.url === "/api/meldingen/seen") {
+    var body = "";
+    req.on("data", function(c) { body += c; });
+    req.on("end", function() {
+      var data = {}, viewer = auth.sessionUser(auth.getSessionToken(req));
+      try { data = JSON.parse(body || "{}"); } catch (e) {}
+      if (!viewer) return json(res, { ok: true });
+      notifications.markSeen(viewer.id, data.id, function() { json(res, { ok: true }); });
+    });
     return true;
   }
 

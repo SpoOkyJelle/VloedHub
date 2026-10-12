@@ -20,6 +20,10 @@ var PUBLIC_AVATARS = '/api/auth/avatar/';
 var ADMIN_PREFIXES = ['/flows', '/debug', '/api/flows', '/api/debug'];
 var ADMIN_POSTS = ['/api/modules', '/api/discord', '/api/discord/test', '/api/camera', '/api/vaatwasser/config', '/api/vaatwasser/link', '/api/vaatwasser/unlink', '/api/afval/address'];
 
+// Een gast kijkt alleen: niets bedienen of instellen. Wat wel mag is in- en uitloggen en wat bij het eigen
+// account hoort (naam, foto, PIN, de eigen indeling en de eigen meldingen).
+var GAST_POSTS = ['/api/auth/login', '/api/auth/logout', '/api/auth/set-pin', '/api/auth/users/update', '/api/auth/users/photo', '/api/layout', '/api/meldingen/seen', '/api/meldingen/clear'];
+
 function adminOnly(req) {
   var urlPath = req.url.split("?")[0];
   if (req.method === "POST" && ADMIN_POSTS.indexOf(urlPath) !== -1) return true;
@@ -123,7 +127,15 @@ var server = http.createServer(function(req, res) {
     }
   }
 
-  if (auth.hasUsers() && adminOnly(req) && !auth.isAdmin(auth.sessionUser(auth.getSessionToken(req)))) {
+  // ook op een adres dat thuis zonder inlog werkt (zoals een lamp): wie als gast is ingelogd bedient niets
+  var user = auth.sessionUser(auth.getSessionToken(req));
+  if (auth.isReadOnly(user) && req.method !== "GET" && req.method !== "HEAD" && GAST_POSTS.indexOf(req.url.split("?")[0]) === -1) {
+    res.writeHead(403, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: false, error: "Als gast kun je alleen kijken" }));
+    return;
+  }
+
+  if (auth.hasUsers() && adminOnly(req) && !auth.isAdmin(user)) {
     if (req.url.startsWith("/api/")) {
       res.writeHead(403, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: "Dat kan alleen de beheerder" }));

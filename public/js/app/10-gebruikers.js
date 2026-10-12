@@ -1,9 +1,11 @@
 // ── Gebruikers ──
 // Instellingen > Systeem: iedere huisgenoot heeft een eigen naam, PIN en profielfoto. Zolang er nog niemand is
 // aangemaakt logt iedereen in met de gedeelde PIN; wie de eerste gebruiker aanmaakt wordt beheerder. Er is precies
-// één beheerder, de rest is bewoner. De beheerder kan anderen toevoegen, verwijderen, een nieuwe PIN geven en het
-// beheer overdragen. Je eigen naam en foto kun je altijd zelf aanpassen.
-var USER_ROLES = { admin: 'Beheerder', bewoner: 'Bewoner' };
+// één beheerder; die geeft de anderen een rol: bewoner, tablet (een gedeeld scherm: bedienen kan, maar het is geen
+// persoon in de eetpoll) of gast (alleen kijken). De beheerder kan ook anderen toevoegen, verwijderen, een nieuwe PIN
+// geven en het beheer overdragen. Je eigen naam en foto kun je altijd zelf aanpassen.
+var USER_ROLES = { admin: 'Beheerder', bewoner: 'Bewoner', tablet: 'Tablet', gast: 'Gast' };
+var USER_ROLES_ASSIGNABLE = ['bewoner', 'tablet', 'gast'];   // beheerder word je alleen door overdracht
 var USER_PHOTO_SIZE = 256;   // de foto wordt in de browser vierkant gesneden en verkleind voor hij naar de server gaat
 var usersData = null, userArmed = null, userForm = null; // userForm: { id, action } van het open invulveld; userArmed: de knop die op een tweede tik wacht
 var userPhotoFor = null;
@@ -20,7 +22,9 @@ function showUsers(d, error) {
       (admin || self ? '<button class="presence-remove" onclick="userAsk(\'' + u.id + '\',\'name\')">Naam wijzigen</button>' +
         '<button class="presence-remove" onclick="userPickPhoto(\'' + u.id + '\')">' + (u.photo ? 'Andere foto' : 'Foto kiezen') + '</button>' +
         (u.photo ? '<button class="presence-remove" onclick="userPhoto(\'' + u.id + '\',null)">Foto weghalen</button>' : '') : '') +
-      (admin && !self ? '<button class="presence-remove" onclick="userAsk(\'' + u.id + '\',\'pin\')">Nieuwe PIN</button>' +
+      (admin && !self ? '<select class="field user-role" aria-label="Rol van ' + escHtml(u.name) + '" onchange="userPost(\'update\',{id:\'' + u.id + '\',role:this.value})">' +
+        USER_ROLES_ASSIGNABLE.map(function(r) { return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + USER_ROLES[r] + '</option>'; }).join('') + '</select>' +
+        '<button class="presence-remove" onclick="userAsk(\'' + u.id + '\',\'pin\')">Nieuwe PIN</button>' +
         '<button class="presence-remove" onclick="userConfirm(\'transfer\',\'' + u.id + '\',this)">Beheer overdragen</button>' +
         '<button class="presence-remove" onclick="userConfirm(\'remove\',\'' + u.id + '\',this)" aria-label="' + escHtml(u.name) + ' verwijderen">Verwijderen</button>' : '');
     return '<div class="presence-row' + (self ? ' home' : '') + '">' +
@@ -34,7 +38,7 @@ function showUsers(d, error) {
   }).join('');
   status.style.color = error ? 'var(--red)' : '';
   status.textContent = error || (!d.users.length ? 'Nog geen gebruikers: iedereen logt in met dezelfde PIN. Maak hieronder eerst je eigen account aan; dat wordt de beheerder. Daarna vervalt de gedeelde PIN en logt iedereen in met een eigen account.' :
-    admin ? 'Jij bent de beheerder. Voeg hieronder een huisgenoot toe met een eerste PIN; die kan hem daarna zelf wijzigen bij Beveiliging.' :
+    admin ? 'Jij bent de beheerder. Voeg hieronder iemand toe met een eerste PIN en kies daarna een rol: een bewoner doet overal aan mee, een tablet is een gedeeld scherm (bedienen kan, maar geen persoon in de eetpoll) en een gast kan alleen kijken.' :
     'Alleen de beheerder kan gebruikers toevoegen of verwijderen. Je eigen naam en foto kun je zelf aanpassen.');
   document.getElementById('users-form').hidden = d.users.length > 0 && !admin;
   var out = document.getElementById('logout-desc');

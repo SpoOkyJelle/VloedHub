@@ -7,6 +7,14 @@ Object.keys(MODULES).forEach(function(k) { if (!moduleOn(k)) document.body.class
 var ME = null;
 try { ME = JSON.parse(document.getElementById('user-data').textContent); } catch (e) {}
 if (ME && ME.role !== 'admin') document.body.classList.add('not-admin');
+// Weigert de server iets omdat je rol het niet toelaat, dan zegt de app waarom, waar je ook op tikte
+var plainFetch = window.fetch;
+window.fetch = function() {
+  return plainFetch.apply(this, arguments).then(function(r) {
+    if (r.status === 403) r.clone().json().then(function(d) { if (d && d.error && typeof toast === 'function') toast(d.error, 'error'); }).catch(function() {});
+    return r;
+  });
+};
 // Wandtablet-weergave: aan met /?kiosk=1, uit met /?kiosk=0; de keuze blijft op dit apparaat bewaard
 var KIOSK = (function() {
   try {

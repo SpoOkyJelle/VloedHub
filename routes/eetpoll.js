@@ -22,7 +22,7 @@ module.exports = function(req, res) {
       try { data = JSON.parse(body || "{}"); } catch (e) { return json(res, 400, { ok: false, error: "Ongeldige aanvraag" }); }
       var me = auth.sessionUser(auth.getSessionToken(req));
       if (!me) return json(res, 403, { ok: false, error: "Stemmen kan alleen met een eigen account" });
-      var err = eetpoll.vote(me.id, data.day, data.eat);
+      var err = eetpoll.vote(me, data.day, data.eat);
       if (err) return json(res, 400, { ok: false, error: err });
       json(res, 200, Object.assign({ ok: true }, eetpoll.getStatus(me)));
     });

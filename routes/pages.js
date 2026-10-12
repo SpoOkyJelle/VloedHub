@@ -20,9 +20,9 @@ var MIME_TYPES = {
 
 module.exports = function(req, res) {
   if (req.method === "GET" && req.url.split("?")[0] === "/") {
-    var layoutJson = JSON.stringify(layout.load()).replace(/</g, "\\u003c");
     // wie er is ingelogd (null zolang iedereen de gedeelde PIN gebruikt); de pagina verbergt daarmee wat alleen de beheerder mag
     var me = auth.sessionUser(auth.getSessionToken(req));
+    var layoutJson = JSON.stringify(layout.load(me && me.id)).replace(/</g, "\\u003c");
     var html = HTML_TEMPLATE.replace(/__LOCAL_IP__/g, discord.LOCAL_IP).replace("__LAYOUT_JSON__", function() { return layoutJson; })
       .replace("__MODULES_JSON__", function() { return JSON.stringify(modules.getMap()); })
       .replace("__USER_JSON__", function() { return JSON.stringify(me ? { id: me.id, name: me.name, role: me.role } : null).replace(/</g, "\\u003c"); });

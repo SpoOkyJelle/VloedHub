@@ -2352,6 +2352,11 @@ body.kiosk .meld-panel {
   gap:0.4rem}
 .users-form[hidden] {
   display:none}
+.user-role {
+  width:auto;
+  min-height:2rem;
+  padding:0.2rem 0.5rem;
+  font-size:var(--fs-xs)}
 .user-avatar {
   flex-shrink:0;
   width:2.2rem;

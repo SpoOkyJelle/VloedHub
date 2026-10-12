@@ -41,14 +41,22 @@ function hashMatches(hash, pin) {
 
 // ── Gebruikers ────────────────────────────────────────────────────────────
 // Iedere huisgenoot heeft een eigen naam en PIN. Ze staan in data/users.json (niet in git), de profielfoto's
-// in data/avatars/. Iedereen heeft een rol: er is precies één beheerder ("admin"), de rest is bewoner. De eerste
-// gebruiker wordt beheerder; alleen die kan anderen toevoegen, verwijderen of een nieuwe PIN geven, en het
-// beheer overdragen aan een ander. Wat verder alleen de beheerder mag staat in server.js.
+// in data/avatars/. Iedereen heeft een rol (zie ROLES). Er is precies één beheerder: de eerste gebruiker. Alleen
+// die kan anderen toevoegen, verwijderen, een rol of een nieuwe PIN geven, en het beheer overdragen aan een
+// ander. Wat verder alleen de beheerder mag, en wat een gast niet mag, staat in server.js.
 // Zolang er nog geen gebruikers zijn werkt de gedeelde PIN uit config.json zoals voorheen; daarna niet meer.
 var USERS_PATH = path.join(__dirname, '../data/users.json');
 var AVATAR_DIR = path.join(__dirname, '../data/avatars');
 var MAX_USERS = 10;
 var MAX_PHOTO = 300 * 1024;   // de browser verkleint de foto eerst; een echte is een paar tientallen kB
+// person: telt mee als huisgenoot (eetpoll, persoonlijke meldingen). readOnly: kan alleen kijken.
+var ROLES = {
+  admin:   { label: 'Beheerder', person: true },
+  bewoner: { label: 'Bewoner',   person: true },
+  tablet:  { label: 'Tablet' },                    // een gedeeld scherm, zoals de wandtablet: bedienen kan, maar het is geen persoon
+  gast:    { label: 'Gast',      readOnly: true }
+};
+var ASSIGNABLE = ['bewoner', 'tablet', 'gast'];   // beheerder word je alleen door overdracht
 var users = loadUsers();   // [{ id, name, pinHash, role, photo }]: photo is het moment van opslaan, of ontbreekt
 
 function loadUsers() {
@@ -58,7 +66,7 @@ function loadUsers() {
   list = list.filter(function(u) { return u && u.id && u.name && u.pinHash; });
   // precies één beheerder: de eerste die zo staat aangemerkt, anders de eerste gebruiker
   var boss = list.filter(function(u) { return u.role === 'admin' || u.admin; })[0] || list[0];
-  list.forEach(function(u) { u.role = u === boss ? 'admin' : 'bewoner'; delete u.admin; });
+  list.forEach(function(u) { u.role = u === boss ? 'admin' : ASSIGNABLE.indexOf(u.role) !== -1 ? u.role : 'bewoner'; delete u.admin; });
   return list;
 }
 
@@ -83,6 +91,18 @@ function listUsers() {
 
 function isAdmin(user) {
   return !!user && user.role === 'admin';
+}
+
+function isPerson(user) {
+  return !!user && !!(ROLES[user.role] || {}).person;
+}
+
+function isReadOnly(user) {
+  return !!user && !!(ROLES[user.role] || {}).readOnly;
+}
+
+function roleLabel(role) {
+  return (ROLES[role] || {}).label || role;
 }
 
 function validPin(pin) {
@@ -133,7 +153,18 @@ function updateUser(id, changes) {
 function transferAdmin(toId) {
   var to = getUser(toId);
   if (!to) return 'Onbekende gebruiker';
-  users.forEach(function(u) { u.role = u === to ? 'admin' : 'bewoner'; });
+  users.forEach(function(u) { if (u === to) u.role = 'admin'; else if (u.role === 'admin') u.role = 'bewoner'; });
+  saveUsers();
+  return null;
+}
+
+// De beheerder geeft een ander een rol. Geeft een foutmelding terug, of null.
+function setRole(id, role) {
+  var u = getUser(id);
+  if (!u) return 'Onbekende gebruiker';
+  if (ASSIGNABLE.indexOf(role) === -1) return 'Onbekende rol';
+  if (isAdmin(u)) return 'De beheerder houdt zijn rol; draag het beheer over om die te wijzigen';
+  u.role = role;
   saveUsers();
   return null;
 }
@@ -293,4 +324,4 @@ setInterval(function() {
   Object.keys(attempts).forEach(function(ip) { if (now - attempts[ip].last > 24 * 3600000) delete attempts[ip]; });
 }, 3600000);
 
-module.exports = { readConfig, writeConfig, pinIsSet, pinIsCorrect, setPin, loginWait, loginFailed, loginSucceeded, hasUsers, listUsers, userPinIsCorrect, isAdmin, addUser, updateUser, transferAdmin, removeUser, photoFile, setPhoto, createSession, isValidSession, sessionUser, bindSession, destroySession, destroyUserSessions, getSessionToken, sessionCookie, clearCookie };
+module.exports = { readConfig, writeConfig, pinIsSet, pinIsCorrect, setPin, loginWait, loginFailed, loginSucceeded, hasUsers, listUsers, userPinIsCorrect, isAdmin, isPerson, isReadOnly, roleLabel, addUser, updateUser, transferAdmin, setRole, removeUser, photoFile, setPhoto, createSession, isValidSession, sessionUser, bindSession, destroySession, destroyUserSessions, getSessionToken, sessionCookie, clearCookie };

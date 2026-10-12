@@ -80,7 +80,7 @@ function getStatus(me) {
   return {
     items: items.filter(function(x) { return !x.done; }).concat(items.filter(function(x) { return x.done; }).sort(function(a, b) { return b.doneAt - a.doneAt; })),
     users: users,
-    me: me ? me.id : null
+    me: me && !auth.isReadOnly(me) ? me.id : null
   };
 }
 
