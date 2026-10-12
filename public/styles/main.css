@@ -2120,57 +2120,67 @@ body.kiosk .meld-panel {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:0.4rem}
-/* Eetpoll: per dag de profielfoto's van iedereen en je eigen keuze */
+/* Eetpoll: vandaag bovenaan (aantal eters en wie), daaronder de week als tabel met een bolletje per dag */
 .eet-card {
   display:flex;
   flex-direction:column;
-  gap:0.5rem}
-.eet-card .chart-title i {
+  gap:0.6rem}
+.eet-card .chart-title i,.bood-card .chart-title i {
   margin-right:0.4rem;
   color:var(--accent-l)}
 .eet-week {
   font-size:var(--fs-2xs);
   color:var(--dim);
   font-variant-numeric:tabular-nums}
+#blk-eetpoll {
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem}
 .eet-row {
   display:flex;
   align-items:center;
-  gap:0.6rem;
-  min-height:2.9rem;
-  border-top:1px solid rgba(var(--overlay-rgb),0.04)}
-.eet-row:first-child {
-  border-top:none}
-.eet-row.past {
-  opacity:0.45}
-.eet-day {
-  flex-shrink:0;
-  width:3.6rem;
+  min-height:2.6rem}
+.eet-today {
   display:flex;
   flex-direction:column;
-  line-height:1.25}
-.eet-day b {
-  font-size:var(--fs-sm);
-  font-weight:600}
-.eet-day span {
-  font-size:var(--fs-2xs);
-  color:var(--muted);
-  white-space:nowrap}
-.eet-row.today .eet-day b,.eet-row.today .eet-day span {
-  color:var(--accent-l)}
-.eet-faces {
+  gap:0.55rem;
+  padding:0.7rem 0.75rem;
+  border-radius:var(--r-lg);
+  background:rgba(var(--overlay-rgb),0.04)}
+.eet-today-head {
+  display:flex;
+  align-items:center;
+  gap:0.6rem}
+.eet-today-n {
+  font-size:2rem;
+  font-weight:700;
+  line-height:1;
+  color:var(--green);
+  font-variant-numeric:tabular-nums}
+.eet-today-head > div:not(.eet-today-faces) {
   flex:1;
   min-width:0;
   display:flex;
+  flex-direction:column;
+  line-height:1.3}
+.eet-today-head b {
+  font-size:var(--fs-sm);
+  font-weight:600}
+.eet-today-head span:not(.eet-today-n) {
+  font-size:var(--fs-2xs);
+  color:var(--muted)}
+.eet-today-faces {
+  display:flex;
   flex-wrap:wrap;
-  gap:0.45rem;
-  padding:0.3rem 0.15rem}
-/* groene rand en vinkje: eet mee; rood en grijs: eet niet mee; gestippeld en vaag: nog niet gekozen */
+  justify-content:flex-end;
+  gap:0.3rem}
 .eet-face {
-  position:relative;
   flex-shrink:0;
+  display:block;
   width:2rem;
   height:2rem;
-  border-radius:50%;
+  border-radius:50%}
+.eet-today-faces .eet-face {
   box-shadow:0 0 0 2px var(--green)}
 .eet-face img,.eet-face b {
   width:100%;
@@ -2184,115 +2194,182 @@ body.kiosk .meld-panel {
   color:var(--accent-l);
   font-size:var(--fs-sm);
   font-weight:700}
-.eet-face.no {
-  box-shadow:0 0 0 2px var(--red)}
-.eet-face.no img,.eet-face.no b {
-  filter:grayscale(1);
-  opacity:0.45}
-.eet-face.open {
-  box-shadow:none;
-  outline:2px dashed var(--border-strong)}
-.eet-face.open img,.eet-face.open b {
-  opacity:0.4}
-.eet-face > i {
-  position:absolute;
-  right:-0.3rem;
-  bottom:-0.3rem;
-  width:1rem;
-  height:1rem;
-  border-radius:50%;
+.eet-today-rest {
   display:flex;
+  flex-direction:column;
+  gap:0.15rem;
+  font-size:var(--fs-xs);
+  color:var(--muted)}
+.eet-today-rest i {
+  width:1.1rem;
+  margin-right:0.25rem;
+  text-align:center}
+/* de week: een kolom per huisgenoot, een rij per dag */
+.eet-scroll {
+  overflow-x:auto}
+.eet-table {
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed}
+.eet-table th,.eet-table td {
+  padding:0.2rem 0;
+  text-align:center;
+  font-weight:400}
+.eet-table thead th {
+  padding-bottom:0.35rem;
+  vertical-align:bottom}
+.eet-table thead th:first-child,.eet-table tbody th {
+  width:3.5rem;
+  text-align:left}
+.eet-table thead .eet-face {
+  margin:0 auto}
+.eet-name {
+  display:block;
+  margin-top:0.2rem;
+  font-size:var(--fs-2xs);
+  color:var(--muted);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap}
+.eet-table th.me .eet-name {
+  color:var(--accent-l);
+  font-weight:600}
+.eet-table .me {
+  background:rgba(var(--accent-rgb),0.07)}
+.eet-table thead th.me {
+  border-radius:0.6rem 0.6rem 0 0}
+.eet-table tbody tr:last-child td.me {
+  border-radius:0 0 0.6rem 0.6rem}
+.eet-table tbody tr {
+  border-top:1px solid rgba(var(--overlay-rgb),0.05)}
+.eet-table tbody th {
+  line-height:1.25}
+.eet-table tbody th b {
+  display:block;
+  font-size:var(--fs-sm);
+  font-weight:600}
+.eet-table tbody th span {
+  font-size:var(--fs-2xs);
+  color:var(--muted);
+  white-space:nowrap}
+.eet-table tr.today th b,.eet-table tr.today th span {
+  color:var(--accent-l)}
+.eet-table tr.past > * {
+  opacity:0.4}
+.eet-table .eet-count {
+  width:2rem;
+  font-size:var(--fs-xs);
+  font-weight:600;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.eet-mark {
+  display:inline-flex;
   align-items:center;
   justify-content:center;
-  font-size:0.55rem;
-  color:#fff;
+  width:1.9rem;
+  height:1.9rem;
+  border-radius:50%;
+  border:1.5px dashed var(--border-strong);
+  background:none;
+  color:var(--dim);
+  font-size:0.7rem;
+  vertical-align:middle}
+.eet-mark.yes {
+  border:none;
   background:var(--green);
-  border:2px solid var(--surface)}
-.eet-face.no > i {
-  background:var(--red)}
-.eet-face .sr-only {
+  color:#06280f}
+/* je eigen bolletjes zijn knoppen: groter raakvlak en een duidelijke rand */
+button.eet-mark {
+  width:2.4rem;
+  height:2.4rem;
+  font-size:0.85rem;
+  cursor:pointer;
+  touch-action:manipulation}
+button.eet-mark:not(.yes) {
+  border:1.5px solid var(--accent)}
+.eet-mark .sr-only {
   position:absolute;
   width:1px;
   height:1px;
   overflow:hidden;
   clip-path:inset(50%);
   white-space:nowrap}
-.eet-count {
-  flex-shrink:0;
-  font-size:var(--fs-xs);
-  font-weight:600;
-  color:var(--muted);
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap}
-.eet-count i {
-  margin-right:0.3rem;
-  font-size:0.7rem}
-.eet-vote {
-  flex-shrink:0;
-  display:flex;
-  gap:0.3rem}
-.eet-btn {
-  width:2.4rem;
-  height:2.4rem;
-  border-radius:50%;
-  border:1px solid var(--border-strong);
-  background:none;
-  color:var(--muted);
-  font-size:var(--fs-sm);
-  cursor:pointer;
-  touch-action:manipulation}
-.eet-btn:disabled {
-  cursor:default}
-.eet-btn.yes.on {
-  background:var(--green);
-  border-color:var(--green);
-  color:#fff}
-.eet-btn.no.on {
-  background:var(--red);
-  border-color:var(--red);
-  color:#fff}
-/* Boodschappen: invulveld bovenaan, daaronder de lijst met per ding wie het toevoegde */
+.eet-hint {
+  font-size:var(--fs-2xs);
+  color:var(--dim)}
+/* Boodschappen: invulveld en voorstellen bovenaan, daaronder de lijst; een regel aantikken vinkt hem af */
 .bood-card {
   display:flex;
   flex-direction:column;
-  gap:0.5rem}
-.bood-card .chart-title i {
-  margin-right:0.4rem;
-  color:var(--accent-l)}
+  gap:0.6rem}
 .bood-form {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:0.4rem}
 .bood-form[hidden] {
   display:none}
+.bood-form .btn {
+  min-width:2.75rem}
 .bood-list {
   display:flex;
-  flex-direction:column;
-  max-height:22rem;
-  overflow-y:auto}
+  flex-direction:column}
+.bood-chips {
+  display:flex;
+  gap:0.35rem;
+  overflow-x:auto;
+  padding-bottom:0.5rem;
+  scrollbar-width:none}
+.bood-chips::-webkit-scrollbar {
+  display:none}
+.bood-chip {
+  flex-shrink:0;
+  min-height:2rem;
+  padding:0 0.7rem;
+  border-radius:var(--r-pill);
+  border:1px solid var(--border-strong);
+  background:none;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:var(--fs-xs);
+  font-weight:600;
+  white-space:nowrap;
+  cursor:pointer;
+  touch-action:manipulation}
+.bood-chip i {
+  margin-right:0.35rem;
+  font-size:0.65rem;
+  color:var(--accent-l)}
 .bood-row {
   display:flex;
   align-items:center;
-  gap:0.6rem;
-  min-height:2.9rem;
-  border-top:1px solid rgba(var(--overlay-rgb),0.04)}
-.bood-row:first-child {
-  border-top:none}
-.bood-check {
-  flex-shrink:0;
-  width:1.7rem;
-  height:1.7rem;
-  border-radius:50%;
-  border:2px solid var(--border-strong);
+  gap:0.7rem;
+  width:100%;
+  min-height:3rem;
+  padding:0.3rem 0;
+  border:none;
+  border-top:1px solid rgba(var(--overlay-rgb),0.05);
   background:none;
-  color:transparent;
-  font-size:0.7rem;
+  color:var(--text);
+  font-family:inherit;
+  text-align:left}
+button.bood-row {
   cursor:pointer;
   touch-action:manipulation}
+.bood-check {
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:1.6rem;
+  height:1.6rem;
+  border-radius:50%;
+  border:2px solid var(--border-strong);
+  color:transparent;
+  font-size:0.7rem}
 .bood-row.done .bood-check {
   background:var(--green);
   border-color:var(--green);
-  color:#fff}
+  color:#06280f}
 .bood-text {
   flex:1;
   min-width:0;
@@ -2329,22 +2406,35 @@ body.kiosk .meld-panel {
   color:var(--accent-l);
   font-size:var(--fs-xs);
   font-weight:700}
-.bood-remove {
-  flex-shrink:0;
-  width:2rem;
-  height:2rem;
-  border:none;
-  border-radius:50%;
-  background:none;
-  color:var(--dim);
-  cursor:pointer}
 .bood-empty {
-  padding:0.8rem 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:0.4rem;
+  padding:1.2rem 0;
   font-size:var(--fs-sm);
   color:var(--muted)}
-.bood-clear {
-  align-self:flex-start;
-  margin-top:0.5rem}
+.bood-empty i {
+  font-size:1.4rem;
+  color:var(--dim)}
+.bood-done-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5rem;
+  margin-top:0.6rem;
+  padding:0.3rem 0;
+  font-size:var(--fs-2xs);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--dim)}
+/* op een breed scherm blijft het blok even hoog als zijn buren; op een telefoon schuift gewoon de pagina */
+@media (min-width:720px) {
+  .bood-list {
+    max-height:24rem;
+    overflow-y:auto}
+}
 /* Gebruikers (Instellingen): naam, PIN en de knop op één rij */
 .users-form {
   display:grid;

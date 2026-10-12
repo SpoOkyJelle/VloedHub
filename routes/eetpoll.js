@@ -13,7 +13,7 @@ module.exports = function(req, res) {
     return true;
   }
 
-  // Je eigen keuze voor één dag: { day: 0-6 (maandag = 0), eat: true, false of null }
+  // Je eigen bolletje voor één dag: { day: 0-6 (maandag = 0), eat: true of false }
   if (req.method === "POST" && req.url === "/api/eetpoll/vote") {
     var body = "";
     req.on("data", function(c) { body += c; });
