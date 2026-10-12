@@ -33,6 +33,10 @@
       "size": "4"
     },
     {
+      "type": "eetpoll",
+      "size": "2"
+    },
+    {
       "type": "status",
       "size": "2"
     },
@@ -93,6 +97,10 @@
     {
       "type": "scenes",
       "size": "4"
+    },
+    {
+      "type": "eetpoll",
+      "size": "2"
     },
     {
       "type": "camera",

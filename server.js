@@ -51,6 +51,7 @@ var routes = [
   require("./routes/costs"),
   require("./routes/weather"),
   require("./routes/afval"),
+  require("./routes/eetpoll"),
   require("./routes/insights"),
   require("./routes/scenes"),
   require("./routes/party"),

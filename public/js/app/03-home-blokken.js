@@ -31,7 +31,7 @@ var layoutEditMode = false;
 function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', eetpoll:'eetpoll', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -140,6 +140,10 @@ var BLOCKS = {
   'camera': {label:'Deurbelcamera',icon:'fa-video',dynamic:true,
     render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" role="button" tabindex="0" aria-label="Beeld van de deurbel vergroten" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div><div class="cam-visits" id="blk-cam-visits"></div></div>';},
     refresh:function(){loadCamera();loadRings();}
+  },
+  'eetpoll': {label:'Wie eet mee',icon:'fa-utensils',dynamic:true,
+    render:function(el){var rows='';for(var i=0;i<7;i++)rows+='<div class="eet-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card eet-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-utensils"></i>Wie eet mee</span><span class="eet-week" id="blk-eetpoll-week"></span></div><div id="blk-eetpoll">'+rows+'</div></div>';},
+    refresh:function(){loadEetpoll();}
   },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
