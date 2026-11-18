@@ -55,10 +55,27 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Nu meteen verversen (kost één API-verzoek)
+  if (req.method === "POST" && req.url === "/api/tado/refresh") {
+    tado.refreshNow(function(err, status) {
+      json(res, 200, Object.assign({ ok: !err, error: err || null }, status));
+    });
+    return true;
+  }
+
   // Vorstgrens instellen: { threshold }
   if (req.method === "POST" && req.url === "/api/tado/frost") {
     readBody(req, function(data) {
       if (!data || !tado.setFrost(data.threshold)) return json(res, 400, { ok: false, error: "Grens moet tussen 1 en 15 °C liggen" });
+      json(res, 200, Object.assign({ ok: true }, tado.getStatus()));
+    });
+    return true;
+  }
+
+  // Ververssnelheid instellen (minuten): { minutes }
+  if (req.method === "POST" && req.url === "/api/tado/poll-interval") {
+    readBody(req, function(data) {
+      if (!data || !tado.setPollMinutes(data.minutes)) return json(res, 400, { ok: false, error: "Kies tussen 10 en 360 minuten" });
       json(res, 200, Object.assign({ ok: true }, tado.getStatus()));
     });
     return true;

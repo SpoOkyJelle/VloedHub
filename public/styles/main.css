@@ -1406,6 +1406,16 @@ to {
   flex-direction:column;
   gap:0.4rem;
   margin:0.2rem 0}
+.tado-meta {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.5rem;
+  font-size:var(--fs-2xs);
+  color:var(--muted);
+  margin:-0.3rem 0 0.1rem}
+.tado-meta:empty {
+  display:none}
 .mod-switch {
   position:relative;
   display:inline-block;

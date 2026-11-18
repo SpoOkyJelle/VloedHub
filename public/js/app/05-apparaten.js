@@ -234,9 +234,8 @@ function tadoZoneHtml(z) {
   if (z.openWindow) sub.push('<i class="fa-solid fa-window-maximize"></i> raam open');
   sub.push(z.overlay ? 'handmatig' : 'schema');
   var off = z.power === 'OFF';
-  var canStep = z.online && z.setpoint != null || (z.online && z.type === 'HEATING');
   var dis = z.online ? '' : ' disabled';
-  var stepDis = canStep ? '' : ' disabled';
+  var stepDis = dis;
   return '<div class="card tado-card">' +
     '<div class="tado-head"><span class="tado-name">' + escHtml(z.name) + '</span>' + flame + '</div>' +
     '<div class="tado-temp">' + tadoDeg(z.temperature) + '</div>' +
@@ -249,13 +248,25 @@ function tadoZoneHtml(z) {
       (z.overlay ? '<button class="btn btn-quiet btn-sm" onclick="tadoAuto(' + z.id + ')"' + dis + '>Schema</button>' : '') +
     '</div></div>';
 }
+function tadoAgo(ms) {
+  if (!ms) return '';
+  var min = Math.round((Date.now() - ms) / 60000);
+  return min < 1 ? 'zojuist bijgewerkt' : min < 60 ? 'bijgewerkt ' + min + ' min geleden' : 'bijgewerkt ' + Math.round(min / 60) + ' uur geleden';
+}
 function renderTado(d) {
   tadoData = d;
   var grid = document.getElementById('tado-zones');
   if (grid) {
     if (!d.linked) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">Nog niet gekoppeld — koppel bij Instellingen → Koppelingen</div></div>';
-    else if (!d.zones || !d.zones.length) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">' + escHtml(d.error || 'Nog geen zones ontvangen…') + '</div></div>';
+    else if (!d.zones || !d.zones.length) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">' + escHtml(d.error || 'Nog geen kamers ontvangen…') + '</div></div>';
     else grid.innerHTML = d.zones.map(tadoZoneHtml).join('');
+  }
+  var meta = document.getElementById('tado-meta');
+  if (meta) {
+    if (d.linked && d.zones && d.zones.length) {
+      meta.innerHTML = '<span>' + escHtml(tadoAgo(d.updated)) + '</span>' +
+        '<button class="btn btn-quiet btn-sm" id="tado-refresh-btn" onclick="refreshTadoNow(this)"><i class="fa-solid fa-rotate"></i> Ververs</button>';
+    } else meta.innerHTML = '';
   }
   showTadoStatus(d);
 }
@@ -311,10 +322,30 @@ function showTadoStatus(d) {
   }
   var frost = document.getElementById('tado-frost');
   if (frost && document.activeElement !== frost && d.frostThreshold != null) frost.value = d.frostThreshold;
+  var pollEl = document.getElementById('tado-poll');
+  if (pollEl && document.activeElement !== pollEl && d.pollMinutes != null) pollEl.value = d.pollMinutes;
   clearTimeout(tadoLinkTimer);
   if (d.pending) tadoLinkTimer = setTimeout(refreshTado, 3000);
 }
 function loadTadoStatus() { refreshTado(); }
+function refreshTadoNow(btn) {
+  if (btn) btn.disabled = true;
+  fetch('/api/tado/refresh', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
+    if (!d.ok && d.error) toast(d.error, 'error');
+    renderTado(d);
+  }).catch(function() { if (btn) btn.disabled = false; toast('tado: verbindingsfout', 'error'); });
+}
+function saveTadoPoll(btn) {
+  var input = document.getElementById('tado-poll');
+  btn.disabled = true;
+  fetch('/api/tado/poll-interval', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({minutes: input.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Ververssnelheid opgeslagen', 'ok');
+      renderTado(d);
+    }).catch(function() { btn.disabled = false; toast('tado: verbindingsfout', 'error'); });
+}
 function linkTado() {
   var btn = document.getElementById('tado-link-btn'); if (btn) btn.disabled = true;
   fetch('/api/tado/link', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {

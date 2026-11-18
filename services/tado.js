@@ -4,29 +4,41 @@ var path = require("path");
 var modules = require("./modules");
 var discord = require("./discord");
 
-// Slimme verwarming via de officiële tado° REST-API.
-// Sinds maart 2025 is inloggen met gebruikersnaam/wachtwoord eruit; koppelen gaat met de "device flow":
+// Slimme verwarming via de officiële tado° cloud-API, afgestemd op de tado° X (de nieuwe generatie).
+//
+// Koppelen: sinds maart 2025 is inloggen met wachtwoord eruit; het gaat met de "device flow":
 // VloedHub vraagt een code aan, jij keurt die één keer goed op login.tado.com (ingelogd op je tado-account),
-// daarna houdt de server zelf het token vers. Er is geen developer-app of client-secret nodig — tado
-// gebruikt een vaste, publieke client-id. Tokens staan in data/tado.json (niet in git).
-// De API heeft geen live-stream zoals Home Connect, dus de zones worden gepolld.
+// daarna houdt de server zelf het token vers. Er is geen developer-app, client-secret of Matter-code nodig —
+// tado gebruikt een vaste, publieke client-id. Tokens staan in data/tado.json (niet in git).
+//
+// tado° X praat via een andere API dan de oudere V3+: de kamers en de bediening zitten op hops.tado.com
+// (/homes/{id}/rooms), het home-id komt nog van de klassieke API (my.tado.com/api/v2/me).
+//
+// Let op de limiet: op het gratis plan staat tado maar ~100 API-verzoeken per dag toe (20.000 met een
+// Auto-Assist-abonnement). Daarom pollt de server zuinig (standaard elke 30 min, instelbaar) en werkt hij
+// de kaart na een bediening meteen zelf bij in plaats van opnieuw op te halen.
 var AUTH_HOST = "login.tado.com";
-var API_HOST = "my.tado.com";
+var MY_HOST = "my.tado.com";       // /api/v2/me voor het home-id (en presence, nu niet gebruikt)
+var HOPS_HOST = "hops.tado.com";   // tado° X: kamers uitlezen en bedienen
 var CLIENT_ID = "1bb50063-6b0c-4d11-bd99-387f4a91cc46";
-var SCOPE = "offline_access"; // vraagt een refresh-token aan, zodat de koppeling blijft werken
+var SCOPE = "offline_access";      // vraagt een refresh-token aan, zodat de koppeling blijft werken
 var CONFIG_FILE = path.join(__dirname, "../data/tado.json");
 
-var POLL_MS = 45 * 1000;        // de API heeft geen limiet zoals Home Connect, maar elke 45 s is ruim genoeg
+var DEFAULT_POLL_MIN = 30;         // zuinig i.v.m. de limiet van 100 verzoeken/dag op het gratis plan
+var MIN_POLL_MIN = 10, MAX_POLL_MIN = 360;
 var RETRY_MS = 5 * 60 * 1000;
-var DEFAULT_FROST = 5;          // °C: onder deze kamertemperatuur komt er een vorstwaarschuwing
-var FROST_RELEASE = 1;          // pas weer opnieuw melden als het een graad boven de grens is gekomen (hysterese)
-var MIN_SET = 5, MAX_SET = 25;  // tado staat instellen toe tussen 5 en 25 °C
+var RATE_RETRY_MS = 60 * 60 * 1000; // na een limiet-antwoord (429) pas over een uur opnieuw proberen
+var DEFAULT_FROST = 5;             // °C: onder deze kamertemperatuur komt er een vorstwaarschuwing
+var FROST_RELEASE = 1;             // pas weer opnieuw melden als het een graad boven de grens is (hysterese)
+var MIN_SET = 5, MAX_SET = 25;     // tado staat instellen toe tussen 5 en 25 °C
+var RATE_MSG = "tado API-limiet bereikt (100 verzoeken/dag op het gratis plan) — VloedHub probeert het later opnieuw";
 
-var pending = null;             // lopende koppeling: { user_code, url, expires }
+var pending = null;                // lopende koppeling: { user_code, url, expires }
 var linkError = null;
-var zones = [];                 // laatst opgehaalde zones, zie parseZone
+var rateLimited = false;
+var zones = [];                    // laatst opgehaalde kamers, zie parseRoom
 var lastUpdate = null;
-var alerts = {};                // per zone onthouden waarover al gemeld is (offline/vorst), zodat er niet herhaald wordt
+var alerts = {};                   // per kamer onthouden waarover al gemeld is (offline/vorst), geen herhaling
 var pollTimer = null, generation = 0;
 
 function load() {
@@ -37,6 +49,12 @@ function save(cfg) {
   var dir = path.dirname(CONFIG_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
+}
+
+function pollMs() {
+  var m = load().pollMinutes;
+  if (!(m >= MIN_POLL_MIN && m <= MAX_POLL_MIN)) m = DEFAULT_POLL_MIN;
+  return m * 60 * 1000;
 }
 
 function form(obj) {
@@ -68,7 +86,7 @@ function oauth(endpoint, params, cb) {
 }
 
 function oauthMessage(data, fallback) {
-  var d = data && (data.error_description || data.error);
+  var d = data && (data.error_description || data.error || data.title || data.message);
   return d ? String(d) : fallback;
 }
 
@@ -120,11 +138,14 @@ function startLink(cb) {
 }
 
 function unlink() {
-  pending = null; linkError = null;
+  pending = null; linkError = null; rateLimited = false;
   stopPolling();
   var cfg = load();
-  // de vorstgrens is een voorkeur, geen koppeling: die blijft bewaard
-  save(cfg.frostThreshold != null ? { frostThreshold: cfg.frostThreshold } : {});
+  // de voorkeuren (vorstgrens, pollsnelheid) zijn geen koppeling: die blijven bewaard
+  var keep = {};
+  if (cfg.frostThreshold != null) keep.frostThreshold = cfg.frostThreshold;
+  if (cfg.pollMinutes != null) keep.pollMinutes = cfg.pollMinutes;
+  save(keep);
   zones = []; lastUpdate = null; alerts = {};
 }
 
@@ -155,19 +176,19 @@ function accessToken(cb) {
 }
 
 // cb(err, status, body). body wordt als JSON verstuurd als het meegegeven is.
-function api(method, urlPath, body, cb) {
+function api(host, method, urlPath, body, cb) {
   accessToken(function(err, token) {
     if (err) return cb(err);
     var headers = { Authorization: "Bearer " + token, Accept: "application/json" };
     var payload = body ? JSON.stringify(body) : null;
     if (payload) { headers["Content-Type"] = "application/json"; headers["Content-Length"] = Buffer.byteLength(payload); }
-    request(API_HOST, method, urlPath, headers, payload, cb);
+    request(host, method, urlPath, headers, payload, cb);
   });
 }
 
-// ── Huis en zones ───────────────────────────────────────────────────────────
+// ── Huis en kamers ──────────────────────────────────────────────────────────
 function findHome(cb) {
-  api("GET", "/api/v2/me", null, function(err, status, body) {
+  api(MY_HOST, "GET", "/api/v2/me", null, function(err, status, body) {
     if (err || status !== 200 || !body.homes || !body.homes.length) {
       if (!err && status === 200) linkError = "Geen huis gevonden in dit tado-account";
       return cb && cb(null);
@@ -180,51 +201,57 @@ function findHome(cb) {
   });
 }
 
-// Zet het onbewerkte zone-statusantwoord om naar wat de kaart nodig heeft
-function parseZone(z, state) {
-  var s = state.setting || {};
-  var sensors = state.sensorDataPoints || {};
+// Zet een kamer uit het tado° X rooms-antwoord om naar wat de kaart nodig heeft
+function parseRoom(r) {
+  var s = r.setting || {};
+  var sensors = r.sensorDataPoints || {};
   var inside = sensors.insideTemperature || {};
   var hum = sensors.humidity || {};
-  var heat = (state.activityDataPoints && state.activityDataPoints.heatingPower) || {};
+  var heat = r.heatingPower || {};
   return {
-    id: z.id,
-    name: z.name,
-    type: z.type,                                              // HEATING of HOT_WATER
+    id: r.id,
+    name: r.name,
     power: s.power || null,                                    // ON of OFF
-    setpoint: s.temperature && s.temperature.celsius != null ? s.temperature.celsius : null,
-    temperature: inside.celsius != null ? inside.celsius : null,
+    setpoint: s.temperature && s.temperature.value != null ? s.temperature.value : null,
+    temperature: inside.value != null ? inside.value : null,
     humidity: hum.percentage != null ? hum.percentage : null,
     heatingPower: heat.percentage != null ? heat.percentage : null,
-    openWindow: !!state.openWindow,
-    overlay: !!state.overlay,                                  // true = handmatig gezet, schema onderbroken
-    online: !state.link || state.link.state === "ONLINE"
+    openWindow: !!(r.openWindow && r.openWindow.activated !== false),
+    overlay: !!r.manualControlTermination,                     // handmatig gezet, schema onderbroken
+    online: !r.connection || r.connection.state !== "OFFLINE"
   };
+}
+
+// Haalt alle kamers in één verzoek op (zuinig i.v.m. de dag-limiet). cb(err)
+function getRooms(cb) {
+  var cfg = load();
+  if (!cfg.tokens) return cb("niet gekoppeld");
+  if (!cfg.homeId) return findHome(function(id) { if (!id) return cb(linkError || "geen huis gevonden"); getRooms(cb); });
+  api(HOPS_HOST, "GET", "/homes/" + cfg.homeId + "/rooms", null, function(err, status, body) {
+    if (status === 429) { rateLimited = true; linkError = RATE_MSG; return cb("limiet"); }
+    if (err) return cb("tado is niet bereikbaar");
+    if (status !== 200) return cb(oauthMessage(body, "Kamers ophalen mislukt (" + status + ")"));
+    var list = Array.isArray(body) ? body : (body && body.rooms) || [];
+    rateLimited = false;
+    if (linkError === RATE_MSG) linkError = null;
+    applyZones(list.map(parseRoom));
+    cb(null);
+  });
 }
 
 function poll() {
   clearTimeout(pollTimer);
   var gen = generation;
-  var cfg = load();
-  if (!cfg.tokens) return;
-  if (!cfg.homeId) return findHome(function(id) { if (gen === generation) pollTimer = setTimeout(poll, id ? 0 : RETRY_MS); });
-
-  api("GET", "/api/v2/homes/" + cfg.homeId + "/zones", null, function(err, status, list) {
+  if (!load().tokens) return;
+  getRooms(function(err) {
     if (gen !== generation) return;
-    if (err || status !== 200 || !Array.isArray(list)) return schedule(gen, RETRY_MS);
-    // één statusoproep per zone; HOT_WATER-zones hebben geen kamertemperatuur maar passen in dezelfde kaart
-    var queue = list.filter(function(z) { return z.type === "HEATING" || z.type === "HOT_WATER"; });
-    var results = [], i = 0;
-    (function next() {
-      if (gen !== generation) return;
-      if (i >= queue.length) { applyZones(results); return schedule(gen, POLL_MS); }
-      var z = queue[i++];
-      api("GET", "/api/v2/homes/" + cfg.homeId + "/zones/" + z.id + "/state", null, function(e, st, state) {
-        if (!e && st === 200 && state && state.setting) results.push(parseZone(z, state));
-        next();
-      });
-    })();
+    schedule(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : pollMs());
   });
+}
+
+// Eenmalig nu ophalen (knop "Ververs"); verstoort de vaste pollcyclus niet. cb(err, status)
+function refreshNow(cb) {
+  getRooms(function(err) { cb(err && err !== "limiet" ? (rateLimited ? RATE_MSG : "Verversen mislukt") : null, getStatus()); });
 }
 
 function schedule(gen, ms) {
@@ -244,8 +271,14 @@ function applyZones(list) {
   checkAlerts();
 }
 
-// Meldingen: een zone offline, of een kamer onder de vorstgrens. Beide melden één keer bij de overgang en
-// opnieuw als het probleem weg is en terugkomt; een herstart van de server meldt een lopende storing opnieuw.
+// Werkt één kamer in het geheugen bij na een bediening, zodat de kaart meteen klopt zonder extra API-verzoek
+function patchZone(id, changes) {
+  zones = zones.map(function(z) { return z.id === id ? Object.assign({}, z, changes) : z; });
+  lastUpdate = Date.now();
+}
+
+// Meldingen: een kamer offline, of onder de vorstgrens. Beide melden één keer bij de overgang en opnieuw
+// als het probleem weg is en terugkomt; een herstart van de server meldt een lopende storing opnieuw.
 function checkAlerts() {
   if (!modules.isOn("tado")) return;
   var cfg = load();
@@ -274,30 +307,35 @@ function checkAlerts() {
 function setZone(zoneId, opts, cb) {
   var cfg = load();
   if (!cfg.homeId) return cb("niet gekoppeld");
-  var setting = { type: "HEATING" };
-  if (opts.power === "OFF") setting.power = "OFF";
+  var setting;
+  if (opts.power === "OFF") setting = { power: "OFF" };
   else {
     var t = Number(opts.temperature);
     if (!(t >= MIN_SET && t <= MAX_SET)) return cb("Temperatuur moet tussen " + MIN_SET + " en " + MAX_SET + " °C liggen");
-    setting.power = "ON";
-    setting.temperature = { celsius: Math.round(t * 10) / 10 };
+    setting = { power: "ON", isBoost: false, temperature: { value: Math.round(t * 10) / 10 } };
   }
-  api("PUT", "/api/v2/homes/" + cfg.homeId + "/zones/" + zoneId + "/overlay", { setting: setting, termination: { type: "MANUAL" } }, function(err, status, data) {
-    if (err) return cb("tado is niet bereikbaar");
-    if (status !== 200 && status !== 201 && status !== 204) return cb(oauthMessage(data, "Instellen mislukt (" + status + ")"));
-    poll(); // meteen verversen zodat de kaart de nieuwe stand toont
-    cb(null);
-  });
+  api(HOPS_HOST, "POST", "/homes/" + cfg.homeId + "/rooms/" + zoneId + "/manualControl",
+    { setting: setting, termination: { type: "MANUAL" } }, function(err, status, data) {
+      if (err) return cb("tado is niet bereikbaar");
+      if (status === 429) { rateLimited = true; return cb(RATE_MSG); }
+      if (status !== 200 && status !== 201 && status !== 204) return cb(oauthMessage(data, "Instellen mislukt (" + status + ")"));
+      // zuinig met API-verzoeken: niet opnieuw ophalen, maar de kaart meteen zelf bijwerken
+      patchZone(zoneId, opts.power === "OFF"
+        ? { power: "OFF", overlay: true }
+        : { power: "ON", setpoint: setting.temperature.value, overlay: true });
+      cb(null);
+    });
 }
 
 // Terug naar het verwarmingsschema (de handmatige instelling intrekken)
 function resumeZone(zoneId, cb) {
   var cfg = load();
   if (!cfg.homeId) return cb("niet gekoppeld");
-  api("DELETE", "/api/v2/homes/" + cfg.homeId + "/zones/" + zoneId + "/overlay", null, function(err, status, data) {
+  api(HOPS_HOST, "DELETE", "/homes/" + cfg.homeId + "/rooms/" + zoneId + "/manualControl", null, function(err, status, data) {
     if (err) return cb("tado is niet bereikbaar");
+    if (status === 429) { rateLimited = true; return cb(RATE_MSG); }
     if (status !== 200 && status !== 204) return cb(oauthMessage(data, "Terug naar schema mislukt (" + status + ")"));
-    poll();
+    patchZone(zoneId, { overlay: false });
     cb(null);
   });
 }
@@ -312,6 +350,16 @@ function setFrost(v) {
   return true;
 }
 
+function setPollMinutes(v) {
+  v = Math.round(Number(v));
+  if (!(v >= MIN_POLL_MIN && v <= MAX_POLL_MIN)) return false;
+  var cfg = load();
+  cfg.pollMinutes = v;
+  save(cfg);
+  if (cfg.tokens) poll(); // meteen met de nieuwe snelheid verder
+  return true;
+}
+
 // ── Status ────────────────────────────────────────────────────────────────
 function getStatus() {
   var cfg = load();
@@ -320,8 +368,10 @@ function getStatus() {
     linked: !!cfg.tokens,
     pending: pending ? { user_code: pending.user_code, url: pending.url } : null,
     error: linkError,
+    rateLimited: rateLimited,
     homeName: cfg.homeName || null,
     frostThreshold: cfg.frostThreshold != null ? cfg.frostThreshold : DEFAULT_FROST,
+    pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
     minSet: MIN_SET, maxSet: MAX_SET,
     zones: zones,
     updated: lastUpdate
@@ -334,6 +384,6 @@ function start() {
 
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
-  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost,
-  _parseZone: parseZone, _checkAlerts: checkAlerts
+  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, refreshNow: refreshNow,
+  _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };
