@@ -45,6 +45,7 @@ var routes = [
   require("./routes/camera"),
   require("./routes/presence"),
   require("./routes/fridge"),
+  require("./routes/tado"),
   require("./routes/modules"),
   require("./routes/discord"),
   require("./routes/region"),

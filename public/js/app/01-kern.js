@@ -77,7 +77,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 400);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadTadoStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); ledRenderAll(); }
   var eb = document.getElementById('layout-edit-btn');
   if (eb) eb.classList.toggle('show', n === 0);
@@ -87,7 +87,7 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
-    if (n === 4) { refreshVaatwasser(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); lampsRefresh(); }
+    if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); lampsRefresh(); }
     if (n === 5) { refreshSettingsNames(); }
   }
 }
