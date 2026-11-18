@@ -194,11 +194,40 @@ function findHome(cb) {
       return cb && cb(null);
     }
     var cfg = load();
-    cfg.homeId = body.homes[0].id;
-    cfg.homeName = body.homes[0].name || "tado°";
+    cfg.homes = body.homes.map(function(h) { return { id: h.id, name: h.name || ("Huis " + h.id) }; });
+    // alleen automatisch een huis kiezen als er nog geen geldige keuze is; een eigen keuze blijft staan
+    var chosen = cfg.homes.filter(function(h) { return h.id === cfg.homeId; })[0] || cfg.homes[0];
+    cfg.homeId = chosen.id;
+    cfg.homeName = chosen.name;
     save(cfg);
     cb && cb(cfg.homeId);
   });
+}
+
+// Wisselen tussen huizen (wie er meerdere heeft). Leegt de kamers en haalt het gekozen huis meteen op.
+function setHome(id) {
+  var cfg = load();
+  var h = (cfg.homes || []).filter(function(x) { return String(x.id) === String(id); })[0];
+  if (!h) return false;
+  if (cfg.homeId !== h.id) {
+    cfg.homeId = h.id; cfg.homeName = h.name;
+    save(cfg);
+    zones = []; lastUpdate = null; alerts = {};
+    if (cfg.tokens) poll();
+  }
+  return true;
+}
+
+// Waar een kamer getoond wordt: "both" (overal), "thuis", "home" (alleen het Home-blok) of "hidden"
+var ROOM_VIEWS = ["both", "thuis", "home", "hidden"];
+function setRoomView(zoneId, view) {
+  if (ROOM_VIEWS.indexOf(view) === -1 || zoneId == null) return false;
+  var cfg = load();
+  if (!cfg.roomView) cfg.roomView = {};
+  if (view === "both") delete cfg.roomView[zoneId];
+  else cfg.roomView[zoneId] = view;
+  save(cfg);
+  return true;
 }
 
 // Zet een kamer uit het tado° X rooms-antwoord om naar wat de kaart nodig heeft
@@ -226,7 +255,8 @@ function parseRoom(r) {
 function getRooms(cb) {
   var cfg = load();
   if (!cfg.tokens) return cb("niet gekoppeld");
-  if (!cfg.homeId) return findHome(function(id) { if (!id) return cb(linkError || "geen huis gevonden"); getRooms(cb); });
+  // nog geen huis gekozen, of de huizenlijst ontbreekt (koppeling van een oudere versie): eerst ophalen
+  if (!cfg.homeId || !cfg.homes || !cfg.homes.length) return findHome(function(id) { if (!id) return cb(linkError || "geen huis gevonden"); getRooms(cb); });
   api(HOPS_HOST, "GET", "/homes/" + cfg.homeId + "/rooms", null, function(err, status, body) {
     if (status === 429) { rateLimited = true; linkError = RATE_MSG; return cb("limiet"); }
     if (err) return cb("tado is niet bereikbaar");
@@ -364,16 +394,19 @@ function setPollMinutes(v) {
 function getStatus() {
   var cfg = load();
   if (pending && Date.now() > pending.expires) pending = null;
+  var rv = cfg.roomView || {};
   return {
     linked: !!cfg.tokens,
     pending: pending ? { user_code: pending.user_code, url: pending.url } : null,
     error: linkError,
     rateLimited: rateLimited,
     homeName: cfg.homeName || null,
+    homeId: cfg.homeId || null,
+    homes: cfg.homes || [],
     frostThreshold: cfg.frostThreshold != null ? cfg.frostThreshold : DEFAULT_FROST,
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
     minSet: MIN_SET, maxSet: MAX_SET,
-    zones: zones,
+    zones: zones.map(function(z) { return Object.assign({ view: rv[z.id] || "both" }, z); }),
     updated: lastUpdate
   };
 }
@@ -385,5 +418,6 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
   setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, refreshNow: refreshNow,
+  setHome: setHome, setRoomView: setRoomView,
   _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };

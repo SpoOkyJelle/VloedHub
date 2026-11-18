@@ -1416,6 +1416,23 @@ to {
   margin:-0.3rem 0 0.1rem}
 .tado-meta:empty {
   display:none}
+.tado-rooms {
+  display:flex;
+  flex-direction:column;
+  gap:0.4rem}
+.tado-room-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.6rem}
+.tado-room-row > span {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap}
+.tado-room-row select.field {
+  width:auto;
+  flex-shrink:0}
 .mod-switch {
   position:relative;
   display:inline-block;

@@ -259,8 +259,13 @@ function renderTado(d) {
   if (grid) {
     if (!d.linked) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">Nog niet gekoppeld — koppel bij Instellingen → Koppelingen</div></div>';
     else if (!d.zones || !d.zones.length) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">' + escHtml(d.error || 'Nog geen kamers ontvangen…') + '</div></div>';
-    else grid.innerHTML = d.zones.map(tadoZoneHtml).join('');
+    else {
+      var shown = d.zones.filter(function(z) { return z.view !== 'home' && z.view !== 'hidden'; });
+      grid.innerHTML = shown.length ? shown.map(tadoZoneHtml).join('')
+        : '<div class="card fridge-card"><div class="fridge-msg">Alle kamers staan ingesteld om hier niet te tonen (zie Instellingen).</div></div>';
+    }
   }
+  buildTadoExtra(d);
   var meta = document.getElementById('tado-meta');
   if (meta) {
     if (d.linked && d.zones && d.zones.length) {
@@ -326,6 +331,45 @@ function showTadoStatus(d) {
   if (pollEl && document.activeElement !== pollEl && d.pollMinutes != null) pollEl.value = d.pollMinutes;
   clearTimeout(tadoLinkTimer);
   if (d.pending) tadoLinkTimer = setTimeout(refreshTado, 3000);
+}
+function buildTadoExtra(d) {
+  var el = document.getElementById('tado-extra');
+  if (!el) return;
+  if (!d.linked) { el.innerHTML = ''; return; }
+  var html = '';
+  if (d.homes && d.homes.length > 1) {
+    html += '<div class="setting-row"><div class="setting-text"><div class="setting-title">Huis</div><div class="setting-desc">Je account heeft meerdere huizen</div></div>' +
+      '<select class="field" aria-label="Huis" onchange="setTadoHome(this)">' +
+      d.homes.map(function(h) { return '<option value="' + escHtml(String(h.id)) + '"' + (h.id === d.homeId ? ' selected' : '') + '>' + escHtml(h.name) + '</option>'; }).join('') +
+      '</select></div>';
+  }
+  if (d.zones && d.zones.length) {
+    var opts = [['both', 'Overal'], ['thuis', 'Alleen Thuis'], ['home', 'Alleen Home-blok'], ['hidden', 'Verbergen']];
+    html += '<div class="setting-row setting-row-wrap"><div class="setting-text"><div class="setting-title">Kamers tonen</div><div class="setting-desc">Kies per kamer waar hij verschijnt op het dashboard</div></div></div>' +
+      '<div class="tado-rooms">' + d.zones.map(function(z) {
+        return '<div class="tado-room-row"><span>' + escHtml(z.name) + '</span>' +
+          '<select class="field" data-zone="' + escHtml(String(z.id)) + '" aria-label="Zichtbaarheid ' + escHtml(z.name) + '" onchange="setTadoRoomView(this)">' +
+          opts.map(function(o) { return '<option value="' + o[0] + '"' + ((z.view || 'both') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+          '</select></div>';
+      }).join('') + '</div>';
+  }
+  el.innerHTML = html;
+}
+function setTadoHome(sel) {
+  sel.disabled = true;
+  fetch('/api/tado/home', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: sel.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (!d.ok) toast(d.error || 'Huis wisselen mislukt', 'error');
+      renderTado(d);
+      setTimeout(refreshTado, 2500); // het nieuwe huis wordt op de achtergrond opgehaald
+    }).catch(function() { sel.disabled = false; toast('tado: verbindingsfout', 'error'); });
+}
+function setTadoRoomView(sel) {
+  fetch('/api/tado/room-view', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({zoneId: sel.dataset.zone, view: sel.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (!d.ok) toast(d.error || 'Opslaan mislukt', 'error');
+      renderTado(d);
+    }).catch(function() { toast('tado: verbindingsfout', 'error'); });
 }
 function loadTadoStatus() { refreshTado(); }
 function refreshTadoNow(btn) {

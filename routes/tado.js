@@ -55,6 +55,24 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Een ander huis kiezen (wie er meerdere heeft): { id }
+  if (req.method === "POST" && req.url === "/api/tado/home") {
+    readBody(req, function(data) {
+      if (!data || data.id == null || !tado.setHome(data.id)) return json(res, 400, { ok: false, error: "Onbekend huis" });
+      json(res, 200, Object.assign({ ok: true }, tado.getStatus()));
+    });
+    return true;
+  }
+
+  // Waar een kamer getoond wordt: { zoneId, view } met view both|thuis|home|hidden
+  if (req.method === "POST" && req.url === "/api/tado/room-view") {
+    readBody(req, function(data) {
+      if (!data || !tado.setRoomView(data.zoneId, data.view)) return json(res, 400, { ok: false, error: "Ongeldige keuze" });
+      json(res, 200, Object.assign({ ok: true }, tado.getStatus()));
+    });
+    return true;
+  }
+
   // Nu meteen verversen (kost één API-verzoek)
   if (req.method === "POST" && req.url === "/api/tado/refresh") {
     tado.refreshNow(function(err, status) {
