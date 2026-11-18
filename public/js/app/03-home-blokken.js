@@ -31,7 +31,7 @@ var layoutEditMode = false;
 function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas', tado_heating:'tado' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -156,6 +156,11 @@ var BLOCKS = {
   'chart_temp_mini': {label:'Temperatuurgrafiek',icon:'fa-temperature-half',dynamic:true,
     render:function(el){el.innerHTML='<div class="chart-card compact"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap h-120"><canvas id="blk-chart-temp"></canvas></div></div>';},
     refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
+  },
+  // tado° X: huidige kamertemperaturen op Home. Leest de server-cache (/api/tado), dus geen extra tado-API-verzoeken.
+  'tado_heating': {label:'Verwarming (tado)',icon:'fa-temperature-arrow-up',dynamic:true,
+    render:function(el){el.innerHTML='<div class="section-title">Verwarming</div><div class="temp-grid" id="dyn-tado-grid"></div>';},
+    refresh:function(){fetch('/api/tado').then(function(r){return r.json();}).then(function(d){var g=document.getElementById('dyn-tado-grid');if(!g)return;if(!d.linked||!d.zones||!d.zones.length){g.innerHTML='<div class="temp-card"><div class="temp-room">'+(d.linked?'Geen kamers':'Niet gekoppeld')+'</div></div>';return;}g.innerHTML=d.zones.map(function(z){var sub=z.power==='OFF'?'uit':(z.setpoint!=null?'→ '+nlNum(z.setpoint,z.setpoint%1?1:0)+'°':'');if(z.online&&z.heatingPower>0)sub+=(sub?' · ':'')+'🔥 '+Math.round(z.heatingPower)+'%';var icon=!z.online?'fa-plug-circle-xmark':z.heatingPower>0?'fa-fire':'fa-temperature-half';return '<div class="temp-card"><i class="fa-solid '+icon+'"></i><div class="temp-room">'+escHtml(z.name)+'</div><div class="temp-value">'+(z.temperature!=null?nlNum(z.temperature,1):'—')+' °C</div><div class="temp-age">'+sub+'</div></div>';}).join('');}).catch(function(){});}
   }
 };
 
