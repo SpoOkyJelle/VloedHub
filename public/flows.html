@@ -147,6 +147,14 @@
             <i class="fa-solid fa-cloud-rain" style="color:var(--blue)"></i>
             <div><div class="palette-node-name">Regenkanis</div><div class="palette-node-desc">Neerslagkans &gt; X%</div></div>
           </div>
+          <div class="palette-node" draggable="true" data-node="shower_started" data-tooltip="Triggert zodra de Tapo-badkamersensor een douche detecteert (luchtvochtigheid)." ondragstart="drag(event)">
+            <i class="fa-solid fa-shower" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Douche begint</div><div class="palette-node-desc">Tapo-badkamersensor</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="humidity_above" data-tooltip="Triggert als de luchtvochtigheid van de Tapo-badkamersensor boven X procent komt." ondragstart="drag(event)">
+            <i class="fa-solid fa-droplet" style="color:var(--blue)"></i>
+            <div><div class="palette-node-name">Luchtvochtigheid boven</div><div class="palette-node-desc">Tapo-sensor &gt; X%</div></div>
+          </div>
 
           <div class="palette-group-label" data-group="triggers-apparaten">Triggers — Apparaten<i class="fa-solid fa-chevron-down chevron"></i></div>
           <div class="palette-node" draggable="true" data-node="wash_started" data-tooltip="Triggert zodra de wasmachine een nieuwe wascyclus begint." ondragstart="drag(event)">
@@ -266,6 +274,12 @@
           <div class="palette-node" draggable="true" data-node="relay_off" data-tooltip="Zet een relaisuitgang uit." ondragstart="drag(event)">
             <i class="fa-solid fa-toggle-off" style="color:var(--dim)"></i>
             <div><div class="palette-node-name">Relais uit</div><div class="palette-node-desc">Zet een lamp/apparaat uit</div></div>
+          </div>
+
+          <div class="palette-group-label" data-group="acties-verwarming">Acties — Verwarming<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="tado_set" data-tooltip="Zet een tado°-kamer op temperatuur, uit, of terug naar het schema." ondragstart="drag(event)">
+            <i class="fa-solid fa-temperature-half" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Verwarming instellen</div><div class="palette-node-desc">tado°-kamer regelen</div></div>
           </div>
 
           <div class="palette-group-label" data-group="acties-meldingen">Acties — Meldingen<i class="fa-solid fa-chevron-down chevron"></i></div>
@@ -529,6 +543,12 @@
     weather_rain: t('df-node-title--rain','fa-cloud-rain','Regenkanis') +
       b(f('Drempel (%)','<input type="number" df-probability min="0" max="100" step="5">') + hint('Triggert als neerslagkans boven de drempel komt.')),
 
+    shower_started: t('df-node-title--rain','fa-shower','Douche begint') +
+      b('<div class="df-node-hint">Triggert zodra de Tapo-badkamersensor een douche detecteert (via de luchtvochtigheid). {vochtigheid} toont het percentage, {badkamer} de temperatuur.</div>'),
+
+    humidity_above: t('df-node-title--rain','fa-droplet','Luchtvochtigheid boven') +
+      b(f('Drempel (%)','<input type="number" df-percent min="0" max="100" step="5">') + hint('Triggert één keer als de Tapo-badkamersensor boven de drempel komt. {vochtigheid} toont het percentage.')),
+
     wash_started: t('df-node-title--wash-start','fa-rotate','Wasmachine start') +
       b('<div class="df-node-hint">Triggert zodra de wasmachine begint met wassen.</div>'),
 
@@ -733,7 +753,16 @@
           '</select>') +
         f('Volume','<select df-volume><option value="low">Zacht</option><option value="normal">Normaal</option><option value="high">Hard</option></select>') +
         f('Duur (sec)','<input type="number" df-duration min="1" max="300" value="5">') +
-        hint('Laat de sirene van de H100-hub klinken. Vereist dat het hub-IP is ingesteld bij Instellingen → Tapo.'))
+        hint('Laat de sirene van de H100-hub klinken. Vereist dat het hub-IP is ingesteld bij Instellingen → Tapo.')),
+
+    tado_set: t('df-node-title--action','fa-temperature-half','Verwarming instellen') +
+      b(f('Kamer','<input type="text" df-room placeholder="bijv. Woonkamer">') +
+        f('Actie','<select df-mode>' +
+          '<option value="heat">Verwarmen op temperatuur</option>' +
+          '<option value="off">Uitzetten</option>' +
+          '<option value="resume">Terug naar schema</option></select>') +
+        f('Temperatuur (°C)','<input type="number" df-temp min="5" max="25" step="0.5" value="20">') +
+        hint('Bestuurt een tado°-kamer; de naam moet overeenkomen met tado. De temperatuur geldt alleen bij “Verwarmen op temperatuur”. “Terug naar schema” heft een handmatige instelling op.'))
   };
 
   // ── HTML builder helpers ───────────────────────────────────────────────
@@ -759,6 +788,8 @@
     temp_above:      { room: '', temp: '25' },
     temp_below:      { room: '', temp: '18' },
     weather_rain:    { probability: '70' },
+    shower_started:  {},
+    humidity_above:  { percent: '75' },
     wash_started:    {},
     wash_done:       {},
     dish_started:    {},
@@ -792,12 +823,13 @@
     flash:           { device: 'default', times: '3', interval_ms: '500' },
     telegram:        { token: '', chat_id: '', message: 'Flow getriggerd!' },
     mqtt_publish:    { broker: 'mqtt://localhost:1883', topic: '', message: '', username: '', password: '' },
-    tapo_bell:       { tone: '', volume: 'normal', duration: '5' }
+    tapo_bell:       { tone: '', volume: 'normal', duration: '5' },
+    tado_set:        { room: '', mode: 'heat', temp: '20' }
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, person_home:0, person_away:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1 };
-  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, person_home:1, person_away:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0 };
+  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, shower_started:0, humidity_above:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, person_home:0, person_away:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1, tado_set:1 };
+  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, shower_started:1, humidity_above:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, person_home:1, person_away:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0, tado_set:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));
@@ -1673,7 +1705,9 @@
     { group: 'Triggers — Klimaat & Weer', nodes: [
       { type:'temp_above',      icon:'fa-temperature-arrow-up',     color:'var(--red)',    name:'Temperatuur boven',   desc:'Kamer warmer dan X°C' },
       { type:'temp_below',      icon:'fa-temperature-arrow-down',   color:'var(--blue)',   name:'Temperatuur onder',   desc:'Kamer kouder dan X°C' },
-      { type:'weather_rain',    icon:'fa-cloud-rain',               color:'var(--blue)',   name:'Regenkanis',          desc:'Neerslagkans > X%' }
+      { type:'weather_rain',    icon:'fa-cloud-rain',               color:'var(--blue)',   name:'Regenkanis',          desc:'Neerslagkans > X%' },
+      { type:'shower_started',  icon:'fa-shower',                   color:'var(--blue)',   name:'Douche begint',       desc:'Tapo-badkamersensor' },
+      { type:'humidity_above',  icon:'fa-droplet',                  color:'var(--blue)',   name:'Luchtvochtigheid boven', desc:'Tapo-sensor > X%' }
     ]},
     { group: 'Triggers — Apparaten', nodes: [
       { type:'wash_started',    icon:'fa-rotate',                   color:'var(--blue)',   name:'Wasmachine start',    desc:'Wascyclus begint' },
@@ -1713,6 +1747,9 @@
     { group: 'Acties — Relais', nodes: [
       { type:'relay_on',        icon:'fa-toggle-on',                color:'var(--green)',  name:'Relais aan',          desc:'Zet een lamp/apparaat aan' },
       { type:'relay_off',       icon:'fa-toggle-off',               color:'var(--dim)',    name:'Relais uit',          desc:'Zet een lamp/apparaat uit' }
+    ]},
+    { group: 'Acties — Verwarming', nodes: [
+      { type:'tado_set',        icon:'fa-temperature-half',         color:'var(--orange)', name:'Verwarming instellen', desc:'tado°-kamer regelen' }
     ]},
     { group: 'Acties — Meldingen', nodes: [
       { type:'notify',          icon:'fa-bell',                     color:'var(--accent)', name:'Discord melding',     desc:'Stuur een bericht' },

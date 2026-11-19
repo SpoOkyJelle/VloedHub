@@ -24,7 +24,8 @@ var TRIGGERS = {
   phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
   sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1,
   afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1,
-  dish_started: 1, dish_done: 1, dish_alert: 1, person_home: 1, person_away: 1
+  dish_started: 1, dish_done: 1, dish_alert: 1, person_home: 1, person_away: 1,
+  shower_started: 1, humidity_above: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -335,6 +336,39 @@ function executeNode(node, ctx) {
     return { action: 'tapo_bell', tone: bellTone, volume: bellVol, duration: bellDur };
   }
 
+  if (node.name === 'tado_set') {
+    if (!modules.isOn('tado')) {
+      console.log('[Flow] tado_set overgeslagen: tado-module staat uit');
+      return { action: 'tado_set', skipped: 'tado uit' };
+    }
+    var tadoQuery = (node.data.room || '').toLowerCase().trim();
+    var tadoMode  = node.data.mode || 'heat';
+    var tadoZones = (tado.getStatus().zones) || [];
+    // eerst een exacte naam-match, anders een deel van de naam (zoals de kamer-triggers)
+    var tadoZone = tadoZones.filter(function(z) { return (z.name || '').toLowerCase() === tadoQuery; })[0]
+                || (tadoQuery && tadoZones.filter(function(z) { return (z.name || '').toLowerCase().indexOf(tadoQuery) !== -1; })[0]);
+    if (!tadoZone) {
+      console.error('[Flow] tado_set: kamer niet gevonden:', node.data.room);
+      return { action: 'tado_set', error: 'kamer "' + (node.data.room || '') + '" niet gevonden' };
+    }
+    function tadoDone(err) { if (err) console.error('[Flow] tado_set fout (' + tadoZone.name + '):', err); }
+    if (tadoMode === 'resume') {
+      tado.resumeZone(tadoZone.id, tadoDone);
+      console.log('[Flow] tado:', tadoZone.name, 'terug naar schema');
+      return { action: 'tado_set', room: tadoZone.name, mode: 'resume' };
+    }
+    if (tadoMode === 'off') {
+      tado.setZone(tadoZone.id, { power: 'OFF' }, tadoDone);
+      console.log('[Flow] tado:', tadoZone.name, 'uit');
+      return { action: 'tado_set', room: tadoZone.name, mode: 'off' };
+    }
+    var tadoTemp = parseFloat(node.data.temp);
+    if (isNaN(tadoTemp)) tadoTemp = 20;
+    tado.setZone(tadoZone.id, { temperature: tadoTemp }, tadoDone);
+    console.log('[Flow] tado:', tadoZone.name, 'op', tadoTemp + '°C');
+    return { action: 'tado_set', room: tadoZone.name, mode: 'heat', temperature: tadoTemp };
+  }
+
   if (node.name === 'mqtt_publish') {
     var mqttSvc = require('./mqtt');
     mqttSvc.publish(
@@ -533,6 +567,12 @@ var lastCtx = {};
 function gatherExtras(ctx, callback) {
   ctx.vars = {};
   ctx.tadoPresence = modules.isOn('tado') ? tado.getPresence() : { home: null, devices: [] };
+  // Tapo-badkamersensor (T310): douchedetectie en luchtvochtigheid voor de flow-triggers
+  var tapoStat = modules.isOn('tapo') ? tapo.getStatus() : null;
+  ctx.showerActive = !!(tapoStat && tapoStat.showerActive);
+  ctx.tapoHumidity = tapoStat && tapoStat.t310 ? tapoStat.t310.humidity : null;
+  if (ctx.tapoHumidity != null) ctx.vars.vochtigheid = ctx.tapoHumidity + '%';
+  if (tapoStat && tapoStat.t310 && tapoStat.t310.temp != null) ctx.vars.badkamer = tapoStat.t310.temp + '°';
   prices.fetchPrices(function(pErr, p) {
     if (!pErr && p && p.electricity_eur_kwh != null) {
       ctx.price = p.electricity_eur_kwh;
@@ -781,6 +821,15 @@ function checkSensorTriggers(rows, ctx) {
               traverseOutputs(node, nodes, pCtx, flow.id);
             }
             return;
+          }
+          case 'shower_started':
+            // Tapo-badkamersensor meldt een douche (vuurt op de overgang naar actief)
+            isOn = !!ctx.showerActive;
+            break;
+          case 'humidity_above': {
+            var hum = parseFloat(node.data.percent);
+            isOn = ctx.tapoHumidity != null && ctx.tapoHumidity > (isNaN(hum) ? 75 : hum);
+            break;
           }
           default:
             return; // not a sensor trigger
