@@ -93,7 +93,7 @@ function showScreen(n, btn, fromSwipe) {
 }
 
 // Schermen van uitgezette modules worden overgeslagen
-function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')) || (n === 6 && !moduleOn('samen')); }
+function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')); }
 function nextScreen(dir) {
   for (var n = currentScreen + dir; n >= 0 && n <= 5; n += dir) { if (!screenHidden(n)) return n; }
   return currentScreen;

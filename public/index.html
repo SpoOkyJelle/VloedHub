@@ -114,14 +114,6 @@
   </div>
 </div>
 
-<!-- SCREEN 6: SAMEN (eetpoll en boodschappen). Staat direct na Home; de volgorde van de schermen staat in SCREEN_ORDER -->
-<div class='screen' id='screen-6'>
-<div class='samen-grid'>
-  <div data-module='eetpoll' data-samen='eetpoll'></div>
-  <div data-module='boodschappen' data-samen='boodschappen'></div>
-</div>
-</div>
-
 <!-- SCREEN 1: ELEKTRA -->
 <div class='screen' id='screen-1'>
 
@@ -419,7 +411,15 @@
     <input class='field' id='tapo-password' type='password' autocomplete='off' aria-label='Tapo wachtwoord' placeholder='Tapo wachtwoord'>
     <button class='btn btn-primary' id='tapo-link-btn' onclick='saveTapoCreds(this)'>Koppelen</button>
   </div>
-  <div class='setting-desc'>Tapo heeft geen OAuth; VloedHub logt in met je Tapo-account. Tip: maak hiervoor een apart TP-Link-account en deel je apparaten daarnaartoe, dan kun je de toegang intrekken. Je gegevens blijven op de server (<code>data/tapo.json</code>, niet in git).</div>
+  <div class='setting-desc'>Tapo heeft geen OAuth; VloedHub logt lokaal in met je Tapo-account. Tip: maak hiervoor een apart TP-Link-account en deel je apparaten daarnaartoe, dan kun je de toegang intrekken. Je gegevens blijven op de server (<code>data/tapo.json</code>, niet in git). Lukt inloggen niet (403), zet dan "Third-Party Compatibility" om in de Tapo-app.</div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>IP-adressen</div><div class='setting-desc'>Lokale IP's van de hub (H100) en de stekker (P410M). Zet ze vast in je router.</div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tapo-hub-ip' type='text' inputmode='decimal' autocomplete='off' aria-label='Hub IP-adres' placeholder='Hub IP'>
+      <input class='field' id='tapo-plug-ip' type='text' inputmode='decimal' autocomplete='off' aria-label='Stekker IP-adres' placeholder='Stekker IP'>
+      <button class='btn btn-ghost' onclick='saveTapoIps(this)'>Opslaan</button>
+    </div>
+  </div>
   <div id='tapo-extra'></div>
   <div class='setting-row'>
     <div class='setting-text'><div class='setting-title'>Kamer van de T310</div><div class='setting-desc'>Naam waaronder temperatuur en vocht worden gelogd</div></div>
@@ -536,9 +536,6 @@
   <img class='nav-logo' src='/icons/icon-192.png' alt='VloedHub'>
   <button class='nav-item active' data-screen='0' onclick='showScreen(0,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'/></svg></span><span class='nav-label'>Home</span>
-  </button>
-  <button class='nav-item' data-module='samen' data-screen='6' onclick='showScreen(6,this)'>
-    <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 3v7a3 3 0 0 0 3 3v8M4 3v5M10 3v5M17 21v-7h-2V8a5 5 0 0 1 3-5v18'/></svg></span><span class='nav-label'>Samen</span>
   </button>
   <button class='nav-item' data-screen='1' onclick='showScreen(1,this)'>
     <span class='nav-icon'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M13 2L4 14h7l-1 8 9-12h-7z'/></svg></span><span class='nav-label'>Elektra</span>

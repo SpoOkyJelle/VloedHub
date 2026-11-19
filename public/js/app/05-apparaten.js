@@ -423,9 +423,15 @@ function renderTapo(d) {
   if (!d) return;
   tapoData = d;
   var st = document.getElementById('tapo-status');
-  if (st) st.textContent = d.linked ? ('Gekoppeld (' + escHtml(d.region || '') + ')') : 'Nog niet gekoppeld. Vul je Tapo e-mail en wachtwoord in en klik op Koppelen.';
+  if (st) st.textContent = !d.linked ? 'Nog niet gekoppeld. Vul je Tapo e-mail en wachtwoord in en klik op Koppelen.'
+    : !d.configured ? 'Gekoppeld — vul nog de IP-adressen van de hub en/of stekker in.'
+    : 'Gekoppeld.';
   var btn = document.getElementById('tapo-link-btn');
   if (btn) { btn.disabled = false; btn.textContent = d.linked ? 'Opnieuw koppelen' : 'Koppelen'; }
+  var hubIp = document.getElementById('tapo-hub-ip');
+  if (hubIp && document.activeElement !== hubIp) hubIp.value = d.hubIp || '';
+  var plugIp = document.getElementById('tapo-plug-ip');
+  if (plugIp && document.activeElement !== plugIp) plugIp.value = d.plugIp || '';
   var room = document.getElementById('tapo-room');
   if (room && document.activeElement !== room) room.value = d.roomName || '';
   var poll = document.getElementById('tapo-poll');
@@ -472,6 +478,18 @@ function refreshTapoNow(btn) {
 }
 function unlinkTapo() {
   fetch('/api/tapo/unlink', {method:'POST'}).then(function(r){return r.json();}).then(renderTapo).catch(function(){});
+}
+function saveTapoIps(btn) {
+  var hub = document.getElementById('tapo-hub-ip'), plug = document.getElementById('tapo-plug-ip');
+  btn.disabled = true;
+  fetch('/api/tapo/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({hubIp: hub.value.trim(), plugIp: plug.value.trim()})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('IP-adressen opgeslagen — uitlezen gestart…', 'ok');
+      renderTapo(d);
+      setTimeout(refreshTapo, 4000);
+    }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
 }
 function saveTapoRoom(btn) {
   var input = document.getElementById('tapo-room');

@@ -1,39 +1,35 @@
-var https = require("https");
 var fs = require("fs");
 var path = require("path");
-var crypto = require("crypto");
 var modules = require("./modules");
 var discord = require("./discord");
 var logging = require("../db/logging");
+var tapoLib = require("tp-link-tapo-connect");
 
-// TP-Link Tapo via de cloud. Tapo heeft geen publieke API/OAuth: we gebruiken dezelfde privé-cloud-API
-// als de Tapo-app. Inloggen gaat met e-mail + wachtwoord -> een token (geen refresh-token; bij verloop
-// loggen we opnieuw in). Daarom moeten de inloggegevens bewaard blijven; ze staan in data/tapo.json
-// (niet in git) en worden via de instellingen ingevoerd, nooit in de code of .env. Advies: maak hiervoor
-// een apart TP-Link-account en deel je apparaten daarnaartoe, zodat je de toegang kunt intrekken.
+// TP-Link Tapo, LOKAAL uitgelezen over het thuisnetwerk (de VloedHub-server staat op het LAN, dus dit
+// werkt ook als je zelf niet thuis bent). De cloud-API bleek deze apparaten niet te laten uitlezen
+// ("Device is offline"), lokaal wel.
 //
-// Let op: of de cloud-"passthrough" (het echte uitlezen van vermogen en de hub-sensoren) werkt, hangt af
-// van je apparaten en firmware. Nieuwere Tapo-firmware versleutelt end-to-end en weigert soms de simpele
-// cloud-passthrough. Deze service degradeert netjes: lukt het niet, dan staat dat in de status, zonder
-// de server onderuit te halen. Met scripts/tapo-cloud-probe.js kun je los testen wat de cloud teruggeeft.
+// Koppelen: Tapo heeft geen OAuth, dus we loggen lokaal in met je Tapo-account (nodig voor de KLAP/TPAP-
+// handshake) plus het lokale IP van elk apparaat. Gegevens staan in data/tapo.json (niet in git). Tip:
+// gebruik een apart TP-Link-account en deel je apparaten daarnaartoe, dan is de toegang intrekbaar.
+//
+// LET OP (firmware): recente Tapo-firmware kiest tussen KLAP en TPAP via "Third-Party Compatibility" in de
+// Tapo-app (Ik > Third-Party Services). Krijg je login-fouten (403 handshake), zet die schakelaar dan om.
 //
 // Wat we uitlezen:
-//  - P410M (slimme stekker): huidig vermogen -> voedt de bestaande wasmachine-status/melding.
-//  - T310 (onder de hub): temperatuur + luchtvochtigheid -> temperature_readings (badkamer) + douche-detectie.
+//  - P410M (stekker): getEnergyUsage().current_power is in MILLIWATT -> watt = /1000 -> wasmachine-status.
+//  - T310 (onder de H100): getChildDevicesInfo() -> current_temp + current_humidity -> badkamer + douche.
 
 var CONFIG_FILE = path.join(__dirname, "../data/tapo.json");
 
-var DEFAULT_REGION = "eu-wap";
-var TOKEN_TTL = 6 * 60 * 60 * 1000;   // cloud-token ruim voor verloop vernieuwen
-
-var DEFAULT_POLL_MIN = 3;             // fijn genoeg voor wasmachine-detectie, rustig voor de cloud
+var DEFAULT_POLL_MIN = 3;
 var MIN_POLL_MIN = 1, MAX_POLL_MIN = 30;
 var RETRY_MS = 5 * 60 * 1000;
 
-// Wasmachine-detectie uit het vermogen van de P410M
-var WASH_RUN_W = 8;                   // boven dit vermogen draait de wasmachine
+// Wasmachine-detectie uit het vermogen van de P410M (in watt)
+var WASH_RUN_W = 8;                   // boven dit vermogen draait de wasmachine (stand-by is ~1,5 W)
 var WASH_DONE_W = 3;                  // zo lang hieronder = klaar
-var WASH_DONE_MIN = 5;               // minuten aanhoudend laag voor "klaar" (voorkomt pauzes in het programma)
+var WASH_DONE_MIN = 5;                // minuten aanhoudend laag voor "klaar" (vangt korte pauzes in het programma op)
 var WASH_AUTOCLEAR_MIN = 180;         // "klaar" na zoveel minuten vanzelf terug naar idle
 
 // Douche-detectie uit de luchtvochtigheid van de T310
@@ -44,13 +40,13 @@ var SHOWER_COOLDOWN_MS = 30 * 60 * 1000;
 
 var DEFAULT_ROOM = "Badkamer";
 
-var token = null, tokenAt = 0;
 var lastError = null;
 var lastUpdate = null;
-var devices = [];                     // laatste getDeviceList (zonder geheimen)
-var plug = null;                      // { watts, on, updated }
-var t310 = null;                      // { temp, humidity, updated, online }
-var lastRaw = {};                     // kleine ruwe snippets voor debug in de status (geen geheimen)
+var plug = null;                      // { watts, on, name, updated }
+var t310 = null;                      // { temp, humidity, online, name, updated }
+var lastRaw = {};                     // kleine ruwe snippets voor de status (geen geheimen)
+
+var plugSession = null, hubSession = null;  // ingelogde apparaat-objecten, hergebruikt tussen polls
 
 // in-geheugen wasmachine-detectie
 var washState = "idle";               // idle | running | done
@@ -74,15 +70,6 @@ function save(cfg) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
 }
 
-function region() {
-  var r = load().region;
-  return /^[a-z0-9-]+$/.test(String(r || "")) ? r : DEFAULT_REGION;
-}
-
-function loginUrl() {
-  return "https://" + region() + ".tplinkcloud.com/";
-}
-
 function pollMs() {
   var m = load().pollMinutes;
   if (!(m >= MIN_POLL_MIN && m <= MAX_POLL_MIN)) m = DEFAULT_POLL_MIN;
@@ -94,179 +81,78 @@ function roomName() {
   return (typeof n === "string" && n.trim()) ? n.trim() : DEFAULT_ROOM;
 }
 
-function b64(s) {
-  try { return Buffer.from(String(s), "base64").toString("utf8"); } catch (e) { return String(s); }
+function validIp(ip) {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(String(ip || "")) || /^[a-zA-Z0-9][a-zA-Z0-9.-]*$/.test(String(ip || ""));
 }
 
-// ── Cloud-aanroepen ─────────────────────────────────────────────────────────
-// cb(err, parsedBody). body is het geparste JSON-antwoord, of null.
-function post(url, body, cb) {
-  var u;
-  try { u = new URL(url); } catch (e) { return cb(e); }
-  var payload = JSON.stringify(body);
-  var req = https.request({
-    hostname: u.hostname, path: u.pathname + u.search, method: "POST",
-    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) },
-    timeout: 20000
-  }, function(res) {
-    var chunks = "";
-    res.on("data", function(c) { chunks += c; });
-    res.on("end", function() {
-      var data = null;
-      try { data = JSON.parse(chunks); } catch (e) {}
-      cb(null, data);
-    });
-  });
-  req.on("timeout", function() { req.destroy(new Error("timeout")); });
-  req.on("error", function(e) { cb(e); });
-  req.write(payload);
-  req.end();
-}
-
-function doLogin(cb) {
+// ── Inloggen op een apparaat (met hergebruik + opnieuw inloggen bij een fout) ──
+async function device(which, ip) {
   var cfg = load();
-  if (!cfg.email || !cfg.password) return cb("niet gekoppeld");
-  var uuid = cfg.terminalUUID || (crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString("hex"));
-  if (!cfg.terminalUUID) { cfg.terminalUUID = uuid; save(cfg); }
-  post(loginUrl(), {
-    method: "login",
-    params: { appType: "Tapo_Android", cloudUserName: cfg.email, cloudPassword: cfg.password, terminalUUID: uuid }
-  }, function(err, body) {
-    if (err) return cb("TP-Link cloud niet bereikbaar");
-    if (!body || body.error_code !== 0 || !body.result || !body.result.token) {
-      return cb("Inloggen mislukt (" + (body && body.error_code) + ")");
-    }
-    token = body.result.token; tokenAt = Date.now();
-    cb(null, token);
-  });
+  var cached = which === "plug" ? plugSession : hubSession;
+  if (cached && cached.ip === ip) return cached.dev;
+  var dev = await tapoLib.loginDeviceByIp(cfg.email, cfg.password, ip);
+  var entry = { ip: ip, dev: dev };
+  if (which === "plug") plugSession = entry; else hubSession = entry;
+  return dev;
 }
 
-// Zorgt voor een geldig token (logt zo nodig opnieuw in) en roept cb(err, token) aan.
-function withToken(cb) {
-  if (token && Date.now() - tokenAt < TOKEN_TTL) return cb(null, token);
-  doLogin(cb);
+function dropSession(which) {
+  if (which === "plug") plugSession = null; else hubSession = null;
 }
 
-// Een cloud-methode met token in de URL; logt één keer opnieuw in bij een token-fout.
-function cloudCall(baseUrl, body, cb, retried) {
-  withToken(function(err, tk) {
-    if (err) return cb(err);
-    post(baseUrl + "?token=" + encodeURIComponent(tk), body, function(e, resp) {
-      if (e) return cb("TP-Link cloud niet bereikbaar");
-      // token verlopen/ongeldig -> één keer opnieuw inloggen en opnieuw proberen
-      if (resp && (resp.error_code === -20651 || resp.error_code === -20675 || resp.error_code === -20571) && !retried) {
-        token = null;
-        return cloudCall(baseUrl, body, cb, true);
-      }
-      cb(null, resp);
-    });
-  });
-}
-
-function getDeviceList(cb) {
-  cloudCall(loginUrl(), { method: "getDeviceList" }, function(err, resp) {
-    if (err) return cb(err);
-    if (!resp || resp.error_code !== 0 || !resp.result) return cb("Apparaten ophalen mislukt (" + (resp && resp.error_code) + ")");
-    cb(null, resp.result.deviceList || []);
-  });
-}
-
-// Eén device-commando via cloud-passthrough. innerMethod bv. "get_current_power". cb(err, innerResult)
-function passthrough(dev, innerMethod, cb) {
-  var appUrl = String(dev.appServerUrl || loginUrl()).replace(/\/$/, "") + "/";
-  cloudCall(appUrl, {
-    method: "passthrough",
-    params: { deviceId: dev.deviceId, requestData: JSON.stringify({ method: innerMethod }) }
-  }, function(err, resp) {
-    if (err) return cb(err);
-    if (!resp || resp.error_code !== 0) return cb("passthrough " + innerMethod + " geweigerd (" + (resp && resp.error_code) + ")");
-    var rd = resp.result && resp.result.responseData;
-    var inner = null;
-    if (typeof rd === "string") { try { inner = JSON.parse(rd); } catch (e) { return cb("versleuteld antwoord (cloud-passthrough niet ondersteund voor dit apparaat)"); } }
-    else if (rd && typeof rd === "object") inner = rd;
-    if (!inner) return cb("leeg antwoord op " + innerMethod);
-    if (inner.error_code != null && inner.error_code !== 0) return cb(innerMethod + " -> error " + inner.error_code);
-    cb(null, inner.result || inner);
-  });
-}
-
-// ── Apparaten kiezen ────────────────────────────────────────────────────────
-function isType(dev, needle) {
-  return String(dev.deviceType || "").toUpperCase().indexOf(needle) !== -1;
-}
-
-function chosenPlug() {
-  var cfg = load();
-  if (cfg.washPlugId) return devices.filter(function(d) { return d.deviceId === cfg.washPlugId; })[0] || null;
-  return devices.filter(function(d) { return isType(d, "PLUG"); })[0] || null;
-}
-
-function chosenHub() {
-  var cfg = load();
-  if (cfg.hubId) return devices.filter(function(d) { return d.deviceId === cfg.hubId; })[0] || null;
-  return devices.filter(function(d) { return isType(d, "HUB"); })[0] || null;
+// Voert fn(dev) uit; lukt dat niet, dan één keer opnieuw inloggen en opnieuw proberen
+async function withDevice(which, ip, fn) {
+  try {
+    return await fn(await device(which, ip));
+  } catch (e) {
+    dropSession(which);
+    return await fn(await device(which, ip));
+  }
 }
 
 // ── Uitlezen ──────────────────────────────────────────────────────────────
-// Huidig vermogen (W) van de stekker, defensief: verschillende firmwares melden het anders.
-function readPlug(cb) {
-  var dev = chosenPlug();
-  if (!dev) return cb(null); // geen stekker: geen fout
-  passthrough(dev, "get_current_power", function(err, r) {
-    if (!err && r && r.current_power != null) {
-      recordPlug(Number(r.current_power), dev); // P110/P410: Watt
-      return cb(null);
-    }
-    // uitwijk: get_energy_usage meldt current_power soms in milliwatt
-    passthrough(dev, "get_energy_usage", function(err2, r2) {
-      if (err2) { lastRaw.plug = String(err || err2); return cb(err2); }
-      var w = r2 && r2.current_power != null ? Number(r2.current_power) / 1000 : null;
-      if (w == null) { lastRaw.plug = "geen current_power in antwoord"; return cb("geen vermogen"); }
-      recordPlug(w, dev);
-      cb(null);
-    });
-  });
+async function readPlug(ip) {
+  var info = null, energy = null;
+  try { info = await withDevice("plug", ip, function(d) { return d.getDeviceInfo(); }); } catch (e) {}
+  energy = await withDevice("plug", ip, function(d) { return d.getEnergyUsage(); });
+  var mw = energy && energy.current_power != null ? Number(energy.current_power) : null;
+  if (mw == null) throw new Error("geen current_power");
+  var watts = Math.round((mw / 1000) * 10) / 10;   // current_power is milliwatt
+  plug = {
+    watts: watts,
+    on: info && info.device_on != null ? !!info.device_on : watts > 0,
+    name: (info && info.nickname) || "P410M",
+    updated: Date.now()
+  };
+  lastRaw.plug = watts + " W";
+  evaluateWash(watts);
 }
 
-function recordPlug(watts, dev) {
-  if (!isFinite(watts)) return;
-  plug = { watts: Math.round(watts * 10) / 10, on: watts > 0.5, updated: Date.now(), name: b64(dev.alias) || dev.deviceModel };
-  lastRaw.plug = plug.watts + " W";
-  evaluateWash(plug.watts);
-}
-
-// Sensoren onder de hub; zoekt de T310 (temp + vocht).
-function readHub(cb) {
-  var dev = chosenHub();
-  if (!dev) return cb(null);
-  passthrough(dev, "get_child_device_list", function(err, r) {
-    if (err) { lastRaw.hub = String(err); return cb(err); }
-    var list = (r && (r.child_device_list || r.childDeviceList)) || [];
-    lastRaw.hub = list.length + " sub-apparaten";
-    var cfg = load();
-    var child = cfg.t310Id ? list.filter(function(c) { return (c.device_id || c.deviceId) === cfg.t310Id; })[0] : null;
-    if (!child) child = list.filter(function(c) { return /T31\d/i.test(String(c.model || "")) || /temp/i.test(String(c.category || "")); })[0];
-    if (!child) return cb(null);
-    recordT310(child);
-    cb(null);
-  });
+async function readHub(ip) {
+  var children = await withDevice("hub", ip, function(d) { return d.getChildDevicesInfo(); });
+  var list = Array.isArray(children) ? children : [];
+  lastRaw.hub = list.length + " sub-apparaten";
+  var cfg = load();
+  var c = cfg.t310Id ? list.filter(function(x) { return x.device_id === cfg.t310Id; })[0] : null;
+  if (!c) c = list.filter(function(x) { return /T31\d/i.test(String(x.model || "")) || /temp.*hmdt|temp.*hum/i.test(String(x.category || "")); })[0];
+  if (!c) { lastRaw.hub = list.length + " sub-apparaten, geen T310"; return; }
+  recordT310(c);
 }
 
 function recordT310(c) {
   var temp = c.current_temp != null ? c.current_temp : (c.current_temperature != null ? c.current_temperature : null);
-  if (temp != null && /fahrenheit|f/i.test(String(c.temp_unit || "")) && !/celsius/i.test(String(c.temp_unit || ""))) {
-    temp = (Number(temp) - 32) * 5 / 9;
-  }
-  var hum = c.current_humidity != null ? c.current_humidity : (c.humidity != null ? c.humidity : null);
+  if (temp != null && /fahrenheit/i.test(String(c.temp_unit || ""))) temp = (Number(temp) - 32) * 5 / 9;
   temp = temp != null ? Math.round(Number(temp) * 10) / 10 : null;
-  hum = hum != null ? Math.round(Number(hum)) : null;
-  var online = c.status == null || String(c.status).toLowerCase() === "online" || c.status === 1 || c.status === true || c.at_low_battery === false;
-  t310 = { temp: temp, humidity: hum, updated: Date.now(), online: online, name: b64(c.nickname) || c.model };
+  var hum = c.current_humidity != null ? Math.round(Number(c.current_humidity)) : null;
+  t310 = {
+    temp: temp,
+    humidity: hum,
+    online: String(c.status || "online").toLowerCase() === "online",
+    name: c.nickname || c.model || "T310",
+    updated: Date.now()
+  };
   lastRaw.t310 = (temp != null ? temp + "°C" : "?") + " / " + (hum != null ? hum + "%" : "?");
-
-  if (temp != null) {
-    logging.logTemperatureReadings({ device: "tapo-t310", readings: [{ room: roomName(), temp_c: temp, humidity: hum }] }, function() {});
-  }
+  if (temp != null) logging.logTemperatureReadings({ device: "tapo-t310", readings: [{ room: roomName(), temp_c: temp, humidity: hum }] }, function() {});
   if (hum != null) evaluateShower(hum);
 }
 
@@ -275,10 +161,7 @@ function evaluateWash(watts) {
   var now = Date.now();
   if (watts > WASH_RUN_W) {
     washLowSince = 0;
-    if (washState !== "running") {
-      washState = "running"; washDoneAt = 0;
-      logging.setWashStatus("running", "tapo-p410m");
-    }
+    if (washState !== "running") { washState = "running"; washDoneAt = 0; logging.setWashStatus("running", "tapo-p410m"); }
   } else if (washState === "running" && watts < WASH_DONE_W) {
     if (!washLowSince) washLowSince = now;
     if (now - washLowSince >= WASH_DONE_MIN * 60 * 1000) {
@@ -289,10 +172,7 @@ function evaluateWash(watts) {
     }
   } else if (washState === "done") {
     washLowSince = 0;
-    if (washDoneAt && now - washDoneAt >= WASH_AUTOCLEAR_MIN * 60 * 1000) {
-      washState = "idle"; washDoneAt = 0;
-      logging.setWashStatus("idle", "tapo-p410m");
-    }
+    if (washDoneAt && now - washDoneAt >= WASH_AUTOCLEAR_MIN * 60 * 1000) { washState = "idle"; washDoneAt = 0; logging.setWashStatus("idle", "tapo-p410m"); }
   } else {
     washLowSince = 0;
   }
@@ -307,7 +187,7 @@ function evaluateShower(hum) {
     showerActive = true;
     if (now - lastShowerNotify >= SHOWER_COOLDOWN_MS) {
       lastShowerNotify = now;
-      if (modules.isOn("temperature")) discord.notify("temperature", "🚿 **Er wordt gedoucht** — " + roomName() + " " + hum + "% luchtvochtigheid");
+      if (modules.isOn("tapo")) discord.notify("temperature", "🚿 **Er wordt gedoucht** — " + roomName() + " " + hum + "% luchtvochtigheid");
     }
   } else if (showerActive && hum <= SHOWER_RELEASE) {
     showerActive = false;
@@ -316,64 +196,71 @@ function evaluateShower(hum) {
 }
 
 // ── Pollen ──────────────────────────────────────────────────────────────────
-function refresh(cb) {
-  getDeviceList(function(err, list) {
-    if (err) { lastError = err; return cb && cb(err); }
-    devices = list.map(function(d) {
-      return { deviceId: d.deviceId, alias: d.alias, name: b64(d.alias) || d.deviceName, model: d.deviceModel,
-        type: d.deviceType, fw: d.fwVer, online: d.status, appServerUrl: d.appServerUrl };
-    });
-    var pending = 2, firstErr = null;
-    function done(e) { if (e && !firstErr) firstErr = e; if (--pending === 0) finish(firstErr); }
-    function finish(e) {
-      lastUpdate = Date.now();
-      lastError = e || null;
-      if (cb) cb(e || null);
-    }
-    readPlug(done);
-    readHub(done);
-  });
+async function refresh() {
+  var cfg = load();
+  var errs = [];
+  if (cfg.plugIp) { try { await readPlug(cfg.plugIp); } catch (e) { errs.push("stekker: " + e.message); lastRaw.plug = e.message; } }
+  if (cfg.hubIp)  { try { await readHub(cfg.hubIp);  } catch (e) { errs.push("hub: " + e.message); lastRaw.hub = e.message; } }
+  lastUpdate = Date.now();
+  lastError = errs.length ? errs.join(" · ") : null;
 }
 
 function poll() {
   clearTimeout(pollTimer);
   var gen = generation;
-  if (!load().email) return;
-  refresh(function() {
+  var cfg = load();
+  if (!cfg.email || !cfg.password || (!cfg.plugIp && !cfg.hubIp)) return;
+  refresh().catch(function(e) { lastError = e.message; }).then(function() {
     if (gen !== generation) return;
     pollTimer = setTimeout(poll, pollMs());
   });
 }
 
 function refreshNow(cb) {
-  if (!load().email) return cb && cb("niet gekoppeld", getStatus());
-  refresh(function(err) { cb && cb(err || null, getStatus()); });
+  var cfg = load();
+  if (!cfg.email || !cfg.password) return cb && cb("niet gekoppeld", getStatus());
+  if (!cfg.plugIp && !cfg.hubIp) return cb && cb("geen IP-adres ingesteld", getStatus());
+  refresh().then(function() { cb && cb(lastError, getStatus()); }).catch(function(e) { lastError = e.message; cb && cb(e.message, getStatus()); });
 }
 
 function stopPolling() { generation++; clearTimeout(pollTimer); }
 
 // ── Instellen ────────────────────────────────────────────────────────────────
-function setCredentials(email, password, reg) {
+function setCredentials(email, password) {
   if (!email || !password || String(email).indexOf("@") === -1) return false;
   var cfg = load();
   cfg.email = String(email).trim();
   cfg.password = String(password);
-  if (reg && /^[a-z0-9-]+$/.test(String(reg))) cfg.region = String(reg);
   save(cfg);
-  token = null; tokenAt = 0; lastError = null;
-  stopPolling();
-  start();
+  plugSession = hubSession = null; lastError = null;
+  stopPolling(); start();
+  return true;
+}
+
+// IP-adressen van de apparaten: { hubIp, plugIp } (leeg = wissen)
+function setDevices(sel) {
+  if (!sel) return false;
+  var cfg = load();
+  ["hubIp", "plugIp"].forEach(function(k) {
+    if (sel[k] !== undefined) {
+      if (!sel[k]) delete cfg[k];
+      else if (validIp(sel[k])) cfg[k] = String(sel[k]).trim();
+    }
+  });
+  if (sel.t310Id !== undefined) { if (sel.t310Id) cfg.t310Id = String(sel.t310Id); else delete cfg.t310Id; }
+  save(cfg);
+  plugSession = hubSession = null;
+  if (cfg.email && cfg.password) { stopPolling(); start(); }
   return true;
 }
 
 function unlink() {
   stopPolling();
   var cfg = load();
-  // voorkeuren (kamernaam, pollsnelheid, gekozen apparaten) blijven; alleen de koppeling eruit
-  ["email", "password", "token"].forEach(function(k) { delete cfg[k]; });
+  ["email", "password", "hubIp", "plugIp", "t310Id"].forEach(function(k) { delete cfg[k]; });
   save(cfg);
-  token = null; tokenAt = 0; lastError = null;
-  devices = []; plug = null; t310 = null; lastRaw = {};
+  plugSession = hubSession = null; lastError = null;
+  plug = null; t310 = null; lastRaw = {};
   washState = "idle"; lastHumidity = null; showerActive = false;
 }
 
@@ -381,7 +268,7 @@ function setPollMinutes(v) {
   v = Math.round(Number(v));
   if (!(v >= MIN_POLL_MIN && v <= MAX_POLL_MIN)) return false;
   var cfg = load(); cfg.pollMinutes = v; save(cfg);
-  if (cfg.email) poll();
+  if (cfg.email && cfg.password) poll();
   return true;
 }
 
@@ -392,27 +279,17 @@ function setRoomName(name) {
   return true;
 }
 
-// Handmatig een apparaat aan een rol koppelen: { washPlugId, hubId, t310Id }
-function setDevices(sel) {
-  var cfg = load();
-  ["washPlugId", "hubId", "t310Id"].forEach(function(k) {
-    if (sel && sel[k] !== undefined) { if (sel[k]) cfg[k] = String(sel[k]); else delete cfg[k]; }
-  });
-  save(cfg);
-  return true;
-}
-
-// ── Status (nooit e-mail/wachtwoord/token terug) ─────────────────────────────
+// ── Status (nooit e-mail/wachtwoord terug) ───────────────────────────────────
 function getStatus() {
   var cfg = load();
   return {
-    linked: !!cfg.email,
-    region: region(),
+    linked: !!(cfg.email && cfg.password),
+    configured: !!(cfg.plugIp || cfg.hubIp),
     error: lastError,
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
     roomName: roomName(),
-    devices: devices,
-    selection: { washPlugId: cfg.washPlugId || null, hubId: cfg.hubId || null, t310Id: cfg.t310Id || null },
+    hubIp: cfg.hubIp || null,
+    plugIp: cfg.plugIp || null,
     plug: plug,
     t310: t310,
     washState: washState,
@@ -423,11 +300,12 @@ function getStatus() {
 }
 
 function start() {
-  if (load().email) poll();
+  var cfg = load();
+  if (cfg.email && cfg.password && (cfg.plugIp || cfg.hubIp)) poll();
 }
 
 module.exports = {
   start: start, getStatus: getStatus, refreshNow: refreshNow,
-  setCredentials: setCredentials, unlink: unlink,
-  setPollMinutes: setPollMinutes, setRoomName: setRoomName, setDevices: setDevices
+  setCredentials: setCredentials, setDevices: setDevices, unlink: unlink,
+  setPollMinutes: setPollMinutes, setRoomName: setRoomName
 };
