@@ -39,6 +39,7 @@ var rateLimited = false;
 var zones = [];                    // laatst opgehaalde kamers, zie parseRoom
 var lastUpdate = null;
 var alerts = {};                   // per kamer onthouden waarover al gemeld is (offline/vorst), geen herhaling
+var presence = { home: null, devices: [], updated: null };  // geofencing: wie is thuis (tado mobileDevices)
 var pollTimer = null, generation = 0;
 
 function load() {
@@ -269,19 +270,47 @@ function getRooms(cb) {
   });
 }
 
+// Geofencing: per gekoppelde telefoon of hij thuis is (classic API, zelfde token). Draait in dezelfde
+// pollcyclus als de kamers (één extra verzoek per poll) i.v.m. de dag-limiet van tado.
+function fetchPresence() {
+  var cfg = load();
+  if (!cfg.tokens || !cfg.homeId) return;
+  api(MY_HOST, "GET", "/api/v2/homes/" + cfg.homeId + "/mobileDevices", null, function(err, status, body) {
+    if (err || status !== 200 || !Array.isArray(body)) return;
+    var devices = body
+      .filter(function(m) { return m && m.settings && m.settings.geoTrackingEnabled; })
+      .map(function(m) {
+        return {
+          name: m.name || "?",
+          atHome: !!(m.location && m.location.atHome),
+          stale: !!(m.location && m.location.stale),
+          hasLocation: !!m.location
+        };
+      });
+    presence = {
+      home: devices.some(function(d) { return d.atHome; }) ? "HOME" : (devices.length ? "AWAY" : null),
+      devices: devices,
+      updated: Date.now()
+    };
+  });
+}
+
+function getPresence() { return presence; }
+
 function poll() {
   clearTimeout(pollTimer);
   var gen = generation;
   if (!load().tokens) return;
   getRooms(function(err) {
     if (gen !== generation) return;
+    if (!err) fetchPresence();   // alleen als de kamers lukten (niet bij limiet/fout), scheelt verzoeken
     schedule(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : pollMs());
   });
 }
 
 // Eenmalig nu ophalen (knop "Ververs"); verstoort de vaste pollcyclus niet. cb(err, status)
 function refreshNow(cb) {
-  getRooms(function(err) { cb(err && err !== "limiet" ? (rateLimited ? RATE_MSG : "Verversen mislukt") : null, getStatus()); });
+  getRooms(function(err) { if (!err) fetchPresence(); cb(err && err !== "limiet" ? (rateLimited ? RATE_MSG : "Verversen mislukt") : null, getStatus()); });
 }
 
 function schedule(gen, ms) {
@@ -407,6 +436,7 @@ function getStatus() {
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
     minSet: MIN_SET, maxSet: MAX_SET,
     zones: zones.map(function(z) { return Object.assign({ view: rv[z.id] || "both" }, z); }),
+    presence: presence,
     updated: lastUpdate
   };
 }
@@ -418,6 +448,6 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
   setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, refreshNow: refreshNow,
-  setHome: setHome, setRoomView: setRoomView,
+  setHome: setHome, setRoomView: setRoomView, getPresence: getPresence,
   _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };

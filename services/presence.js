@@ -6,6 +6,7 @@ var execFile = require("child_process").execFile;
 var httpget = require("../utils/httpget");
 var camera = require("./camera");
 var modules = require("./modules");
+var tado = require("./tado");
 
 // Wie is thuis: elke telefoon die is aangemeld wordt om de halve minuut op het thuisnetwerk gezocht.
 // Een telefoon wordt herkend aan zijn MAC-adres; het IP-adres kan wisselen en wordt dan teruggezocht.
@@ -418,8 +419,18 @@ function getStatus(req) {
   var host = req.headers && req.headers.host;
   var port = host && host.split(":")[1] ? ":" + host.split(":")[1] : "";
   var local_url = localIp ? "http://" + localIp + port : null;
+  // Netwerk-gedetecteerde personen, plus (als tado aanstaat) de telefoons uit tado°-geofencing.
+  var list = people.map(function(p) { return { id: p.id, name: p.name, type: p.type || null, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null, source: "netwerk" }; });
+  if (modules.isOn("tado")) {
+    var pres = tado.getPresence() || {};
+    (pres.devices || []).forEach(function(d) {
+      // niet dubbel tonen als er al een netwerk-persoon met dezelfde naam is
+      if (list.some(function(p) { return p.name && d.name && p.name.toLowerCase() === d.name.toLowerCase(); })) return;
+      list.push({ id: "tado:" + d.name, name: d.name, type: null, home: !!d.atHome, since: null, last_seen: pres.updated || null, source: "tado", stale: !!d.stale });
+    });
+  }
   return {
-    people: people.map(function(p) { return { id: p.id, name: p.name, type: p.type || null, home: !!p.home, since: p.since || null, last_seen: p.lastSeen || null }; }),
+    people: list,
     me: { local: !!lanIp(ip) && ownIps().indexOf(ip) === -1, phone: !!phoneType(req), id: me ? me.id : null },
     sources: getSources(),
     away_after_min: AWAY_AFTER / 60000,

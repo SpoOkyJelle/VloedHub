@@ -10,10 +10,15 @@ function showPresence(d, error) {
   var list = document.getElementById('presence-list'), status = document.getElementById('presence-me-status');
   if (!list || !status) return;
   list.innerHTML = d.people.length ? d.people.map(function(p) {
+    var isTado = p.source === 'tado';
+    var badge = isTado ? '<span class="presence-type">tado°</span>' : (p.type ? '<span class="presence-type">' + p.type + '</span>' : '');
+    var sub = isTado
+      ? 'Via tado°-geofencing · ' + (p.home ? 'Thuis' : 'Weg') + (p.stale ? ' (locatie verouderd)' : '')
+      : (p.home ? 'Thuis' : 'Weg') + (p.since ? ' sinds ' + shortWhen(p.since) : '') + ' · ' + presenceAgo(p.last_seen);
     return '<div class="presence-row' + (p.home ? ' home' : '') + '"><i class="fa-solid ' + (p.home ? 'fa-house-user' : 'fa-person-walking-arrow-right') + '"></i>' +
-      '<div><div class="outage-text">' + escHtml(p.name) + (p.type ? '<span class="presence-type">' + p.type + '</span>' : '') + '</div><div class="outage-sub">' + (p.home ? 'Thuis' : 'Weg') + (p.since ? ' sinds ' + shortWhen(p.since) : '') + ' · ' + presenceAgo(p.last_seen) + '</div></div>' +
-      '<button class="presence-remove" onclick="removePresence(\'' + p.id + '\',this)" aria-label="' + escHtml(p.name) + ' verwijderen">Verwijderen</button></div>';
-  }).join('') : '<div class="outage-sub">Nog geen telefoons aangemeld. Open VloedHub op elke telefoon, thuis op de wifi, en meld hem hieronder aan.</div>';
+      '<div><div class="outage-text">' + escHtml(p.name) + badge + '</div><div class="outage-sub">' + sub + '</div></div>' +
+      (isTado ? '' : '<button class="presence-remove" onclick="removePresence(\'' + p.id + '\',this)" aria-label="' + escHtml(p.name) + ' verwijderen">Verwijderen</button>') + '</div>';
+  }).join('') : '<div class="outage-sub">Nog geen telefoons aangemeld. Open VloedHub op elke telefoon, thuis op de wifi, en meld hem hieronder aan. Met tado°-geofencing aan verschijnen die telefoons hier vanzelf.</div>';
   // van welk adres de gegevens van de apparaten in huis binnenkomen
   var src = document.getElementById('presence-sources');
   if (src) src.innerHTML = d.sources.length ? d.sources.map(function(x) {

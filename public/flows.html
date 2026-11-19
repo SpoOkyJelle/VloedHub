@@ -182,6 +182,16 @@
             <div><div class="palette-node-name">Apparaat offline</div><div class="palette-node-desc">Sensor of lamp stuurt niets meer</div></div>
           </div>
 
+          <div class="palette-group-label" data-group="triggers-aanwezigheid">Triggers — Aanwezigheid<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="person_home" data-tooltip="Triggert zodra iemand thuiskomt (via tado°-geofencing). Leeg = hele huis van weg naar thuis." ondragstart="drag(event)">
+            <i class="fa-solid fa-house" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Iemand komt thuis</div><div class="palette-node-desc">tado°-geofence: thuis</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="person_away" data-tooltip="Triggert zodra iemand weggaat (via tado°-geofencing). Leeg = hele huis van thuis naar weg." ondragstart="drag(event)">
+            <i class="fa-solid fa-door-open" style="color:var(--orange)"></i>
+            <div><div class="palette-node-name">Iemand gaat weg</div><div class="palette-node-desc">tado°-geofence: weg</div></div>
+          </div>
+
           <div class="palette-group-label" data-group="triggers-integraties">Triggers — Integraties<i class="fa-solid fa-chevron-down chevron"></i></div>
           <div class="palette-node" draggable="true" data-node="webhook_trigger" data-tooltip="Start de flow via een HTTP POST naar /api/webhook/{token}." ondragstart="drag(event)">
             <i class="fa-solid fa-globe" style="color:var(--blue)"></i>
@@ -554,6 +564,14 @@
     device_offline: t('df-node-title--wash-start','fa-plug-circle-xmark','Apparaat offline') +
       b('<div class="df-node-hint">Triggert als een bewaakt apparaat geen berichten meer stuurt. {apparaat} in een melding toont welk apparaat.</div>'),
 
+    person_home: t('df-node-title--wash-start','fa-house','Iemand komt thuis') +
+      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen">') +
+        hint('Triggert zodra de persoon via tado\u00b0-geofencing thuiskomt. Leeg = zodra het huis van AWAY naar HOME gaat. {persoon} toont de naam.')),
+
+    person_away: t('df-node-title--wash-start','fa-door-open','Iemand gaat weg') +
+      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen">') +
+        hint('Triggert zodra de persoon via tado\u00b0-geofencing weggaat. Leeg = zodra het huis naar AWAY gaat. {persoon} toont de naam.')),
+
     scene: t('df-node-title--action','fa-wand-magic-sparkles','Sc\u00e8ne') +
       b(f('Sc\u00e8ne','<select df-scene><option value="all_off">Alles uit</option><option value="evening">Avond</option><option value="all_on">Alles aan</option><option value="disco">Disco</option></select>') +
         hint('Zet alle lampen in \u00e9\u00e9n keer, net als de knoppen op Home.')),
@@ -751,6 +769,8 @@
     afval_pickup:    { when: 'before', time: '21:00', kind: 'all' },
     fridge_temp_above: { compartment: 'refrigerator', temp: '8' },
     device_offline:  {},
+    person_home:     { person: '' },
+    person_away:     { person: '' },
     scene:           { scene: 'all_off' },
     delay:           { seconds: '30' },
     time_window:     { 'start-type': 'time', start: '18:00', 'end-type': 'time', end: '23:00' },
@@ -776,8 +796,8 @@
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1 };
-  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0 };
+  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, person_home:0, person_away:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1 };
+  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, person_home:1, person_away:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));
@@ -1665,6 +1685,10 @@
       { type:'fridge_temp_above', icon:'fa-snowflake', color:'var(--blue)', name:'Koelkast te warm', desc:'Vak warmer dan X°C' },
       { type:'device_offline', icon:'fa-plug-circle-xmark', color:'var(--red)', name:'Apparaat offline', desc:'Sensor of lamp stuurt niets meer' }
     ]},
+    { group: 'Triggers — Aanwezigheid', nodes: [
+      { type:'person_home',     icon:'fa-house',                    color:'var(--green)',  name:'Iemand komt thuis',   desc:'tado°-geofence: thuis' },
+      { type:'person_away',     icon:'fa-door-open',                color:'var(--orange)', name:'Iemand gaat weg',     desc:'tado°-geofence: weg' }
+    ]},
     { group: 'Triggers — Integraties', nodes: [
       { type:'webhook_trigger', icon:'fa-globe',                    color:'var(--blue)',   name:'Webhook trigger',     desc:'Starten via HTTP POST' },
       { type:'mqtt_trigger',    icon:'fa-tower-broadcast',          color:'var(--orange)', name:'MQTT trigger',        desc:'Starten via MQTT bericht' }
@@ -1801,6 +1825,7 @@
     percent:      { label: 'Max. afwijking (%)',   type: 'number', min: 0, max: 100, step: 5 },
     rate:         { label: 'Drempel (m³/uur)',     type: 'number', min: 0, max: 10, step: 0.1 },
     room:         { label: 'Kamer',               type: 'text', placeholder: 'bijv. Woonkamer' },
+    person:       { label: 'Persoon (leeg = iedereen)', type: 'text', placeholder: 'bijv. Jelle' },
     temp:         { label: 'Drempel (°C)',         type: 'number', min: -30, max: 60, step: 0.5 },
     probability:  { label: 'Drempel (%)',          type: 'number', min: 0, max: 100, step: 5 },
     seconds:      { label: 'Seconden',            type: 'number', min: 1, max: 3600, step: 1 },

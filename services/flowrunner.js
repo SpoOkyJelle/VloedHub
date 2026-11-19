@@ -13,6 +13,7 @@ var costs   = require('../routes/costs');
 var auth    = require('./auth');
 var homeconnect = require('./homeconnect');
 var tapo    = require('./tapo');
+var tado    = require('./tado');
 var http    = require('http');
 var https   = require('https');
 
@@ -23,7 +24,7 @@ var TRIGGERS = {
   phase_imbalance: 1, solar_above: 1, solar_below: 1, weather_rain: 1,
   sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1,
   afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1,
-  dish_started: 1, dish_done: 1, dish_alert: 1
+  dish_started: 1, dish_done: 1, dish_alert: 1, person_home: 1, person_away: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -531,6 +532,7 @@ var lastCtx = {};
 
 function gatherExtras(ctx, callback) {
   ctx.vars = {};
+  ctx.tadoPresence = modules.isOn('tado') ? tado.getPresence() : { home: null, devices: [] };
   prices.fetchPrices(function(pErr, p) {
     if (!pErr && p && p.electricity_eur_kwh != null) {
       ctx.price = p.electricity_eur_kwh;
@@ -754,6 +756,32 @@ function checkSensorTriggers(rows, ctx) {
           case 'dish_alert':
             isOn = ((ctx.dish || {}).alerts || []).length > 0;
             break;
+          case 'person_home':
+          case 'person_away': {
+            // Aanwezigheid via tado°-geofencing. Leeg = het hele huis (HOME/AWAY); anders een naam-match.
+            var pres = ctx.tadoPresence || {};
+            var who = (node.data.person || '').toLowerCase().trim();
+            var personName = 'iemand', atHome;
+            if (who) {
+              var dv = (pres.devices || []).filter(function(d) { return (d.name || '').toLowerCase().indexOf(who) !== -1; })[0];
+              if (!dv) return;                     // onbekende persoon: niets doen
+              personName = dv.name; atHome = dv.atHome;
+            } else {
+              if (!pres.home) return;              // nog geen presence-data
+              atHome = pres.home === 'HOME';
+            }
+            var want = node.name === 'person_away' ? !atHome : atHome;
+            // eerste keer na een herstart alleen onthouden, niet meteen vuren
+            if (!(key in sensorState)) { sensorState[key] = want; return; }
+            var hadPrev = !!sensorState[key];
+            sensorState[key] = want;
+            if (want && !hadPrev) {
+              var pCtx = Object.assign({}, ctx, { vars: Object.assign({}, ctx.vars, { persoon: personName }) });
+              console.log('[Flow] Trigger "' + node.name + '" (' + personName + ') — flow ' + flow.id + ' "' + flow.name + '"');
+              traverseOutputs(node, nodes, pCtx, flow.id);
+            }
+            return;
+          }
           default:
             return; // not a sensor trigger
         }
