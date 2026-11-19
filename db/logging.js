@@ -47,13 +47,14 @@ function logTemperatureReadings(data, callback) {
     return callback(new Error("no valid readings"));
   }
 
-  var stmt = db.prepare("INSERT INTO temperature_readings (received_at, room, temp_c, device) VALUES (?,?,?,?)");
+  var hum = function(r) { return typeof r.humidity === "number" && isFinite(r.humidity) ? r.humidity : null; };
+  var stmt = db.prepare("INSERT INTO temperature_readings (received_at, room, temp_c, humidity, device) VALUES (?,?,?,?,?)");
   valid.forEach(function(r) {
-    stmt.run([received_at, r.room, r.temp_c, data.device || null]);
+    stmt.run([received_at, r.room, r.temp_c, hum(r), data.device || null]);
   });
   stmt.finalize(function(err) {
     if (err) return callback(err);
-    console.log("[" + received_at + "] Temperatuur (" + (data.device || "unknown") + "): " + valid.map(function(r) { return r.room + "=" + r.temp_c + "\u00b0C"; }).join(", "));
+    console.log("[" + received_at + "] Temperatuur (" + (data.device || "unknown") + "): " + valid.map(function(r) { return r.room + "=" + r.temp_c + "\u00b0C" + (hum(r) != null ? "/" + hum(r) + "%" : ""); }).join(", "));
     callback(null, received_at);
   });
 }

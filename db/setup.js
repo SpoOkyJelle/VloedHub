@@ -62,6 +62,8 @@ db.serialize(function() {
     "  device TEXT" +
     ")"
   );
+  // Luchtvochtigheid komt erbij (o.a. de Tapo T310 in de badkamer); oudere rijen hebben hem niet
+  db.run("ALTER TABLE temperature_readings ADD COLUMN humidity REAL", function() {});
 
   db.run(
     "CREATE TABLE IF NOT EXISTS esphome_readings (" +

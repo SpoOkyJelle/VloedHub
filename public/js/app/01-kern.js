@@ -77,7 +77,7 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 400);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadTadoStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadTadoStatus(); loadTapoStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); ledRenderAll(); }
   var eb = document.getElementById('layout-edit-btn');
   if (eb) eb.classList.toggle('show', n === 0);
@@ -93,7 +93,7 @@ function showScreen(n, btn, fromSwipe) {
 }
 
 // Schermen van uitgezette modules worden overgeslagen
-function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')); }
+function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')) || (n === 6 && !moduleOn('samen')); }
 function nextScreen(dir) {
   for (var n = currentScreen + dir; n >= 0 && n <= 5; n += dir) { if (!screenHidden(n)) return n; }
   return currentScreen;

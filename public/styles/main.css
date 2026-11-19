@@ -1330,6 +1330,8 @@ to {
 .mod-off-wasmachine [data-module~='wasmachine'],
 .mod-off-vaatwasser [data-module~='vaatwasser'],
 .mod-off-tado [data-module~='tado'],
+.mod-off-tapo [data-module~='tapo'],
+.mod-off-samen [data-module~='samen'],
 .mod-off-thuis [data-module~='thuis'] {
   display:none !important}
 /* Verwarming (tado): één kaart per zone, zelfde stijl als de andere Thuis-kaarten */

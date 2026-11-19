@@ -6,6 +6,7 @@ data/camera.json
 data/homeconnect.json
 data/homeconnect-keys.json
 data/tado.json
+data/tapo.json
 data/notified.json
 data/presence.json
 data/users.json

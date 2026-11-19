@@ -410,6 +410,34 @@
   </div>
 </div>
 </div>
+<div class='set-section' data-module='tapo'>
+<div class='section-title'>Tapo (TP-Link)</div>
+<div class='setting-card'>
+  <div class='setting-text'><div class='setting-title'>Koppeling</div><div class='setting-desc' id='tapo-status'>Laden…</div></div>
+  <div class='hc-form'>
+    <input class='field' id='tapo-email' type='email' autocomplete='off' aria-label='Tapo e-mailadres' placeholder='Tapo e-mailadres'>
+    <input class='field' id='tapo-password' type='password' autocomplete='off' aria-label='Tapo wachtwoord' placeholder='Tapo wachtwoord'>
+    <button class='btn btn-primary' id='tapo-link-btn' onclick='saveTapoCreds(this)'>Koppelen</button>
+  </div>
+  <div class='setting-desc'>Tapo heeft geen OAuth; VloedHub logt in met je Tapo-account. Tip: maak hiervoor een apart TP-Link-account en deel je apparaten daarnaartoe, dan kun je de toegang intrekken. Je gegevens blijven op de server (<code>data/tapo.json</code>, niet in git).</div>
+  <div id='tapo-extra'></div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Kamer van de T310</div><div class='setting-desc'>Naam waaronder temperatuur en vocht worden gelogd</div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tapo-room' type='text' maxlength='30' aria-label='Kamernaam'>
+      <button class='btn btn-ghost' onclick='saveTapoRoom(this)'>Opslaan</button>
+    </div>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Ververssnelheid</div><div class='setting-desc'>Hoe vaak VloedHub de stekker en sensor uitleest</div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tapo-poll' type='number' min='1' max='30' step='1' inputmode='numeric' aria-label='Ververssnelheid in minuten'>
+      <span class='power-sub'>min</span>
+      <button class='btn btn-ghost' onclick='saveTapoPoll(this)'>Opslaan</button>
+    </div>
+  </div>
+</div>
+</div>
 <div class='set-section' data-module='afval'>
 <div class='section-title'>Afvalkalender</div>
 <div class='setting-card'>

@@ -412,6 +412,90 @@ function saveTadoFrost(btn) {
     }).catch(function() { btn.disabled = false; toast('tado: verbindingsfout', 'error'); });
 }
 
+// ── Tapo (TP-Link) ──
+var tapoData = null;
+function tapoAgo(ms) {
+  if (!ms) return 'nog niet opgehaald';
+  var s = Math.round((Date.now() - ms) / 1000);
+  return s < 60 ? 'zojuist' : s < 3600 ? Math.round(s / 60) + ' min geleden' : Math.round(s / 3600) + ' uur geleden';
+}
+function renderTapo(d) {
+  if (!d) return;
+  tapoData = d;
+  var st = document.getElementById('tapo-status');
+  if (st) st.textContent = d.linked ? ('Gekoppeld (' + escHtml(d.region || '') + ')') : 'Nog niet gekoppeld. Vul je Tapo e-mail en wachtwoord in en klik op Koppelen.';
+  var btn = document.getElementById('tapo-link-btn');
+  if (btn) { btn.disabled = false; btn.textContent = d.linked ? 'Opnieuw koppelen' : 'Koppelen'; }
+  var room = document.getElementById('tapo-room');
+  if (room && document.activeElement !== room) room.value = d.roomName || '';
+  var poll = document.getElementById('tapo-poll');
+  if (poll && document.activeElement !== poll) poll.value = d.pollMinutes || '';
+  var ex = document.getElementById('tapo-extra');
+  if (!ex) return;
+  if (!d.linked) { ex.innerHTML = ''; return; }
+  var rows = [];
+  if (d.plug) rows.push('<div class="setting-desc">Stekker <b>' + escHtml(d.plug.name || '') + '</b>: ' + nlNum(d.plug.watts, 1) + ' W · wasmachine: ' + escHtml(d.washState || 'idle') + '</div>');
+  if (d.t310) rows.push('<div class="setting-desc">Sensor <b>' + escHtml(d.t310.name || '') + '</b>: ' + (d.t310.temp != null ? nlNum(d.t310.temp, 1) + '°' : '—') + ' · ' + (d.t310.humidity != null ? d.t310.humidity + '%' : '—') + (d.showerActive ? ' · 🚿 doucht' : '') + '</div>');
+  if (d.devices && d.devices.length) rows.push('<div class="setting-desc">Gevonden: ' + d.devices.map(function(x) { return escHtml(x.name || x.model || '?') + ' (' + escHtml(x.model || x.type || '') + ')'; }).join(', ') + '</div>');
+  if (d.error) rows.push('<div class="setting-desc">⚠️ ' + escHtml(String(d.error)) + '</div>');
+  if (d.raw && Object.keys(d.raw).length) rows.push('<div class="setting-desc">Ruwe uitlezing — ' + Object.keys(d.raw).map(function(k) { return escHtml(k) + ': ' + escHtml(String(d.raw[k])); }).join(' · ') + '</div>');
+  rows.push('<div class="tado-meta"><span>' + escHtml(tapoAgo(d.updated)) + '</span>' +
+    '<button class="btn btn-quiet btn-sm" onclick="refreshTapoNow(this)"><i class="fa-solid fa-rotate"></i> Ververs nu</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="unlinkTapo()">Ontkoppelen</button></div>');
+  ex.innerHTML = rows.join('');
+}
+function refreshTapo() {
+  if (!document.getElementById('tapo-status')) return;
+  fetch('/api/tapo').then(function(r){return r.json();}).then(renderTapo).catch(function(){});
+}
+function loadTapoStatus() { refreshTapo(); }
+function saveTapoCreds(btn) {
+  var email = document.getElementById('tapo-email'), pw = document.getElementById('tapo-password');
+  if (!email.value || !pw.value) { toast('Vul je Tapo e-mail en wachtwoord in', 'error'); return; }
+  if (btn) btn.disabled = true;
+  fetch('/api/tapo/credentials', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email: email.value, password: pw.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      if (btn) btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Koppelen mislukt', 'error'); return; }
+      pw.value = '';
+      toast('Gekoppeld — gegevens worden opgehaald…', 'ok');
+      renderTapo(d);
+      setTimeout(refreshTapo, 4000); // even wachten tot de eerste uitlezing binnen is
+    }).catch(function() { if (btn) btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
+}
+function refreshTapoNow(btn) {
+  if (btn) btn.disabled = true;
+  fetch('/api/tapo/refresh', {method:'POST'}).then(function(r){return r.json();}).then(function(d) {
+    if (!d.ok && d.error) toast(d.error, 'error');
+    renderTapo(d);
+  }).catch(function() { if (btn) btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
+}
+function unlinkTapo() {
+  fetch('/api/tapo/unlink', {method:'POST'}).then(function(r){return r.json();}).then(renderTapo).catch(function(){});
+}
+function saveTapoRoom(btn) {
+  var input = document.getElementById('tapo-room');
+  btn.disabled = true;
+  fetch('/api/tapo/room', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({room: input.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Kamernaam opgeslagen', 'ok');
+      renderTapo(d);
+    }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
+}
+function saveTapoPoll(btn) {
+  var input = document.getElementById('tapo-poll');
+  btn.disabled = true;
+  fetch('/api/tapo/poll-interval', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({minutes: input.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Ververssnelheid opgeslagen', 'ok');
+      renderTapo(d);
+    }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
+}
+
 // ── Tabbladen van Instellingen ──
 // Het gekozen tabblad blijft op dit apparaat bewaard
 // Het groene vlak achter het gekozen tabblad is één los element dat naar zijn nieuwe plek schuift

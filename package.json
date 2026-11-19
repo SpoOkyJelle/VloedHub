@@ -8,6 +8,7 @@
   "dependencies": {
     "mqtt": "^4.3.8",
     "mssql": "^12.7.4",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "tp-link-tapo-connect": "^2.0.15"
   }
 }
