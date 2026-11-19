@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var modules = require("./modules");
 var discord = require("./discord");
+var logging = require("../db/logging");
 
 // Slimme verwarming via de officiële tado° cloud-API, afgestemd op de tado° X (de nieuwe generatie).
 //
@@ -366,7 +367,22 @@ function stopPolling() {
 function applyZones(list) {
   zones = list;
   lastUpdate = Date.now();
+  logZones(list);
   checkAlerts();
+}
+
+// Temperatuur én luchtvochtigheid per kamer wegschrijven naar de geschiedenis (zelfde tabel als de
+// ESP-sensoren), zodat je er een trend van kunt zien. Draait op de kamer-pollcyclus, niet op de snelle
+// presence-poll, dus geen logspam. device "tado" onderscheidt de bron van de losse sensoren.
+function logZones(list) {
+  if (!modules.isOn("tado")) return;
+  var readings = list
+    .filter(function(z) { return z.online && z.temperature != null; })
+    .map(function(z) { return { room: z.name, temp_c: z.temperature, humidity: z.humidity != null ? z.humidity : null }; });
+  if (!readings.length) return;
+  logging.logTemperatureReadings({ device: "tado", readings: readings }, function(err) {
+    if (err) console.error("[tado] loggen mislukt:", err.message);
+  });
 }
 
 // Werkt één kamer in het geheugen bij na een bediening, zodat de kaart meteen klopt zonder extra API-verzoek
