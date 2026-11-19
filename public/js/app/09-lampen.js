@@ -1,6 +1,6 @@
 // ── Lampen ──
 var LED_EFFECTS = ['Warm Wit','Ijs Wit','Rainbow','Rainbow Wave','Fade Aan/Uit','Confetti','Vuur','Meteor Regen','Twinkle','Politielichten','Eigen kleur','Film Modus','Gaming','Sfeer Fade','Nacht','Kaars'];
-var LED_CUSTOM = LED_EFFECTS.length - 1;
+var LED_CUSTOM = LED_EFFECTS.indexOf('Eigen kleur'); // de "Eigen kleur"-stand (firmware-effect 10), niet het laatste effect
 // De ledstrips werken hetzelfde; alleen het adres, de naam en de kaart op Home verschillen
 var LEDS = {
   'default':   { key: 'led::default',   name: 'LED Strip',       query: '',                  home: 'home-led-status' },
