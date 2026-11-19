@@ -151,5 +151,23 @@ function refreshTemperature() { fetch('/api/temperature/latest').then(function(r
 }).catch(function(){}); }
 var chartTemp = null;
 function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); }), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID } } } } }); }).catch(function(){}); }
+function refreshTapoCard() {
+  if (!document.getElementById('tapo-card') && !document.getElementById('wash-power')) return;
+  fetch('/api/tapo').then(function(r){return r.json();}).then(function(d) {
+    var t = d.t310 || null, el;
+    if ((el = document.getElementById('tapo-card-temp'))) el.textContent = t && t.temp != null ? nlNum(t.temp, 1) + ' °C' : '—';
+    if ((el = document.getElementById('tapo-card-hum'))) el.textContent = t && t.humidity != null ? t.humidity + ' %' : '—';
+    if ((el = document.getElementById('tapo-card-meta'))) el.textContent = d.updated ? tapoAgo(d.updated) : (d.linked ? '' : 'niet gekoppeld');
+    var pill = document.getElementById('tapo-shower-pill');
+    if (pill) {
+      var showering = !!d.showerActive;
+      pill.className = 'wash-status-pill ' + (showering ? 'running' : 'idle');
+      var icon = document.getElementById('tapo-shower-icon'); if (icon) icon.className = showering ? 'fa-solid fa-shower' : 'fa-solid fa-droplet';
+      var txt = document.getElementById('tapo-shower-text');
+      if (txt) txt.textContent = !d.linked ? 'Niet gekoppeld' : !t ? 'Geen sensordata' : showering ? 'Er wordt gedoucht' : 'Rustig';
+    }
+    if ((el = document.getElementById('wash-power'))) el.textContent = d.plug && d.plug.watts != null ? nlNum(d.plug.watts, 1) + ' W' : '—';
+  }).catch(function(){});
+}
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? shortWhen(s.since) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
 

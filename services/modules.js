@@ -25,7 +25,7 @@ var MODULES = [
   { key: "wasmachine",  label: "Wasmachine",             hint: "Wasmachinekaart en de melding dat de was klaar is" },
   { key: "vaatwasser",  label: "Vaatwasser",             hint: "Vaatwasserkaart (Home Connect) en de melding dat de vaat klaar is" },
   { key: "tado",        label: "Verwarming (tado°)",     hint: "Thermostaatkaart op Thuis met bediening, en meldingen bij offline of vorst" },
-  { key: "tapo",        label: "Tapo (TP-Link)",         hint: "Uitlezen van de Tapo-stekker (wasmachine) en T310-sensor (badkamer) via de TP-Link cloud" },
+  { key: "tapo",        label: "Tapo (TP-Link)",         hint: "Badkamerkaart (T310: temp, vocht, douche) en wasmachine-vermogen, lokaal uitgelezen via de Tapo-stekker en -hub op het thuisnetwerk" },
   { key: "discord",     label: "Discord-meldingen",      hint: "Alle berichten naar Discord: herinneringen, offline-meldingen en flows" }
 ];
 
