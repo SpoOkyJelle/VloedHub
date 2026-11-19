@@ -26,6 +26,10 @@ var CONFIG_FILE = path.join(__dirname, "../data/tado.json");
 
 var DEFAULT_POLL_MIN = 30;         // zuinig i.v.m. de limiet van 100 verzoeken/dag op het gratis plan
 var MIN_POLL_MIN = 10, MAX_POLL_MIN = 360;
+// presence (wie-thuis-is) heeft een eigen, snellere pollcyclus dan de kamers: zo verschijnt "thuis" sneller
+// zonder de kamers vaker (en dus duurder) op te halen. In seconden, want dit mag veel sneller dan de kamers.
+// Niet ingesteld = volgt de kamersnelheid, zodat een bestaande koppeling niet ongevraagd extra verbruikt.
+var MIN_PRESENCE_SEC = 10, MAX_PRESENCE_SEC = 3600;
 var RETRY_MS = 5 * 60 * 1000;
 var RATE_RETRY_MS = 60 * 60 * 1000; // na een limiet-antwoord (429) pas over een uur opnieuw proberen
 var DEFAULT_FROST = 5;             // °C: onder deze kamertemperatuur komt er een vorstwaarschuwing
@@ -40,7 +44,7 @@ var zones = [];                    // laatst opgehaalde kamers, zie parseRoom
 var lastUpdate = null;
 var alerts = {};                   // per kamer onthouden waarover al gemeld is (offline/vorst), geen herhaling
 var presence = { home: null, devices: [], updated: null };  // geofencing: wie is thuis (tado mobileDevices)
-var pollTimer = null, generation = 0;
+var pollTimer = null, presenceTimer = null, generation = 0;
 
 function load() {
   try { return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch (e) { return {}; }
@@ -57,6 +61,16 @@ function pollMs() {
   if (!(m >= MIN_POLL_MIN && m <= MAX_POLL_MIN)) m = DEFAULT_POLL_MIN;
   return m * 60 * 1000;
 }
+
+// Hoe vaak presence apart ververst wordt, in seconden. Niet (geldig) ingesteld: volg de kamer-pollsnelheid.
+function effectivePresenceSec(cfg) {
+  var s = cfg.presenceSeconds;
+  if (s >= MIN_PRESENCE_SEC && s <= MAX_PRESENCE_SEC) return s;
+  var m = (cfg.pollMinutes >= MIN_POLL_MIN && cfg.pollMinutes <= MAX_POLL_MIN) ? cfg.pollMinutes : DEFAULT_POLL_MIN;
+  return m * 60;
+}
+
+function presenceMs() { return effectivePresenceSec(load()) * 1000; }
 
 function form(obj) {
   return Object.keys(obj).filter(function(k) { return obj[k]; })
@@ -214,7 +228,8 @@ function setHome(id) {
     cfg.homeId = h.id; cfg.homeName = h.name;
     save(cfg);
     zones = []; lastUpdate = null; alerts = {};
-    if (cfg.tokens) poll();
+    presence = { home: null, devices: [], updated: null };
+    if (cfg.tokens) { poll(); pollPresence(); }
   }
   return true;
 }
@@ -270,13 +285,18 @@ function getRooms(cb) {
   });
 }
 
-// Geofencing: per gekoppelde telefoon of hij thuis is (classic API, zelfde token). Draait in dezelfde
-// pollcyclus als de kamers (één extra verzoek per poll) i.v.m. de dag-limiet van tado.
-function fetchPresence() {
+// Geofencing: per gekoppelde telefoon of hij thuis is (classic API, zelfde token). Draait in een eigen,
+// meestal snellere pollcyclus dan de kamers (zie pollPresence), zodat "thuis" sneller verschijnt. cb(err)
+function fetchPresence(cb) {
+  cb = cb || function() {};
   var cfg = load();
-  if (!cfg.tokens || !cfg.homeId) return;
+  if (!cfg.tokens || !cfg.homeId) return cb("niet gekoppeld");
   api(MY_HOST, "GET", "/api/v2/homes/" + cfg.homeId + "/mobileDevices", null, function(err, status, body) {
-    if (err || status !== 200 || !Array.isArray(body)) return;
+    if (status === 429) { rateLimited = true; linkError = RATE_MSG; return cb("limiet"); }
+    if (err) return cb("tado is niet bereikbaar");
+    if (status !== 200 || !Array.isArray(body)) return cb(oauthMessage(body, "Presence ophalen mislukt (" + status + ")"));
+    rateLimited = false;
+    if (linkError === RATE_MSG) linkError = null;
     var devices = body
       .filter(function(m) { return m && m.settings && m.settings.geoTrackingEnabled; })
       .map(function(m) {
@@ -292,6 +312,7 @@ function fetchPresence() {
       devices: devices,
       updated: Date.now()
     };
+    cb(null);
   });
 }
 
@@ -303,9 +324,26 @@ function poll() {
   if (!load().tokens) return;
   getRooms(function(err) {
     if (gen !== generation) return;
-    if (!err) fetchPresence();   // alleen als de kamers lukten (niet bij limiet/fout), scheelt verzoeken
     schedule(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : pollMs());
   });
+}
+
+// Eigen, losse pollcyclus voor presence — zuiniger kunnen we de kamers op 30 min houden en toch
+// "thuis" sneller zien. Bij een limiet-antwoord even een uur terugschakelen, net als de kamer-poll.
+function pollPresence() {
+  clearTimeout(presenceTimer);
+  var gen = generation;
+  if (!load().tokens) return;
+  fetchPresence(function(err) {
+    if (gen !== generation) return;
+    schedulePresence(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : presenceMs());
+  });
+}
+
+function schedulePresence(gen, ms) {
+  if (gen !== generation) return;
+  clearTimeout(presenceTimer);
+  presenceTimer = setTimeout(pollPresence, ms);
 }
 
 // Eenmalig nu ophalen (knop "Ververs"); verstoort de vaste pollcyclus niet. cb(err, status)
@@ -322,6 +360,7 @@ function schedule(gen, ms) {
 function stopPolling() {
   generation++;
   clearTimeout(pollTimer);
+  clearTimeout(presenceTimer);
 }
 
 function applyZones(list) {
@@ -419,6 +458,17 @@ function setPollMinutes(v) {
   return true;
 }
 
+function setPresenceSeconds(v) {
+  v = Math.round(Number(v));
+  if (!(v >= MIN_PRESENCE_SEC && v <= MAX_PRESENCE_SEC)) return false;
+  var cfg = load();
+  cfg.presenceSeconds = v;
+  delete cfg.presenceMinutes; // oude minuten-sleutel opruimen (vroegere versie)
+  save(cfg);
+  if (cfg.tokens) pollPresence(); // meteen met de nieuwe snelheid verder
+  return true;
+}
+
 // ── Status ────────────────────────────────────────────────────────────────
 function getStatus() {
   var cfg = load();
@@ -434,6 +484,8 @@ function getStatus() {
     homes: cfg.homes || [],
     frostThreshold: cfg.frostThreshold != null ? cfg.frostThreshold : DEFAULT_FROST,
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
+    presenceSeconds: effectivePresenceSec(cfg),
+    presenceSecMin: MIN_PRESENCE_SEC, presenceSecMax: MAX_PRESENCE_SEC,
     minSet: MIN_SET, maxSet: MAX_SET,
     zones: zones.map(function(z) { return Object.assign({ view: rv[z.id] || "both" }, z); }),
     presence: presence,
@@ -442,12 +494,12 @@ function getStatus() {
 }
 
 function start() {
-  if (load().tokens) poll();
+  if (load().tokens) { poll(); pollPresence(); }
 }
 
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
-  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, refreshNow: refreshNow,
+  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, setPresenceSeconds: setPresenceSeconds, refreshNow: refreshNow,
   setHome: setHome, setRoomView: setRoomView, getPresence: getPresence,
   _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };

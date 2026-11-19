@@ -404,11 +404,19 @@
     </div>
   </div>
   <div class='setting-row'>
-    <div class='setting-text'><div class='setting-title'>Ververssnelheid</div><div class='setting-desc'>tado staat op het gratis plan ±100 verzoeken per dag toe (20.000 met Auto-Assist). Vaker verversen verbruikt sneller je dagtegoed.</div></div>
+    <div class='setting-text'><div class='setting-title'>Ververssnelheid kamers</div><div class='setting-desc'>Hoe vaak VloedHub de temperaturen en kamers uitleest.</div></div>
     <div class='tado-frost-form'>
-      <input class='field' id='tado-poll' type='number' min='10' max='360' step='5' inputmode='numeric' aria-label='Ververssnelheid in minuten'>
+      <input class='field' id='tado-poll' type='number' min='10' max='360' step='5' inputmode='numeric' aria-label='Ververssnelheid kamers in minuten'>
       <span class='power-sub'>min</span>
       <button class='btn btn-ghost' onclick='saveTadoPoll(this)'>Opslaan</button>
+    </div>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Ververssnelheid locatie</div><div class='setting-desc'>Hoe snel VloedHub ziet dat iemand thuiskomt of weggaat. Apart van de kamers. <span id='tado-budget'></span></div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tado-presence' type='number' min='10' max='3600' step='5' inputmode='numeric' aria-label='Ververssnelheid locatie in seconden'>
+      <span class='power-sub'>sec</span>
+      <button class='btn btn-ghost' onclick='saveTadoPresence(this)'>Opslaan</button>
     </div>
   </div>
 </div>

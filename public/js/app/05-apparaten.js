@@ -329,6 +329,14 @@ function showTadoStatus(d) {
   if (frost && document.activeElement !== frost && d.frostThreshold != null) frost.value = d.frostThreshold;
   var pollEl = document.getElementById('tado-poll');
   if (pollEl && document.activeElement !== pollEl && d.pollMinutes != null) pollEl.value = d.pollMinutes;
+  var presEl = document.getElementById('tado-presence');
+  if (presEl && document.activeElement !== presEl && d.presenceSeconds != null) presEl.value = d.presenceSeconds;
+  var budget = document.getElementById('tado-budget');
+  if (budget) {
+    // ruwe schatting: één verzoek per kamer-poll + één per locatie-poll, over een hele dag
+    var perDay = (d.pollMinutes ? Math.round(1440 / d.pollMinutes) : 0) + (d.presenceSeconds ? Math.round(86400 / d.presenceSeconds) : 0);
+    budget.textContent = perDay ? '±' + perDay + ' verzoeken/dag — gratis plan geeft ±100/dag, Auto-Assist/AI Assist ±20.000/dag.' : '';
+  }
   clearTimeout(tadoLinkTimer);
   if (d.pending) tadoLinkTimer = setTimeout(refreshTado, 3000);
 }
@@ -387,6 +395,17 @@ function saveTadoPoll(btn) {
       btn.disabled = false;
       if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
       toast('Ververssnelheid opgeslagen', 'ok');
+      renderTado(d);
+    }).catch(function() { btn.disabled = false; toast('tado: verbindingsfout', 'error'); });
+}
+function saveTadoPresence(btn) {
+  var input = document.getElementById('tado-presence');
+  btn.disabled = true;
+  fetch('/api/tado/presence-interval', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({seconds: input.value})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Ververssnelheid locatie opgeslagen', 'ok');
       renderTado(d);
     }).catch(function() { btn.disabled = false; toast('tado: verbindingsfout', 'error'); });
 }
