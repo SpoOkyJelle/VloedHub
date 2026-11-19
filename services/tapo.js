@@ -32,11 +32,14 @@ var WASH_DONE_W = 3;                  // zo lang hieronder = klaar
 var WASH_DONE_MIN = 5;                // minuten aanhoudend laag voor "klaar" (vangt korte pauzes in het programma op)
 var WASH_AUTOCLEAR_MIN = 180;         // "klaar" na zoveel minuten vanzelf terug naar idle
 
-// Douche-detectie uit de luchtvochtigheid van de T310
-var SHOWER_HIGH = 75;                 // boven dit percentage: er wordt gedoucht
-var SHOWER_RISE = 12;                 // of een snelle stijging (procentpunten) sinds de vorige meting
-var SHOWER_RELEASE = 65;              // pas opnieuw melden als het hieronder is gezakt
-var SHOWER_COOLDOWN_MS = 30 * 60 * 1000;
+// Douche-detectie uit de luchtvochtigheid van de T310. Instelbaar in de app (opgeslagen in
+// data/tapo.json → shower); deze waardes gelden als standaard zolang er niets is ingesteld.
+//   high    = boven dit percentage: er wordt gedoucht
+//   rise    = óf een snelle stijging (procentpunten) sinds de vorige meting
+//   release = pas weer "rustig" als het hieronder zakt (hysterese tegen geflikker)
+//   cooldownMin = minimale tijd tussen twee douche-meldingen
+var DEFAULT_SHOWER = { high: 80, rise: 18, release: 68, cooldownMin: 30 };
+var SHOWER_BOUNDS = { high: [50, 100], rise: [3, 50], release: [40, 95], cooldownMin: [0, 240] };
 
 var DEFAULT_ROOM = "Badkamer";
 
@@ -74,6 +77,16 @@ function pollMs() {
   var m = load().pollMinutes;
   if (!(m >= MIN_POLL_MIN && m <= MAX_POLL_MIN)) m = DEFAULT_POLL_MIN;
   return m * 60 * 1000;
+}
+
+// De werkende douche-drempels: ingestelde waarde als die binnen de grenzen valt, anders de standaard.
+// release wordt altijd onder high gehouden, anders zou "gedoucht" heen en weer kunnen flikkeren.
+function showerCfg() {
+  var c = load().shower || {};
+  function pick(k) { var v = Number(c[k]); var b = SHOWER_BOUNDS[k]; return (v >= b[0] && v <= b[1]) ? v : DEFAULT_SHOWER[k]; }
+  var high = pick("high"), release = pick("release");
+  if (release >= high) release = Math.max(SHOWER_BOUNDS.release[0], high - 5);
+  return { high: high, rise: pick("rise"), release: release, cooldownMin: pick("cooldownMin"), cooldownMs: pick("cooldownMin") * 60000 };
 }
 
 function roomName() {
@@ -181,16 +194,17 @@ function evaluateWash(watts) {
 
 // ── Douche-detectie ──────────────────────────────────────────────────────────
 function evaluateShower(hum) {
+  var s = showerCfg();
   var now = Date.now();
-  var rise = lastHumidity != null ? hum - lastHumidity : 0;
-  var high = hum >= SHOWER_HIGH || rise >= SHOWER_RISE;
-  if (high && !showerActive) {
+  var delta = lastHumidity != null ? hum - lastHumidity : 0;
+  var trigger = hum >= s.high || delta >= s.rise;
+  if (trigger && !showerActive) {
     showerActive = true;
-    if (now - lastShowerNotify >= SHOWER_COOLDOWN_MS) {
+    if (now - lastShowerNotify >= s.cooldownMs) {
       lastShowerNotify = now;
       if (modules.isOn("tapo")) discord.notify("temperature", "🚿 **Er wordt gedoucht** — " + roomName() + " " + hum + "% luchtvochtigheid");
     }
-  } else if (showerActive && hum <= SHOWER_RELEASE) {
+  } else if (showerActive && hum <= s.release) {
     showerActive = false;
   }
   lastHumidity = hum;
@@ -280,6 +294,28 @@ function setRoomName(name) {
   return true;
 }
 
+// Douche-drempels instellen: { high, rise, release, cooldownMin }. Lege/ontbrekende velden blijven ongemoeid.
+// Geeft false bij een waarde buiten de grenzen of als release niet onder high ligt.
+function setShower(opts) {
+  opts = opts || {};
+  var keys = ["high", "rise", "release", "cooldownMin"];
+  var cfg = load();
+  var shower = Object.assign({}, cfg.shower || {});
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (opts[k] == null || opts[k] === "") continue;
+    var v = Math.round(Number(opts[k]));
+    var b = SHOWER_BOUNDS[k];
+    if (!(v >= b[0] && v <= b[1])) return false;
+    shower[k] = v;
+  }
+  var eff = Object.assign({}, DEFAULT_SHOWER, shower);
+  if (eff.release >= eff.high) return false; // release moet onder high blijven
+  cfg.shower = shower;
+  save(cfg);
+  return true;
+}
+
 // ── Status (nooit e-mail/wachtwoord terug) ───────────────────────────────────
 function getStatus() {
   var cfg = load();
@@ -295,6 +331,8 @@ function getStatus() {
     t310: t310,
     washState: washState,
     showerActive: showerActive,
+    shower: showerCfg(),
+    showerBounds: SHOWER_BOUNDS,
     raw: lastRaw,
     updated: lastUpdate
   };
@@ -334,7 +372,7 @@ function getTuning() {
     roomName: roomName(),
     pollMinutes: load().pollMinutes != null ? load().pollMinutes : DEFAULT_POLL_MIN,
     wash: { run_w: WASH_RUN_W, done_w: WASH_DONE_W, done_min: WASH_DONE_MIN, autoclear_min: WASH_AUTOCLEAR_MIN },
-    shower: { high: SHOWER_HIGH, rise: SHOWER_RISE, release: SHOWER_RELEASE, cooldown_min: Math.round(SHOWER_COOLDOWN_MS / 60000) }
+    shower: (function() { var s = showerCfg(); return { high: s.high, rise: s.rise, release: s.release, cooldown_min: s.cooldownMin }; })()
   };
 }
 
@@ -346,6 +384,6 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, getTuning: getTuning, refreshNow: refreshNow,
   setCredentials: setCredentials, setDevices: setDevices, unlink: unlink,
-  setPollMinutes: setPollMinutes, setRoomName: setRoomName,
+  setPollMinutes: setPollMinutes, setRoomName: setRoomName, setShower: setShower,
   playAlarm: playAlarm, stopAlarm: stopAlarm, getAlarmTones: getAlarmTones
 };

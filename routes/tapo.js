@@ -152,6 +152,15 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Douche-detectie afstellen: { high, rise, release, cooldownMin } (lege velden blijven ongemoeid)
+  if (req.method === "POST" && req.url === "/api/tapo/shower") {
+    readBody(req, function(data) {
+      if (!data || !tapo.setShower(data)) return json(res, 400, { ok: false, error: "Ongeldige waarde (release moet onder high liggen)" });
+      json(res, 200, Object.assign({ ok: true }, tapo.getStatus()));
+    });
+    return true;
+  }
+
   // Welke apparaten welke rol hebben: { washPlugId, hubId, t310Id }
   if (req.method === "POST" && req.url === "/api/tapo/devices") {
     readBody(req, function(data) {

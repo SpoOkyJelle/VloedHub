@@ -455,6 +455,12 @@ function renderTapo(d) {
   if (room && document.activeElement !== room) room.value = d.roomName || '';
   var poll = document.getElementById('tapo-poll');
   if (poll && document.activeElement !== poll) poll.value = d.pollMinutes || '';
+  var sh = d.shower || {};
+  function setShV(id, v) { var el = document.getElementById(id); if (el && document.activeElement !== el && v != null) el.value = v; }
+  setShV('tapo-shower-high', sh.high); setShV('tapo-shower-rise', sh.rise);
+  setShV('tapo-shower-release', sh.release); setShV('tapo-shower-cooldown', sh.cooldownMin);
+  var shNow = document.getElementById('tapo-shower-now');
+  if (shNow && sh.high != null) shNow.textContent = 'Nu: melden bij ≥' + sh.high + '% of een stijging van +' + sh.rise + 'pp, weer rustig onder ' + sh.release + '%, meld-pauze ' + sh.cooldownMin + ' min.';
   var ex = document.getElementById('tapo-extra');
   if (!ex) return;
   if (!d.linked) { ex.innerHTML = ''; return; }
@@ -533,6 +539,22 @@ function saveTapoIps(btn) {
       toast('IP-adressen opgeslagen — uitlezen gestart…', 'ok');
       renderTapo(d);
       setTimeout(refreshTapo, 4000);
+    }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
+}
+function saveTapoShower(btn) {
+  var body = {
+    high: (document.getElementById('tapo-shower-high') || {}).value,
+    rise: (document.getElementById('tapo-shower-rise') || {}).value,
+    release: (document.getElementById('tapo-shower-release') || {}).value,
+    cooldownMin: (document.getElementById('tapo-shower-cooldown') || {}).value
+  };
+  btn.disabled = true;
+  fetch('/api/tapo/shower', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Douche-detectie opgeslagen', 'ok');
+      renderTapo(d);
     }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
 }
 function saveTapoRoom(btn) {

@@ -456,6 +456,16 @@
     </div>
   </div>
   <div class='setting-row setting-row-wrap'>
+    <div class='setting-text'><div class='setting-title'>Douche-detectie</div><div class='setting-desc'>Wanneer de badkamersensor "er wordt gedoucht" meldt. Hogere drempels = minder vals alarm. <span id='tapo-shower-now'></span></div></div>
+    <div class='tapo-form'>
+      <span class='power-sub'>boven</span><input class='field field-xs' id='tapo-shower-high' type='number' min='50' max='100' step='1' inputmode='numeric' aria-label='Douche: boven dit percentage'><span class='power-sub'>%</span>
+      <span class='power-sub'>of stijging</span><input class='field field-xs' id='tapo-shower-rise' type='number' min='3' max='50' step='1' inputmode='numeric' aria-label='Douche: stijging in procentpunten'><span class='power-sub'>pp</span>
+      <span class='power-sub'>rustig onder</span><input class='field field-xs' id='tapo-shower-release' type='number' min='40' max='95' step='1' inputmode='numeric' aria-label='Douche: weer rustig onder percentage'><span class='power-sub'>%</span>
+      <span class='power-sub'>meld-pauze</span><input class='field field-xs' id='tapo-shower-cooldown' type='number' min='0' max='240' step='1' inputmode='numeric' aria-label='Douche: meldpauze in minuten'><span class='power-sub'>min</span>
+      <button class='btn btn-ghost' onclick='saveTapoShower(this)'>Opslaan</button>
+    </div>
+  </div>
+  <div class='setting-row setting-row-wrap'>
     <div class='setting-text'><div class='setting-title'>Meetdata exporteren</div><div class='setting-desc'>Download de ruwe metingen (vermogen + temp/vocht + wascycli) en de huidige drempelwaardes, om de triggers voor "wasmachine draait/klaar" en "douchen" mee af te laten stellen.</div></div>
     <div class='tapo-form'>
       <select class='field' id='tapo-export-days' aria-label='Periode voor export'><option value='1'>1 dag</option><option value='7' selected>7 dagen</option><option value='30'>30 dagen</option></select>
