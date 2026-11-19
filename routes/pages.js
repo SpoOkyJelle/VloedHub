@@ -43,8 +43,10 @@ module.exports = function(req, res) {
   if (req.method === "GET" && req.url.split("?")[0] === "/js/app.js") {
     var appDir = path.join(PUBLIC_DIR, "js", "app");
     var bundle = fs.readdirSync(appDir).filter(function(f) { return /\.js$/.test(f); }).sort()
-      .map(function(f) { return fs.readFileSync(path.join(appDir, f), "utf8"); }).join("");
-    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+      .map(function(f) { return fs.readFileSync(path.join(appDir, f), "utf8"); }).join("\n;\n");
+    // Niet cachen: de bundel wordt per request vers samengesteld, dus de browser moet altijd de
+    // nieuwste versie ophalen (anders blijft een oude app.js hangen na een wijziging).
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store" });
     res.end(bundle);
     return true;
   }
