@@ -52,12 +52,7 @@
 // ── Screen navigation ──
 var currentScreen = 0;
 var screenTrack = document.getElementById('screens-track');
-var screenLoaded = [true, false, false, false, false, false, false];
-// De volgorde waarin de schermen naast elkaar staan (en waarin je erdoorheen veegt). Samen (6) kwam er later bij
-// en staat direct na Home; de nummers van de andere schermen zijn daardoor gelijk gebleven.
-var SCREEN_ORDER = [0, 6, 1, 2, 3, 4, 5];
-var SCREEN_STEP = 100 / SCREEN_ORDER.length;
-function screenPos(n) { return SCREEN_ORDER.indexOf(n); }
+var screenLoaded = [true, false, false, false, false, false];
 
 function showScreen(n, btn, fromSwipe) {
   var changed = n !== currentScreen;
@@ -67,7 +62,7 @@ function showScreen(n, btn, fromSwipe) {
   screenTrack.style.transition = noMotion ? 'none' : fromSwipe
     ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)'
     : 'transform 0.38s cubic-bezier(0.4,0,0.2,1)';
-  screenTrack.style.transform = 'translateX(calc(-' + SCREEN_STEP + '% * ' + screenPos(n) + '))';
+  screenTrack.style.transform = 'translateX(calc(-' + (100/6) + '% * ' + n + '))';
   document.querySelectorAll('.nav-item[data-screen]').forEach(function(b) {
     var on = b.dataset.screen === String(n);
     b.classList.toggle('active', on);
@@ -82,9 +77,8 @@ function showScreen(n, btn, fromSwipe) {
     screenEl.classList.add('screen-entering');
     setTimeout(function() { screenEl.classList.remove('screen-entering'); }, 400);
   }
-  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadCameraStatus(); loadPresence(); loadUsers(); loadPartyStats(); }
+  if (n === 5) { loadDeviceStatus(); loadModules(); loadDiscordStatus(); loadHcStatus(); loadTadoStatus(); loadCameraStatus(); loadPresence(); loadPartyStats(); }
   if (n === 4) { loadFridge(); closeHomeLedPanels(); ledRenderAll(); }
-  if (n === 6) { loadEetpoll(); loadBoodschappen(); }
   var eb = document.getElementById('layout-edit-btn');
   if (eb) eb.classList.toggle('show', n === 0);
   if (n !== 0 && layoutEditMode) toggleLayoutEdit();
@@ -93,15 +87,15 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
-    if (n === 4) { refreshVaatwasser(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); lampsRefresh(); }
+    if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); lampsRefresh(); }
     if (n === 5) { refreshSettingsNames(); }
   }
 }
 
 // Schermen van uitgezette modules worden overgeslagen
-function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')) || (n === 6 && document.body.classList.contains('mod-off-samen')); }
+function screenHidden(n) { return (n === 2 && !moduleOn('gas')) || (n === 4 && document.body.classList.contains('mod-off-thuis')); }
 function nextScreen(dir) {
-  for (var p = screenPos(currentScreen) + dir; p >= 0 && p < SCREEN_ORDER.length; p += dir) { if (!screenHidden(SCREEN_ORDER[p])) return SCREEN_ORDER[p]; }
+  for (var n = currentScreen + dir; n >= 0 && n <= 5; n += dir) { if (!screenHidden(n)) return n; }
   return currentScreen;
 }
 
@@ -121,8 +115,8 @@ outerEl.addEventListener('touchmove', function(e) {
   var dy = e.touches[0].clientY - touchY0;
   if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) { isSwiping = true; }
   if (isSwiping) {
-    var pct = (screenPos(currentScreen) * SCREEN_STEP) - (dx / window.innerWidth * SCREEN_STEP);
-    pct = Math.max(0, Math.min(100 - SCREEN_STEP, pct));
+    var pct = (currentScreen * (100/6)) - (dx / window.innerWidth * (100/6));
+    pct = Math.max(0, Math.min(500/6, pct));
     screenTrack.style.transition = 'none';
     screenTrack.style.transform = 'translateX(-' + pct + '%)';
   }

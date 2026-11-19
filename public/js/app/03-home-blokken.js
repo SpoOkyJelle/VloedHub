@@ -31,7 +31,7 @@ var layoutEditMode = false;
 function layoutKey(screenIdx) { return screenIdx === 0 && KIOSK && layoutConfig.kiosk ? 'kiosk' : String(screenIdx); }
 
 // Blokken die bij een module horen verdwijnen als die module uit staat
-var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', eetpoll:'eetpoll', boodschappen:'boodschappen', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas' };
+var BLOCK_MODULE = { outages:'storingen', rain:'regen', traffic:'files', p2000:'p2000', ziggo:'ziggo', internet:'internet', camera:'camera',weather:'weather', afval:'afval', led_default:'lights', led_keuken:'lights', led_gang:'lights', led_tv_meubel:'lights', relay_gang:'lights', scenes:'lights', fridge:'fridge', temperature_grid:'temperature', chart_temp_mini:'temperature', esphome_grid:'esphome', wasmachine_quick:'wasmachine', gas_today:'gas', tado_heating:'tado' };
 function blockEnabled(type) { return !BLOCK_MODULE[type] || moduleOn(BLOCK_MODULE[type]); }
 
 var BLOCKS = {
@@ -141,14 +141,6 @@ var BLOCKS = {
     render:function(el){el.innerHTML='<div class="card insight-card cam-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-bell"></i>Deurbel</span><span class="cam-pill" id="blk-cam-pill"><i></i><span>Verbinden</span></span></div><div class="cam-frame" id="blk-cam-frame" role="button" tabindex="0" aria-label="Beeld van de deurbel vergroten" onclick="toggleCamFull()"><img id="blk-cam-img" alt="Beeld van de deurbel" hidden><div class="cam-msg" id="blk-cam-msg"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Laden…</span></div><div class="cam-bar"><span id="blk-cam-time"></span><i class="fa-solid fa-expand"></i></div></div><div class="cam-visits" id="blk-cam-visits"></div></div>';},
     refresh:function(){loadCamera();loadRings();}
   },
-  'eetpoll': {label:'Wie eet mee',icon:'fa-utensils',dynamic:true,
-    render:function(el){var rows='';for(var i=0;i<7;i++)rows+='<div class="eet-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card eet-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-utensils"></i>Wie eet mee</span><span class="eet-week"></span></div><div class="eet-body">'+rows+'</div></div>';},
-    refresh:function(){loadEetpoll();}
-  },
-  'boodschappen': {label:'Boodschappen',icon:'fa-basket-shopping',dynamic:true,
-    render:function(el){el.innerHTML='<div class="card bood-card"><div class="chart-header"><span class="chart-title"><i class="fa-solid fa-basket-shopping"></i>Boodschappen</span><span class="eet-week bood-count"></span></div><form class="bood-form" onsubmit="boodAdd(this);return false"><input class="field" maxlength="200" autocomplete="off" enterkeyhint="send" aria-label="Boodschap toevoegen" placeholder="Melk, brood, eieren…"><button class="btn btn-primary" aria-label="Toevoegen"><i class="fa-solid fa-plus"></i></button></form><div class="bood-list"><div class="bood-row"><span class="skel-line grow"></span></div><div class="bood-row"><span class="skel-line grow"></span></div></div></div>';},
-    refresh:function(){loadBoodschappen();}
-  },
   'afval': {label:'Afvalkalender',icon:'fa-trash-can',dynamic:true,
     render:function(el){var rows='';for(var i=0;i<4;i++)rows+='<div class="afval-row"><span class="skel-line grow"></span></div>';el.innerHTML='<div class="card afval-card"><div class="chart-title">Afvalkalender</div><div id="blk-afval">'+rows+'</div></div>';},
     refresh:function(){loadAfval();}
@@ -164,6 +156,11 @@ var BLOCKS = {
   'chart_temp_mini': {label:'Temperatuurgrafiek',icon:'fa-temperature-half',dynamic:true,
     render:function(el){el.innerHTML='<div class="chart-card compact"><div class="chart-header"><span class="chart-title">Temperatuur vandaag</span></div><div class="chart-wrap h-120"><canvas id="blk-chart-temp"></canvas></div></div>';},
     refresh:function(){fetch('/api/temperature/history?range=day').then(function(r){return r.json();}).then(function(rows){var ctx=document.getElementById('blk-chart-temp');if(!ctx)return;if(window._blkChartTemp)window._blkChartTemp.destroy();var rooms={};rows.forEach(function(r){if(!rooms[r.room])rooms[r.room]=[];rooms[r.room].push({x:r.period.slice(11,16),y:r.avg_temp});});var colors=['#38BDF8','#4ADE80','#FBBF24','#F87171','#8DB255'];var datasets=Object.keys(rooms).slice(0,5).map(function(room,i){return{label:room,data:rooms[room].map(function(p){return p.y;}),borderColor:colors[i],borderWidth:1.5,pointRadius:0,tension:0.3,fill:false};});var allLabels=rows.filter(function(r,i,a){return a.findIndex(function(x){return x.period===r.period;})==i;}).map(function(r){return r.period.slice(11,16);});window._blkChartTemp=new Chart(ctx,{type:'line',data:{labels:allLabels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});}).catch(function(){});}
+  },
+  // tado° X: huidige kamertemperaturen op Home. Leest de server-cache (/api/tado), dus geen extra tado-API-verzoeken.
+  'tado_heating': {label:'Verwarming (tado)',icon:'fa-temperature-arrow-up',dynamic:true,
+    render:function(el){el.innerHTML='<div class="section-title">Verwarming</div><div class="temp-grid" id="dyn-tado-grid"></div>';},
+    refresh:function(){fetch('/api/tado').then(function(r){return r.json();}).then(function(d){var g=document.getElementById('dyn-tado-grid');if(!g)return;var rooms=(d.zones||[]).filter(function(z){return z.view!=='thuis'&&z.view!=='hidden';});if(!d.linked||!rooms.length){g.innerHTML='<div class="temp-card"><div class="temp-room">'+(d.linked?'Geen kamers hier':'Niet gekoppeld')+'</div></div>';return;}g.innerHTML=rooms.map(function(z){var sub=z.power==='OFF'?'uit':(z.setpoint!=null?'→ '+nlNum(z.setpoint,z.setpoint%1?1:0)+'°':'');if(z.online&&z.heatingPower>0)sub+=(sub?' · ':'')+'🔥 '+Math.round(z.heatingPower)+'%';var icon=!z.online?'fa-plug-circle-xmark':z.heatingPower>0?'fa-fire':'fa-temperature-half';return '<div class="temp-card"><i class="fa-solid '+icon+'"></i><div class="temp-room">'+escHtml(z.name)+'</div><div class="temp-value">'+(z.temperature!=null?nlNum(z.temperature,1):'—')+' °C</div><div class="temp-age">'+sub+'</div></div>';}).join('');}).catch(function(){});}
   }
 };
 

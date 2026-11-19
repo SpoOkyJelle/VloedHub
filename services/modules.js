@@ -24,6 +24,7 @@ var MODULES = [
   { key: "esphome",     label: "ESPHome-sensoren",       hint: "Sensorkaart op Thuis" },
   { key: "wasmachine",  label: "Wasmachine",             hint: "Wasmachinekaart en de melding dat de was klaar is" },
   { key: "vaatwasser",  label: "Vaatwasser",             hint: "Vaatwasserkaart (Home Connect) en de melding dat de vaat klaar is" },
+  { key: "tado",        label: "Verwarming (tado°)",     hint: "Thermostaatkaart op Thuis met bediening, en meldingen bij offline of vorst" },
   { key: "discord",     label: "Discord-meldingen",      hint: "Alle berichten naar Discord: herinneringen, offline-meldingen en flows" }
 ];
 

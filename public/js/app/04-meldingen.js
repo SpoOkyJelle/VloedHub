@@ -19,7 +19,7 @@ setInterval(loadWarnings, 15 * 60 * 1000);
 
 // ── Stroomstoringen ──
 // ── Meldingen ──
-var MELDING_ICONS = { weer:'fa-cloud-bolt', storing:'fa-bolt', apparaat:'fa-plug-circle-xmark', wasmachine:'fa-shirt', vaatwasser:'fa-sink', afval:'fa-trash-can', eten:'fa-utensils', deurbel:'fa-bell', nlalert:'fa-tower-broadcast', p2000:'fa-truck-medical', ziggo:'fa-wifi', flow:'fa-diagram-project', systeem:'fa-server' };
+var MELDING_ICONS = { weer:'fa-cloud-bolt', storing:'fa-bolt', apparaat:'fa-plug-circle-xmark', wasmachine:'fa-shirt', vaatwasser:'fa-sink', afval:'fa-trash-can', deurbel:'fa-bell', nlalert:'fa-tower-broadcast', p2000:'fa-truck-medical', ziggo:'fa-wifi', flow:'fa-diagram-project', systeem:'fa-server', tado:'fa-temperature-half' };
 var meldingenAll = false, meldingenClearArmed = false;
 // Een bericht is opgemaakt voor Discord ("⚠️ **Titel** — rest"): hier wordt dat een titel, een ondertitel en eventueel een link
 function meldingParts(msg) {
@@ -32,8 +32,8 @@ function meldingParts(msg) {
 }
 function renderMeldingen(el, rows, inPanel) {
   var shown = inPanel || meldingenAll ? rows : rows.slice(0, 5);
-  function line(icon, title, sub, when, url, cls, personal) {
-    return '<div class="outage-line ' + cls + '"><i class="fa-solid ' + (MELDING_ICONS[icon] || 'fa-bell') + '"></i><div><div class="outage-text">' + escHtml(title) + (personal ? '<span class="presence-type">Voor jou</span>' : '') + '</div>' +
+  function line(icon, title, sub, when, url, cls) {
+    return '<div class="outage-line ' + cls + '"><i class="fa-solid ' + (MELDING_ICONS[icon] || 'fa-bell') + '"></i><div><div class="outage-text">' + escHtml(title) + '</div>' +
       (sub ? '<div class="outage-sub meld-sub">' + escHtml(sub) + '</div>' : '') + '</div><span class="meld-time">' + when + '</span>' +
       (url ? '<a href="' + escHtml(url) + '" target="_blank" rel="noopener" class="outage-link" aria-label="Meer informatie"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>' : '') + '</div>';
   }
@@ -44,14 +44,13 @@ function renderMeldingen(el, rows, inPanel) {
   if (!rows.length && !meldingenActive.length) html += '<div class="outage-line muted"><i class="fa-solid fa-bell-slash"></i><div><div class="outage-text">Nog geen meldingen</div><div class="outage-sub">Weerwaarschuwingen, storingen, apparaten, wasmachine, vaatwasser en flows verschijnen hier</div></div></div>';
   shown.forEach(function(r) {
     var p = meldingParts(r.message);
-    html += line(r.category, p.title, p.sub, shortWhen(r.created_at), p.url, r.id > meldingenSeen ? 'meld-new' : '', r.personal);
+    html += line(r.category, p.title, p.sub, shortWhen(r.created_at), p.url, r.id > meldingenSeen ? 'meld-new' : '');
   });
   el.innerHTML = html;
 }
-// Tot welke melding je het paneel hebt gezien; alles daarna telt mee in het bolletje op de bel. Met een eigen account
-// onthoudt de server dat (dan klopt het op al je apparaten), anders dit apparaat.
+// Tot welke melding je het paneel hebt gezien; alles daarna telt mee in het bolletje op de bel
 var meldingenSeen = 0, meldingenRows = [], meldingenActive = [];
-if (!ME) try { meldingenSeen = parseInt(localStorage.getItem('meldingenSeen'), 10) || 0; } catch (e) {}
+try { meldingenSeen = parseInt(localStorage.getItem('meldingenSeen'), 10) || 0; } catch (e) {}
 function meldPanelOpen() { return document.getElementById('meld-panel').classList.contains('open'); }
 function showMeldBadge() {
   var unread = meldingenRows.filter(function(r) { return r.id > meldingenSeen; }).length;
@@ -63,8 +62,7 @@ function loadMeldingen() {
     fetch('/api/meldingen?limit=50').then(function(r){return r.json();}),
     fetch('/api/meldingen/actief').then(function(r){return r.json();}).catch(function(){ return []; })
   ]).then(function(res) {
-    var rows = res[0].rows || [];
-    if (res[0].account) meldingenSeen = Math.max(meldingenSeen, res[0].seen || 0);
+    var rows = res[0];
     meldingenRows = rows;
     meldingenActive = Array.isArray(res[1]) ? res[1] : [];
     meldingenClearArmed = false;
@@ -90,11 +88,7 @@ function closeMeldPanel() {
   if (!meldPanelOpen()) return;
   document.getElementById('meld-panel').classList.remove('open');
   // bij het sluiten geldt alles als gezien
-  if (meldingenRows.length && meldingenRows[0].id > meldingenSeen) {
-    meldingenSeen = meldingenRows[0].id;
-    if (ME) fetch('/api/meldingen/seen', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: meldingenSeen })}).catch(function(){});
-    else try { localStorage.setItem('meldingenSeen', meldingenSeen); } catch (e) {}
-  }
+  if (meldingenRows.length) { meldingenSeen = meldingenRows[0].id; try { localStorage.setItem('meldingenSeen', meldingenSeen); } catch (e) {} }
   showMeldBadge();
 }
 document.addEventListener('click', function(e) { if (meldPanelOpen() && !e.target.closest('#meld-panel')) closeMeldPanel(); });
