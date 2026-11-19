@@ -210,7 +210,7 @@ function loadGasMonthly() {
 setInterval(function() {
   if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshComparison(); refreshSafety(); }
   if (currentScreen === 2) { refreshGasStats(); loadGasDaily(); }
-  if (currentScreen === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); lampsRefresh(); }
+  if (currentScreen === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); var tb = document.querySelector('[data-temprange].active'); if (tb) loadTempChart(tb.dataset.temprange, tb); var wp = document.querySelector('[data-washpowerrange].active'); if (wp) loadWashPowerChart(wp.dataset.washpowerrange, wp); lampsRefresh(); }
   if (currentScreen === 5) { refreshSettingsNames(); }
 }, 60000);
 setInterval(function() {

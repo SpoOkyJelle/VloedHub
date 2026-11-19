@@ -125,6 +125,7 @@ async function readPlug(ip) {
     updated: Date.now()
   };
   lastRaw.plug = watts + " W";
+  logging.logTapoPower(watts, "tapo-p410m", function() {});
   evaluateWash(watts);
 }
 
@@ -299,13 +300,23 @@ function getStatus() {
   };
 }
 
+// Huidige detectie-drempels (voor de export, zodat je ze later kunt laten bijstellen)
+function getTuning() {
+  return {
+    roomName: roomName(),
+    pollMinutes: load().pollMinutes != null ? load().pollMinutes : DEFAULT_POLL_MIN,
+    wash: { run_w: WASH_RUN_W, done_w: WASH_DONE_W, done_min: WASH_DONE_MIN, autoclear_min: WASH_AUTOCLEAR_MIN },
+    shower: { high: SHOWER_HIGH, rise: SHOWER_RISE, release: SHOWER_RELEASE, cooldown_min: Math.round(SHOWER_COOLDOWN_MS / 60000) }
+  };
+}
+
 function start() {
   var cfg = load();
   if (cfg.email && cfg.password && (cfg.plugIp || cfg.hubIp)) poll();
 }
 
 module.exports = {
-  start: start, getStatus: getStatus, refreshNow: refreshNow,
+  start: start, getStatus: getStatus, getTuning: getTuning, refreshNow: refreshNow,
   setCredentials: setCredentials, setDevices: setDevices, unlink: unlink,
   setPollMinutes: setPollMinutes, setRoomName: setRoomName
 };

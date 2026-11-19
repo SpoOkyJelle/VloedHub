@@ -151,6 +151,25 @@ function refreshTemperature() { fetch('/api/temperature/latest').then(function(r
 }).catch(function(){}); }
 var chartTemp = null;
 function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); }), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID } } } } }); }).catch(function(){}); }
+var chartWashPower = null;
+function loadWashPowerChart(range, btn) {
+  if (!document.getElementById('chart-wash-power')) return;
+  document.querySelectorAll('[data-washpowerrange]').forEach(function(t){ t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  fetch('/api/tapo/power-history?range=' + range).then(function(r){return r.json();}).then(function(rows) {
+    var labels = rows.map(function(r) {
+      var p = r.period || '';
+      return range === 'day' ? p.slice(11, 16) : range === 'week' ? (p.slice(8, 10) + '/' + p.slice(5, 7) + ' ' + p.slice(11, 13) + 'u') : (p.slice(8, 10) + '-' + p.slice(5, 7));
+    });
+    var data = rows.map(function(r){ return r.watts != null ? Number(r.watts).toFixed(1) : null; });
+    if (chartWashPower) chartWashPower.destroy();
+    chartWashPower = new Chart(document.getElementById('chart-wash-power'), {
+      type: 'line',
+      data: { labels: labels, datasets: [{ label: 'Vermogen (W)', data: data, borderColor: '#8DB255', backgroundColor: '#8DB25533', borderWidth: 2, tension: 0.2, pointRadius: 0, fill: true }] },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v){ return v + ' W'; } }, grid: { color: CHART_GRID } } } }
+    });
+  }).catch(function(){});
+}
 function refreshTapoCard() {
   if (!document.getElementById('tapo-card') && !document.getElementById('wash-power')) return;
   fetch('/api/tapo').then(function(r){return r.json();}).then(function(d) {

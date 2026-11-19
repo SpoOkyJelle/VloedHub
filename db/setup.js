@@ -65,6 +65,17 @@ db.serialize(function() {
   // Luchtvochtigheid komt erbij (o.a. de Tapo T310 in de badkamer); oudere rijen hebben hem niet
   db.run("ALTER TABLE temperature_readings ADD COLUMN humidity REAL", function() {});
 
+  // Vermogenshistorie van de Tapo-stekker (P410M) per poll, voor de wasmachine-trend
+  db.run(
+    "CREATE TABLE IF NOT EXISTS tapo_power (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  received_at TEXT NOT NULL," +
+    "  device TEXT," +
+    "  watts REAL" +
+    ")"
+  );
+  db.run("CREATE INDEX IF NOT EXISTS idx_tapo_power_received ON tapo_power (received_at)", function() {});
+
   db.run(
     "CREATE TABLE IF NOT EXISTS esphome_readings (" +
     "  id INTEGER PRIMARY KEY AUTOINCREMENT," +

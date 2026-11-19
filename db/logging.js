@@ -84,6 +84,16 @@ function logWashCycle(data, callback) {
   );
 }
 
+function logTapoPower(watts, device, callback) {
+  if (typeof watts !== "number" || !isFinite(watts)) { if (callback) callback(new Error("invalid watts")); return; }
+  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  db.run(
+    "INSERT INTO tapo_power (received_at, device, watts) VALUES (?,?,?)",
+    [received_at, device || null, watts],
+    function(err) { if (callback) callback(err, received_at); }
+  );
+}
+
 function logEsphomeReadings(data, callback) {
   var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
   var sensors = Array.isArray(data.sensors) ? data.sensors : [];
@@ -104,4 +114,4 @@ function logEsphomeReadings(data, callback) {
   });
 }
 
-module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle, logEsphomeReadings: logEsphomeReadings };
+module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle, logTapoPower: logTapoPower, logEsphomeReadings: logEsphomeReadings };

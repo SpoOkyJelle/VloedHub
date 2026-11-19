@@ -455,6 +455,11 @@ function refreshTapo() {
   fetch('/api/tapo').then(function(r){return r.json();}).then(renderTapo).catch(function(){});
 }
 function loadTapoStatus() { refreshTapo(); }
+function exportTapoData() {
+  var sel = document.getElementById('tapo-export-days');
+  var days = sel ? sel.value : '7';
+  window.location.href = '/api/tapo/export?days=' + encodeURIComponent(days);
+}
 function saveTapoCreds(btn) {
   var email = document.getElementById('tapo-email'), pw = document.getElementById('tapo-password');
   if (!email.value || !pw.value) { toast('Vul je Tapo e-mail en wachtwoord in', 'error'); return; }
