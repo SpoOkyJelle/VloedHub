@@ -38,6 +38,11 @@ function logReading(data, callback) {
   );
 }
 
+// STANDAARD voor klimaatsensoren (temperatuur + luchtvochtigheid): elke bron — ESP32, Tapo T310, tado,
+// en wat er nog bij komt — logt hier met { device, readings: [{ room, temp_c, humidity }] }. Zo'n sensor
+// verschijnt dan vanzelf in de uitlezing (/api/temperature/latest) én in de temp- én vocht-grafiek
+// (/api/temperature/history → loadTempChart/loadHumChart). Geef humidity mee als de sensor het heeft; laat
+// hem weg (of null) als niet. Niks anders nodig om een nieuwe sensor te laten loggen én graferen.
 function logTemperatureReadings(data, callback) {
   var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
   var readings = Array.isArray(data.readings) ? data.readings : [];

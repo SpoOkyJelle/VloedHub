@@ -146,11 +146,49 @@ function refreshTemperature() { fetch('/api/temperature/latest').then(function(r
     var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000);
     var ageText = isNaN(age) ? '' : age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden';
     return '<div class="esp-row"><span class="esp-name"><span class="esp-room">' + r.room + '</span><span class="esp-sub">' + ageText + '</span></span>' +
-      '<span class="esp-val">' + (r.temp_c != null ? nlNum(r.temp_c, 1) : '—') + ' °C</span></div>';
+      '<span class="esp-val">' + (r.temp_c != null ? nlNum(r.temp_c, 1) + ' °C' : '—') +
+      (r.humidity != null ? '<span class="esp-sub"> · ' + r.humidity + ' %</span>' : '') + '</span></div>';
   }).join('') + '</div>';
 }).catch(function(){}); }
-var chartTemp = null;
-function loadTempChart(range, btn) { document.querySelectorAll('[data-temprange]').forEach(function(t) { t.classList.remove('active'); }); if (btn) btn.classList.add('active'); fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) { var periods = []; var byRoom = {}; rows.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); if (!byRoom[r.room]) byRoom[r.room] = {}; byRoom[r.room][r.period] = r.avg_temp; }); periods.sort(); var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171']; var rooms = Object.keys(byRoom); var datasets = rooms.map(function(room, i) { var color = palette[i % palette.length]; return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(1) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false }; }); if (chartTemp) chartTemp.destroy(); chartTemp = new Chart(document.getElementById('chart-temp'), { type: 'line', data: { labels: periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); }), datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID } } } } }); }).catch(function(){}); }
+// Eén grafiek-bouwer voor alle klimaatsensoren die naar temperature_readings loggen (ESP32, Tapo T310,
+// tado, ...). metric 'temp' of 'hum' kiest de reeks; elke kamer wordt één lijn. Een nieuwe sensor hoeft
+// enkel te loggen — hij verschijnt dan vanzelf in beide grafieken. Zie ook db/logging.js.
+var chartTemp = null, chartHum = null;
+var CLIMATE_METRICS = {
+  temp: { field: 'avg_temp', unit: '°C', decimals: 1, canvas: 'chart-temp', attr: 'temprange' },
+  hum:  { field: 'avg_humidity', unit: '%', decimals: 0, canvas: 'chart-hum', attr: 'humrange' }
+};
+function loadTempChart(range, btn) { loadClimateChart('temp', range, btn); }
+function loadHumChart(range, btn) { loadClimateChart('hum', range, btn); }
+function loadClimateChart(metric, range, btn) {
+  var m = CLIMATE_METRICS[metric];
+  if (!m || !document.getElementById(m.canvas)) return;
+  document.querySelectorAll('[data-' + m.attr + ']').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) {
+    var periods = []; var byRoom = {};
+    rows.forEach(function(r) {
+      if (r[m.field] == null) return; // kamers zonder deze meting (bv. geen vochtsensor) overslaan
+      if (periods.indexOf(r.period) === -1) periods.push(r.period);
+      if (!byRoom[r.room]) byRoom[r.room] = {};
+      byRoom[r.room][r.period] = r[m.field];
+    });
+    periods.sort();
+    var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171'];
+    var datasets = Object.keys(byRoom).map(function(room, i) {
+      var color = palette[i % palette.length];
+      return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(m.decimals) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true };
+    });
+    var labels = periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); });
+    if (metric === 'temp') { if (chartTemp) chartTemp.destroy(); } else { if (chartHum) chartHum.destroy(); }
+    var chart = new Chart(document.getElementById(m.canvas), {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + c.parsed.y + ' ' + m.unit; } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v) { return v + ' ' + m.unit; } }, grid: { color: CHART_GRID } } } }
+    });
+    if (metric === 'temp') chartTemp = chart; else chartHum = chart;
+  }).catch(function(){});
+}
 var chartWashPower = null;
 function loadWashPowerChart(range, btn) {
   if (!document.getElementById('chart-wash-power')) return;

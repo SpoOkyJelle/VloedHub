@@ -35,7 +35,7 @@ module.exports = function(req, res) {
 
   if (req.method === "GET" && req.url === "/api/temperature/latest") {
     db.all(
-      "SELECT room, temp_c, device, received_at FROM temperature_readings" +
+      "SELECT room, temp_c, humidity, device, received_at FROM temperature_readings" +
       " WHERE id IN (SELECT MAX(id) FROM temperature_readings GROUP BY room)" +
       " ORDER BY room",
       function(err, rows) {
@@ -61,7 +61,7 @@ module.exports = function(req, res) {
     }
 
     db.all(
-      "SELECT strftime(" + tfmt + ", received_at) as period, room, AVG(temp_c) as avg_temp" +
+      "SELECT strftime(" + tfmt + ", received_at) as period, room, AVG(temp_c) as avg_temp, AVG(humidity) as avg_humidity" +
       " FROM temperature_readings" +
       " WHERE " + twhere +
       " GROUP BY period, room ORDER BY period ASC",
