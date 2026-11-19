@@ -92,6 +92,34 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Hub-bel laten klinken (testknop): { tone?, volume?, duration? }
+  if (req.method === "POST" && req.url === "/api/tapo/alarm") {
+    readBody(req, function(data) {
+      tapo.playAlarm(data || {}, function(err) {
+        if (err) return json(res, 400, { ok: false, error: err });
+        json(res, 200, { ok: true });
+      });
+    });
+    return true;
+  }
+
+  if (req.method === "POST" && req.url === "/api/tapo/alarm/stop") {
+    tapo.stopAlarm(function(err) {
+      if (err) return json(res, 400, { ok: false, error: err });
+      json(res, 200, { ok: true });
+    });
+    return true;
+  }
+
+  // Welke tonen de hub kent (handig om te zien wat beschikbaar is)
+  if (req.method === "GET" && req.url === "/api/tapo/alarm/tones") {
+    tapo.getAlarmTones(function(err, tones) {
+      if (err) return json(res, 400, { ok: false, error: err });
+      json(res, 200, { ok: true, tones: tones });
+    });
+    return true;
+  }
+
   if (req.method === "POST" && req.url === "/api/tapo/unlink") {
     tapo.unlink();
     json(res, 200, Object.assign({ ok: true }, tapo.getStatus()));

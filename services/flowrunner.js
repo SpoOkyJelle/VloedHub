@@ -12,6 +12,7 @@ var scenes  = require('../routes/scenes');
 var costs   = require('../routes/costs');
 var auth    = require('./auth');
 var homeconnect = require('./homeconnect');
+var tapo    = require('./tapo');
 var http    = require('http');
 var https   = require('https');
 
@@ -320,6 +321,17 @@ function executeNode(node, ctx) {
     scenes.run(sceneId);
     console.log('[Flow] Scène:', sceneId);
     return { action: 'scene', scene: sceneId };
+  }
+
+  if (node.name === 'tapo_bell') {
+    var bellTone = node.data.tone || '';
+    var bellVol  = node.data.volume || 'normal';
+    var bellDur  = Math.max(1, Math.min(300, parseInt(node.data.duration) || 5));
+    tapo.playAlarm({ tone: bellTone, volume: bellVol, duration: bellDur }, function(err) {
+      if (err) console.error('[Flow] Tapo-bel fout:', err);
+    });
+    console.log('[Flow] Tapo-bel:', bellTone || '(standaard)', bellVol, bellDur + 's');
+    return { action: 'tapo_bell', tone: bellTone, volume: bellVol, duration: bellDur };
   }
 
   if (node.name === 'mqtt_publish') {

@@ -300,6 +300,34 @@ function getStatus() {
   };
 }
 
+// ── Hub-bel/sirene (H100) ─────────────────────────────────────────────────
+// De H100 heeft een ingebouwde sirene met tonen (deurbel, alarm, enz.). Bruikbaar als testknop
+// en als flow-actie. tone/volume/duration zijn optioneel; leeg = standaard van de hub.
+function playAlarm(opts, cb) {
+  opts = opts || {};
+  var cfg = load();
+  if (!cfg.email || !cfg.password) return cb && cb("niet gekoppeld");
+  if (!cfg.hubIp) return cb && cb("geen hub-IP ingesteld");
+  var dur = opts.duration != null && isFinite(Number(opts.duration)) ? Math.max(1, Math.min(300, Number(opts.duration))) : undefined;
+  withDevice("hub", cfg.hubIp, function(d) {
+    return d.playAlarm(opts.tone || undefined, opts.volume || undefined, dur);
+  }).then(function() { cb && cb(null); }).catch(function(e) { cb && cb(e.message); });
+}
+
+function stopAlarm(cb) {
+  var cfg = load();
+  if (!cfg.hubIp) return cb && cb("geen hub-IP ingesteld");
+  withDevice("hub", cfg.hubIp, function(d) { return d.stopAlarm(); })
+    .then(function() { cb && cb(null); }).catch(function(e) { cb && cb(e.message); });
+}
+
+function getAlarmTones(cb) {
+  var cfg = load();
+  if (!cfg.hubIp) return cb && cb("geen hub-IP ingesteld", null);
+  withDevice("hub", cfg.hubIp, function(d) { return d.getAlarmTones(); })
+    .then(function(r) { cb && cb(null, r); }).catch(function(e) { cb && cb(e.message, null); });
+}
+
 // Huidige detectie-drempels (voor de export, zodat je ze later kunt laten bijstellen)
 function getTuning() {
   return {
@@ -318,5 +346,6 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, getTuning: getTuning, refreshNow: refreshNow,
   setCredentials: setCredentials, setDevices: setDevices, unlink: unlink,
-  setPollMinutes: setPollMinutes, setRoomName: setRoomName
+  setPollMinutes: setPollMinutes, setRoomName: setRoomName,
+  playAlarm: playAlarm, stopAlarm: stopAlarm, getAlarmTones: getAlarmTones
 };

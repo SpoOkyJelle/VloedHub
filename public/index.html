@@ -454,6 +454,16 @@
       <button class='btn btn-ghost' onclick='exportTapoData()'>Exporteren</button>
     </div>
   </div>
+  <div class='setting-row setting-row-wrap'>
+    <div class='setting-text'><div class='setting-title'>Hub-bel testen</div><div class='setting-desc'>Laat de ingebouwde sirene van de H100-hub klinken. Dezelfde bel is als actie beschikbaar in Flows. Vereist een ingesteld hub-IP.</div></div>
+    <div class='tapo-form'>
+      <select class='field' id='tapo-bell-tone' aria-label='Toon'><option value=''>Standaard</option><option value='Doorbell Ring 1'>Deurbel 1</option><option value='Doorbell Ring 2'>Deurbel 2</option><option value='Doorbell Ring 3'>Deurbel 3</option><option value='Doorbell Ring 4'>Deurbel 4</option><option value='Doorbell Ring 5'>Deurbel 5</option><option value='Doorbell Ring 6'>Deurbel 6</option><option value='Doorbell Ring 7'>Deurbel 7</option><option value='Doorbell Ring 8'>Deurbel 8</option><option value='Doorbell Ring 9'>Deurbel 9</option><option value='Doorbell Ring 10'>Deurbel 10</option><option value='Phone Ring'>Telefoon</option><option value='Alarm 1'>Alarm 1</option><option value='Alarm 2'>Alarm 2</option><option value='Alarm 3'>Alarm 3</option><option value='Alarm 4'>Alarm 4</option><option value='Alarm 5'>Alarm 5</option><option value='Dripping Tap'>Druppelende kraan</option><option value='Connection 1'>Verbinding 1</option><option value='Connection 2'>Verbinding 2</option></select>
+      <select class='field' id='tapo-bell-volume' aria-label='Volume'><option value='low'>Zacht</option><option value='normal' selected>Normaal</option><option value='high'>Hard</option></select>
+      <input class='field' id='tapo-bell-duration' type='number' min='1' max='300' value='5' aria-label='Duur in seconden'>
+      <button class='btn btn-ghost' onclick='testTapoBell(this)'>Laat klinken</button>
+      <button class='btn btn-quiet' onclick='stopTapoBell(this)'>Stop</button>
+    </div>
+  </div>
 </div>
 </div>
 <div class='set-section' data-module='afval'>

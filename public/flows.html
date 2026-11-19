@@ -271,6 +271,10 @@
             <i class="fa-solid fa-tower-broadcast" style="color:var(--green)"></i>
             <div><div class="palette-node-name">MQTT publiceer</div><div class="palette-node-desc">Stuur bericht naar topic</div></div>
           </div>
+          <div class="palette-node" draggable="true" data-node="tapo_bell" data-tooltip="Laat de ingebouwde sirene/bel van de Tapo H100-hub klinken (kies toon, volume en duur)." ondragstart="drag(event)">
+            <i class="fa-solid fa-bell" style="color:var(--accent)"></i>
+            <div><div class="palette-node-name">Tapo hub-bel</div><div class="palette-node-desc">Laat de hub-sirene klinken</div></div>
+          </div>
 
           <div class="palette-group-label" data-group="acties-integraties">Acties — Integraties<i class="fa-solid fa-chevron-down chevron"></i></div>
           <div class="palette-node" draggable="true" data-node="webhook" data-tooltip="Stuur een HTTP POST naar een externe URL met optionele body." ondragstart="drag(event)">
@@ -684,7 +688,34 @@
         f('Topic','<input type="text" df-topic>') +
         f('Bericht','<input type="text" df-message>') +
         f('Gebruiker','<input type="text" df-username>') +
-        f('Wachtwoord','<input type="password" df-password>'))
+        f('Wachtwoord','<input type="password" df-password>')),
+
+    tapo_bell: t('df-node-title--notify','fa-bell','Tapo hub-bel') +
+      b(f('Toon','<select df-tone>' +
+          '<option value="">Standaard</option>' +
+          '<option value="Doorbell Ring 1">Deurbel 1</option>' +
+          '<option value="Doorbell Ring 2">Deurbel 2</option>' +
+          '<option value="Doorbell Ring 3">Deurbel 3</option>' +
+          '<option value="Doorbell Ring 4">Deurbel 4</option>' +
+          '<option value="Doorbell Ring 5">Deurbel 5</option>' +
+          '<option value="Doorbell Ring 6">Deurbel 6</option>' +
+          '<option value="Doorbell Ring 7">Deurbel 7</option>' +
+          '<option value="Doorbell Ring 8">Deurbel 8</option>' +
+          '<option value="Doorbell Ring 9">Deurbel 9</option>' +
+          '<option value="Doorbell Ring 10">Deurbel 10</option>' +
+          '<option value="Phone Ring">Telefoon</option>' +
+          '<option value="Alarm 1">Alarm 1</option>' +
+          '<option value="Alarm 2">Alarm 2</option>' +
+          '<option value="Alarm 3">Alarm 3</option>' +
+          '<option value="Alarm 4">Alarm 4</option>' +
+          '<option value="Alarm 5">Alarm 5</option>' +
+          '<option value="Dripping Tap">Druppelende kraan</option>' +
+          '<option value="Connection 1">Verbinding 1</option>' +
+          '<option value="Connection 2">Verbinding 2</option>' +
+          '</select>') +
+        f('Volume','<select df-volume><option value="low">Zacht</option><option value="normal">Normaal</option><option value="high">Hard</option></select>') +
+        f('Duur (sec)','<input type="number" df-duration min="1" max="300" value="5">') +
+        hint('Laat de sirene van de H100-hub klinken. Vereist dat het hub-IP is ingesteld bij Instellingen → Tapo.'))
   };
 
   // ── HTML builder helpers ───────────────────────────────────────────────
@@ -740,12 +771,13 @@
     wake_light:      { device: 'default', brightness: '200', minutes: '30' },
     flash:           { device: 'default', times: '3', interval_ms: '500' },
     telegram:        { token: '', chat_id: '', message: 'Flow getriggerd!' },
-    mqtt_publish:    { broker: 'mqtt://localhost:1883', topic: '', message: '', username: '', password: '' }
+    mqtt_publish:    { broker: 'mqtt://localhost:1883', topic: '', message: '', username: '', password: '' },
+    tapo_bell:       { tone: '', volume: 'normal', duration: '5' }
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1 };
-  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0 };
+  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1 };
+  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));
@@ -1661,7 +1693,8 @@
     { group: 'Acties — Meldingen', nodes: [
       { type:'notify',          icon:'fa-bell',                     color:'var(--accent)', name:'Discord melding',     desc:'Stuur een bericht' },
       { type:'telegram',        icon:'fa-paper-plane',              color:'var(--blue)',   name:'Telegram',            desc:'Stuur een Telegram bericht' },
-      { type:'mqtt_publish',    icon:'fa-tower-broadcast',          color:'var(--green)',  name:'MQTT publiceer',      desc:'Stuur bericht naar topic' }
+      { type:'mqtt_publish',    icon:'fa-tower-broadcast',          color:'var(--green)',  name:'MQTT publiceer',      desc:'Stuur bericht naar topic' },
+      { type:'tapo_bell',       icon:'fa-bell',                     color:'var(--accent)', name:'Tapo hub-bel',        desc:'Laat de hub-sirene klinken' }
     ]},
     { group: 'Acties — Integraties', nodes: [
       { type:'webhook',         icon:'fa-globe',                    color:'var(--green)',  name:'Webhook',             desc:'HTTP POST naar externe URL' }
@@ -1771,6 +1804,17 @@
     temp:         { label: 'Drempel (°C)',         type: 'number', min: -30, max: 60, step: 0.5 },
     probability:  { label: 'Drempel (%)',          type: 'number', min: 0, max: 100, step: 5 },
     seconds:      { label: 'Seconden',            type: 'number', min: 1, max: 3600, step: 1 },
+    tone:         { label: 'Toon',                type: 'select', options: [
+      ['','Standaard'],
+      ['Doorbell Ring 1','Deurbel 1'],['Doorbell Ring 2','Deurbel 2'],['Doorbell Ring 3','Deurbel 3'],
+      ['Doorbell Ring 4','Deurbel 4'],['Doorbell Ring 5','Deurbel 5'],['Doorbell Ring 6','Deurbel 6'],
+      ['Doorbell Ring 7','Deurbel 7'],['Doorbell Ring 8','Deurbel 8'],['Doorbell Ring 9','Deurbel 9'],
+      ['Doorbell Ring 10','Deurbel 10'],['Phone Ring','Telefoon'],
+      ['Alarm 1','Alarm 1'],['Alarm 2','Alarm 2'],['Alarm 3','Alarm 3'],['Alarm 4','Alarm 4'],['Alarm 5','Alarm 5'],
+      ['Dripping Tap','Druppelende kraan'],['Connection 1','Verbinding 1'],['Connection 2','Verbinding 2']
+    ] },
+    volume:       { label: 'Volume',              type: 'select', options: [['low','Zacht'],['normal','Normaal'],['high','Hard']] },
+    duration:     { label: 'Duur (sec)',          type: 'number', min: 1, max: 300, step: 1 },
     start:        { label: 'Van',                 type: 'time' },
     end:          { label: 'Tot',                 type: 'time' },
     check:        { label: 'Controleer',          type: 'select', options: [

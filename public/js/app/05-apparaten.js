@@ -460,6 +460,26 @@ function exportTapoData() {
   var days = sel ? sel.value : '7';
   window.location.href = '/api/tapo/export?days=' + encodeURIComponent(days);
 }
+function testTapoBell(btn) {
+  var tone = (document.getElementById('tapo-bell-tone') || {}).value || '';
+  var volume = (document.getElementById('tapo-bell-volume') || {}).value || 'normal';
+  var duration = parseInt((document.getElementById('tapo-bell-duration') || {}).value, 10) || 5;
+  var orig = btn ? btn.textContent : '';
+  if (btn) btn.disabled = true;
+  fetch('/api/tapo/alarm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tone: tone, volume: volume, duration: duration }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (btn) { btn.disabled = false; if (!d.ok) { btn.textContent = 'Mislukt'; setTimeout(function() { btn.textContent = orig; }, 2000); } }
+    })
+    .catch(function() { if (btn) { btn.disabled = false; btn.textContent = 'Mislukt'; setTimeout(function() { btn.textContent = orig; }, 2000); } });
+}
+function stopTapoBell(btn) {
+  if (btn) btn.disabled = true;
+  fetch('/api/tapo/alarm/stop', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() { if (btn) btn.disabled = false; })
+    .catch(function() { if (btn) btn.disabled = false; });
+}
 function saveTapoCreds(btn) {
   var email = document.getElementById('tapo-email'), pw = document.getElementById('tapo-password');
   if (!email.value || !pw.value) { toast('Vul je Tapo e-mail en wachtwoord in', 'error'); return; }

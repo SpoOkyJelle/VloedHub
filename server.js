@@ -18,7 +18,7 @@ var PUBLIC_AVATARS = '/api/auth/avatar/';
 // Alleen voor de beheerder: de flows en de debugpagina (alles daaronder), en het instellen van modules en
 // koppelingen. Zolang er nog geen gebruikers zijn (iedereen deelt één PIN) geldt dit niet.
 var ADMIN_PREFIXES = ['/flows', '/debug', '/api/flows', '/api/debug'];
-var ADMIN_POSTS = ['/api/modules', '/api/discord', '/api/discord/test', '/api/camera', '/api/vaatwasser/config', '/api/vaatwasser/link', '/api/vaatwasser/unlink', '/api/afval/address', '/api/tapo/credentials', '/api/tapo/unlink', '/api/tapo/devices', '/api/tapo/room', '/api/tapo/poll-interval'];
+var ADMIN_POSTS = ['/api/modules', '/api/discord', '/api/discord/test', '/api/camera', '/api/vaatwasser/config', '/api/vaatwasser/link', '/api/vaatwasser/unlink', '/api/afval/address', '/api/tapo/credentials', '/api/tapo/unlink', '/api/tapo/devices', '/api/tapo/room', '/api/tapo/poll-interval', '/api/tapo/alarm', '/api/tapo/alarm/stop'];
 
 // Een gast kijkt alleen: niets bedienen of instellen. Wat wel mag is in- en uitloggen en wat bij het eigen
 // account hoort (naam, foto, PIN, de eigen indeling en de eigen meldingen).
