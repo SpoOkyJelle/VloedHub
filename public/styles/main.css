@@ -236,10 +236,9 @@ to {
   background:radial-gradient(circle,rgba(var(--accent-rgb),0.12) 0%,transparent 70%);
   pointer-events:none}
 .power-label {
-  font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  font-size:var(--fs-xs);
   color:var(--muted);
-  letter-spacing:0.1em;
+  letter-spacing:0;
   font-weight:600}
 .power-value {
   font-size:clamp(2.8rem,13vw,4.5rem);
@@ -248,6 +247,11 @@ to {
   letter-spacing:-0.04em;
   color:var(--accent-l);
   line-height:1}
+/* Live aflezingen krijgen gelijke-breedte cijfers, zodat getallen die elke paar seconden
+   veranderen niet in breedte verspringen (rustiger op een wanddisplay). */
+.power-value,.info-value,.compare-value,.stat-value,.temp-value,.sensor-value,#kiosk-clock {
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum' 1}
 .power-value .unit {
   font-size:max(var(--fs-xs),0.3em);
   color:var(--muted);
@@ -271,7 +275,7 @@ to {
   min-height:4.5rem}
 .info-label {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   color:var(--dim);
   letter-spacing:0.07em;
   font-weight:600;
@@ -302,7 +306,7 @@ to {
 .phase-name {
   font-size:var(--fs-2xs);
   font-weight:700;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.07em;
   color:var(--dim);
   margin-bottom:0.3rem}
@@ -351,7 +355,7 @@ to {
   padding:0.3rem 0.85rem;
   color:var(--dim);
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.05em;
   font-weight:600;
   border-bottom:1px solid rgba(var(--overlay-rgb),0.06);
@@ -419,7 +423,7 @@ to {
   padding:0.25rem 0.5rem;
   color:var(--dim);
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.05em;
   font-weight:600;
   border-bottom:1px solid rgba(var(--overlay-rgb),0.06)}
@@ -444,7 +448,7 @@ to {
   transition:transform 0.2s}
 .compare-title {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   color:var(--dim);
   letter-spacing:0.07em;
   font-weight:600;
@@ -480,7 +484,7 @@ to {
   padding:0.85rem 1rem}
 .section-title {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   color:var(--dim);
   letter-spacing:0.09em;
   font-weight:600}
@@ -496,7 +500,7 @@ to {
   transition:transform 0.2s}
 .stat-label {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   color:var(--dim);
   letter-spacing:0.07em;
   font-weight:600;
@@ -654,7 +658,7 @@ to {
 .weather-stat-label {
   font-size:var(--fs-2xs);
   color:#B4C0D3;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.04em}
 .wash-status-pill {
   display:inline-flex;
@@ -702,7 +706,7 @@ to {
 .temp-room {
   font-size:var(--fs-2xs);
   color:var(--dim);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.05em;
   font-weight:600;
   margin-top:0.15rem}
@@ -1190,7 +1194,7 @@ to {
   gap:0.45rem;
   font-size:var(--fs-2xs);
   font-weight:600;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.05em;
   color:var(--dim);
   margin-bottom:0.25rem}
@@ -1256,7 +1260,7 @@ to {
   padding:0.55rem 0.65rem}
 .fridge-label {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.07em;
   font-weight:600;
   color:var(--dim)}
@@ -1586,7 +1590,7 @@ to {
   border-radius:var(--r-pill);
   font-size:var(--fs-2xs);
   font-weight:600;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.08em;
   color:var(--muted)}
 .cam-pill i {
@@ -1940,7 +1944,7 @@ to {
 .scene-field label,.scene-bright,.scene-color {
   display:block;
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.06em;
   font-weight:600;
   color:var(--muted);
@@ -2249,7 +2253,7 @@ body.kiosk .meld-panel {
 .outage-line.meld-active .meld-time {
   color:var(--yellow);
   font-weight:600;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.05em}
 .meld-time {
   font-size:var(--fs-2xs);
@@ -2323,7 +2327,7 @@ body.kiosk .meld-panel {
   font-size:var(--fs-2xs);
   font-weight:600;
   color:var(--dim);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.06em}
 .presence-addr {
   font-variant-numeric:tabular-nums}
@@ -2375,7 +2379,7 @@ body.kiosk .meld-panel {
   min-width:0}
 .status-label {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.08em;
   color:var(--dim);
   font-weight:600}
@@ -2709,7 +2713,7 @@ input[type='range'] {
   gap:0.3rem}
 .form-field label,.field-label {
   font-size:var(--fs-2xs);
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.06em;
   font-weight:600;
   color:var(--dim);
@@ -3473,7 +3477,7 @@ body.disco .screen.current :is(.stat-card,.info-card,.phase-card,.chart-card,.ca
 .party-label {
   font-size:var(--fs-2xs);
   font-weight:600;
-  text-transform:uppercase;
+  text-transform:none;
   letter-spacing:0.06em;
   color:var(--dim)}
 .party-sub {
