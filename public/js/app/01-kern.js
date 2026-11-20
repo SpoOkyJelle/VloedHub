@@ -306,9 +306,9 @@ function refreshHeroGas() {
     var e = document.getElementById('hero-gas'); if (!e) return;
     var m3 = res[0].today ? res[0].today.gas_used : null;
     var cost = res[1].day ? res[1].day.gas_cost : null;
-    e.innerHTML = m3 != null
-      ? 'Gas vandaag ' + nlNum(m3, 2) + '<span class="unit">m³</span>' + (cost != null ? ' · €' + nlNum(cost, 2) : '')
-      : 'Gas vandaag —';
+    e.innerHTML = (m3 != null ? nlNum(m3, 2) : '—') + '<span class="unit">m³</span>';
+    var sub = document.getElementById('hero-gas-sub');
+    if (sub) sub.textContent = 'Gas vandaag' + (cost != null ? ' · €' + nlNum(cost, 2) : '');
   }).catch(function() {});
 }
 function refresh() {

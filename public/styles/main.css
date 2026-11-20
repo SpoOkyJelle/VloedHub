@@ -213,6 +213,10 @@ to {
   color:var(--green)}
 .gas-c {
   color:var(--orange)}
+/* In het "Huidig verbruik"-blok staan stroom en gas als gelijkwaardige waarden:
+   verbruik geel, gas oranje (via .gas-c). Alleen hier, niet op de losse statkaarten. */
+.power-hero .delivered {
+  color:var(--yellow)}
 .voltage {
   color:var(--blue)}
 .power-hero {
