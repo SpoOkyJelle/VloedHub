@@ -3,6 +3,7 @@ var path = require("path");
 var modules = require("./modules");
 var discord = require("./discord");
 var logging = require("../db/logging");
+var db = require("../db/setup");
 var tapoLib = require("tp-link-tapo-connect");
 
 // TP-Link Tapo, LOKAAL uitgelezen over het thuisnetwerk (de VloedHub-server staat op het LAN, dus dit
@@ -26,10 +27,11 @@ var DEFAULT_POLL_MIN = 3;
 var MIN_POLL_MIN = 1, MAX_POLL_MIN = 30;
 var RETRY_MS = 5 * 60 * 1000;
 
-// Wasmachine-detectie uit het vermogen van de P410M (in watt)
-var WASH_RUN_W = 8;                   // boven dit vermogen draait de wasmachine (stand-by is ~1,5 W)
-var WASH_DONE_W = 3;                  // zo lang hieronder = klaar
-var WASH_DONE_MIN = 5;                // minuten aanhoudend laag voor "klaar" (vangt korte pauzes in het programma op)
+// Wasmachine-detectie uit het vermogen van de P410M (in watt). Afgesteld op echte metingen: stand-by is
+// 0–1,7 W; draaien is tientallen tot ~2000 W (verwarmen), met korte dips tussen fases naar 4–10 W.
+var WASH_RUN_W = 15;                  // boven dit vermogen draait de wasmachine (ruim boven stand-by én de 4–10 W dips)
+var WASH_DONE_W = 3;                  // zo lang hieronder = klaar (zit tussen stand-by ~1,6 W en de fase-dips ~4 W)
+var WASH_DONE_MIN = 10;               // minuten aanhoudend laag voor "klaar" (overbrugt pauzes/soak in het programma)
 var WASH_AUTOCLEAR_MIN = 180;         // "klaar" na zoveel minuten vanzelf terug naar idle
 
 // Douche-detectie uit de luchtvochtigheid van de T310. Instelbaar in de app (opgeslagen in
@@ -376,7 +378,19 @@ function getTuning() {
   };
 }
 
+// washState leeft in het geheugen; bij een herstart halen we de laatste stand uit de DB terug. Anders kan
+// de kaart op "In gebruik" blijven hangen als de server opnieuw startte terwijl de was liep: het geheugen
+// zou dan op idle staan terwijl de DB running bleef, en de overgang naar "klaar" nooit meer plaatsvindt.
+function restoreWashState() {
+  db.get("SELECT state, since FROM wasmachine_status WHERE id = 1", function(err, row) {
+    if (err || !row) return;
+    if (row.state === "running") { washState = "running"; washLowSince = 0; washDoneAt = 0; }
+    else if (row.state === "done") { washState = "done"; washLowSince = 0; washDoneAt = row.since ? new Date(row.since).getTime() : Date.now(); }
+    else { washState = "idle"; washLowSince = 0; washDoneAt = 0; }
+  });
+}
 function start() {
+  restoreWashState();
   var cfg = load();
   if (cfg.email && cfg.password && (cfg.plugIp || cfg.hubIp)) poll();
 }
