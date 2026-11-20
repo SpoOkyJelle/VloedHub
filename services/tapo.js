@@ -378,15 +378,21 @@ function getTuning() {
   };
 }
 
-// washState leeft in het geheugen; bij een herstart halen we de laatste stand uit de DB terug. Anders kan
-// de kaart op "In gebruik" blijven hangen als de server opnieuw startte terwijl de was liep: het geheugen
-// zou dan op idle staan terwijl de DB running bleef, en de overgang naar "klaar" nooit meer plaatsvindt.
+// washState leeft in het geheugen; bij een herstart synchroniseren we met de DB. "aan/uit" wordt volledig
+// bepaald door het live vermogen (> WASH_RUN_W = draait), dus alleen de "klaar"-latch is het bewaren waard.
+// Een blijven-hangen "running" (server herstartte ná afloop van de was) schonen we direct op naar idle;
+// draait de machine nog écht, dan zet de eerstvolgende meting (> WASH_RUN_W) hem meteen weer op "running".
 function restoreWashState() {
   db.get("SELECT state, since FROM wasmachine_status WHERE id = 1", function(err, row) {
     if (err || !row) return;
-    if (row.state === "running") { washState = "running"; washLowSince = 0; washDoneAt = 0; }
-    else if (row.state === "done") { washState = "done"; washLowSince = 0; washDoneAt = row.since ? new Date(row.since).getTime() : Date.now(); }
-    else { washState = "idle"; washLowSince = 0; washDoneAt = 0; }
+    washLowSince = 0;
+    if (row.state === "done") {
+      washState = "done";
+      washDoneAt = row.since ? new Date(row.since).getTime() : Date.now();
+    } else {
+      washState = "idle"; washDoneAt = 0;
+      if (row.state === "running") logging.setWashStatus("idle", "tapo-p410m", function() {});
+    }
   });
 }
 function start() {
