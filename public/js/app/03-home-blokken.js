@@ -15,7 +15,9 @@ function refreshWasmachine() {
     var badge = state === 'running' ? { cls: 'busy', icon: 'fa-rotate', text: 'In gebruik' }
       : state === 'done' ? { cls: 'busy', icon: 'fa-circle-check', text: 'Klaar' }
       : { cls: 'idle', icon: 'fa-moon', text: 'Inactief' };
-    var values = [(st.total != null ? st.total : 0) + ' wasbeurten'];
+    // Huidig verbruik (W) wordt in-place bijgewerkt door refreshTapoCard via id 'wash-power' — daarom
+    // buiten de sig gehouden, zodat de kaart niet elke 3s herbouwt (en een open grafiek blijft staan).
+    var values = ['<span id="wash-power">—</span>', (st.total != null ? st.total : 0) + ' wasbeurten'];
     if (st.today != null) values.push(st.today + ' vandaag');
     var sub = s.since && state === 'running' ? 'sinds ' + shortWhen(s.since)
       : st.last_finished_at ? 'Laatste: ' + shortWhen(st.last_finished_at) : '';
