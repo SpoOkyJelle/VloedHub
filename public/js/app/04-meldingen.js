@@ -49,7 +49,7 @@ function renderMeldingen(el, rows, inPanel) {
   el.innerHTML = html;
 }
 // Tot welke melding je het paneel hebt gezien; alles daarna telt mee in het bolletje op de bel
-var meldingenSeen = 0, meldingenRows = [], meldingenActive = [];
+var meldingenSeen = 0, meldingenRows = [], meldingenActive = [], meldingenAccount = false;
 try { meldingenSeen = parseInt(localStorage.getItem('meldingenSeen'), 10) || 0; } catch (e) {}
 function meldPanelOpen() { return document.getElementById('meld-panel').classList.contains('open'); }
 function showMeldBadge() {
@@ -62,8 +62,13 @@ function loadMeldingen() {
     fetch('/api/meldingen?limit=50').then(function(r){return r.json();}),
     fetch('/api/meldingen/actief').then(function(r){return r.json();}).catch(function(){ return []; })
   ]).then(function(res) {
-    var rows = res[0];
+    // De server geeft { rows, seen, account }: rows is de lijst. Bij een account bepaalt de server tot
+    // welke melding alles gezien is; zonder account houdt de browser dat zelf bij in localStorage.
+    var payload = res[0] || {};
+    var rows = Array.isArray(payload) ? payload : (payload.rows || []);
     meldingenRows = rows;
+    meldingenAccount = !Array.isArray(payload) && !!payload.account;
+    if (meldingenAccount && payload.seen != null) meldingenSeen = payload.seen;
     meldingenActive = Array.isArray(res[1]) ? res[1] : [];
     meldingenClearArmed = false;
     var blk = document.getElementById('blk-meldingen');
@@ -87,8 +92,15 @@ function toggleMeldPanel(e) {
 function closeMeldPanel() {
   if (!meldPanelOpen()) return;
   document.getElementById('meld-panel').classList.remove('open');
-  // bij het sluiten geldt alles als gezien
-  if (meldingenRows.length) { meldingenSeen = meldingenRows[0].id; try { localStorage.setItem('meldingenSeen', meldingenSeen); } catch (e) {} }
+  // bij het sluiten geldt alles als gezien: met account onthoudt de server dat, anders de browser
+  if (meldingenRows.length) {
+    meldingenSeen = meldingenRows[0].id;
+    if (meldingenAccount) {
+      fetch('/api/meldingen/seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: meldingenSeen }) }).catch(function() {});
+    } else {
+      try { localStorage.setItem('meldingenSeen', meldingenSeen); } catch (e) {}
+    }
+  }
   showMeldBadge();
 }
 document.addEventListener('click', function(e) { if (meldPanelOpen() && !e.target.closest('#meld-panel')) closeMeldPanel(); });
