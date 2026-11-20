@@ -131,11 +131,7 @@ function toggleLedPanel(id, btn) {
   }
 }
 function deviceRename(key, defaultName, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveDeviceName(key, name); }); }
-function esphomeRename(deviceEnc, sensorEnc, iconEl) {
-  var card = iconEl.closest ? iconEl.closest('.sensor-card') : null;
-  var span = card ? card.querySelector('.sensor-name-text') : iconEl.previousElementSibling;
-  inlineRename(span, function(name) { saveEsphomeName(decodeURIComponent(deviceEnc), decodeURIComponent(sensorEnc), name); });
-}
+function esphomeRename(deviceEnc, sensorEnc, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveEsphomeName(decodeURIComponent(deviceEnc), decodeURIComponent(sensorEnc), name); }); }
 function shortWhen(v) {
   var d = new Date(v);
   if (isNaN(d.getTime())) return '—';
@@ -151,6 +147,7 @@ var SENSOR_OPEN = {};    // sid -> actieve range van een uitgeklapte kaart
 var SENSOR_CHARTS = {};  // sid -> Chart-instantie
 var SENSOR_DEFAULT = {}; // sid -> standaard-range (eerste 'day', anders eerste tab)
 var SENSOR_RANGES_ALL = [['hour', 'Uur'], ['day', 'Dag'], ['week', 'Week'], ['month', 'Maand']];
+var SENSOR_PALETTE = ['#38BDF8', '#8DB255', '#F97316', '#2DD4BF', '#FBBF24', '#F87171', '#C084FC'];
 
 function sensorSlug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'x'; }
 function sensorAge(ts) {
@@ -170,7 +167,8 @@ function sensorCard(cfg) {
   var status = '';
   if (cfg.badge) status = '<span class="wash-status-pill sensor-badge ' + (cfg.badge.cls || '') + '">' + (cfg.badge.icon ? '<i class="fa-solid ' + cfg.badge.icon + '"></i> ' : '') + escHtml(cfg.badge.text) + '</span>';
   else if (cfg.meta) status = '<span class="sensor-meta">' + escHtml(cfg.meta) + '</span>';
-  var expand = cfg.chart ? '<button class="sensor-expand" aria-label="Grafiek tonen" onclick="toggleSensorCard(\'' + sid + '\')"><i class="fa-solid fa-chevron-down" id="scv-' + sid + '"></i></button>' : '';
+  var hasExpand = cfg.chart || cfg.expand;
+  var expand = hasExpand ? '<button class="sensor-expand" aria-label="Meer tonen" onclick="toggleSensorCard(\'' + sid + '\')"><i class="fa-solid fa-chevron-down" id="scv-' + sid + '"></i></button>' : '';
   var sub = cfg.sub ? '<small class="sensor-sub">' + escHtml(cfg.sub) + '</small>' : '';
   var values = (cfg.values || []).map(function(v) { return '<span class="sensor-value">' + v + '</span>'; }).join('<span class="sensor-sep">·</span>');
   var chartBlock = '';
@@ -184,12 +182,14 @@ function sensorCard(cfg) {
       '<div class="tab-bar sensor-ranges">' + ranges.map(function(r) { return '<button class="tab' + (r[0] === defRange ? ' active' : '') + '" data-r="' + r[0] + '" onclick="sensorRange(\'' + sid + '\',\'' + r[0] + '\',this)">' + r[1] + '</button>'; }).join('') + '</div>' +
       '<div class="chart-wrap h-150"><canvas id="sc-' + sid + '"></canvas></div>' +
       '</div></div>';
+  } else if (cfg.expand) {
+    chartBlock = '<div class="sensor-collapse" id="scol-' + sid + '"><div>' + cfg.expand + '</div></div>';
   }
   return '<div class="esp-card sensor-card" id="scard-' + sid + '">' +
     '<div class="sensor-head"><i class="fa-solid ' + cfg.icon + '"></i>' +
     '<span class="sensor-name"><span class="sensor-name-text">' + escHtml(cfg.name) + '</span>' + sub + '</span>' +
     '<span class="sensor-status">' + status + '</span>' + (cfg.headExtra || '') + expand + '</div>' +
-    '<div class="sensor-values">' + values + '</div>' + (cfg.controls || '') + chartBlock + '</div>';
+    (values ? '<div class="sensor-values">' + values + '</div>' : '') + (cfg.controls || '') + chartBlock + '</div>';
 }
 function toggleSensorCard(sid) {
   var col = document.getElementById('scol-' + sid); if (!col) return;
@@ -207,27 +207,46 @@ function drawSensorChart(sid, range) {
   var cfg = SENSOR_CFG[sid]; if (!cfg) return;
   var canvas = document.getElementById('sc-' + sid); if (!canvas) return;
   fetch(cfg.url + (cfg.url.indexOf('?') !== -1 ? '&' : '?') + 'range=' + range).then(function(r) { return r.json(); }).then(function(rows) {
-    var mine = cfg.key ? (rows || []).filter(function(r) { return String(r[cfg.key]) === String(cfg.val); }) : (rows || []);
-    var periods = []; mine.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); });
-    periods.sort();
-    var twoAxis = cfg.series.length > 1;
-    var datasets = cfg.series.map(function(s) {
-      var byP = {}; mine.forEach(function(r) { if (r[s.field] != null) byP[r.period] = r[s.field]; });
-      var dec = s.decimals != null ? s.decimals : 1;
-      return { label: s.label, data: periods.map(function(p) { var v = byP[p]; return v != null ? Number(Number(v).toFixed(dec)) : null; }), borderColor: s.color, backgroundColor: s.color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true, yAxisID: s.axis || 'y' };
-    });
+    rows = rows || [];
+    var datasets, yUnit, y1Unit, twoAxis, legendDisplay;
+    var periods = [];
+    function collect(list) { list.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); }); periods.sort(); }
+    if (cfg.groupBy) {
+      // Meerdere sensoren van één device: één lijn per sensor-naam, assen per eenheid (max 2).
+      var mine = rows.filter(function(r) { return cfg.names.indexOf(r[cfg.groupBy]) !== -1; });
+      collect(mine);
+      var units = cfg.units || [''];
+      var unitAxis = {}; units.forEach(function(u, i) { unitAxis[u] = i === 0 ? 'y' : 'y1'; });
+      datasets = cfg.names.map(function(name, i) {
+        var byP = {}; mine.forEach(function(r) { if (r[cfg.groupBy] === name && r[cfg.valueField] != null) byP[r.period] = r[cfg.valueField]; });
+        var color = SENSOR_PALETTE[i % SENSOR_PALETTE.length];
+        var unit = cfg.unitByName[name] || '';
+        return { label: cfg.labelByName[name] || name, _unit: unit, data: periods.map(function(p) { var v = byP[p]; return v != null ? Number(Number(v).toFixed(1)) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true, yAxisID: unitAxis[unit] || 'y' };
+      });
+      yUnit = units[0] || ''; y1Unit = units[1] || ''; twoAxis = units.length > 1; legendDisplay = datasets.length > 1;
+    } else {
+      // Eén entiteit (kamer/sensor), één of twee reeksen op vaste velden.
+      var only = cfg.key ? rows.filter(function(r) { return String(r[cfg.key]) === String(cfg.val); }) : rows;
+      collect(only);
+      datasets = cfg.series.map(function(s) {
+        var byP = {}; only.forEach(function(r) { if (r[s.field] != null) byP[r.period] = r[s.field]; });
+        var dec = s.decimals != null ? s.decimals : 1;
+        return { label: s.label, _unit: s.unit || '', data: periods.map(function(p) { var v = byP[p]; return v != null ? Number(Number(v).toFixed(dec)) : null; }), borderColor: s.color, backgroundColor: s.color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true, yAxisID: s.axis || 'y' };
+      });
+      yUnit = cfg.series[0].unit || ''; y1Unit = cfg.series[1] ? (cfg.series[1].unit || '') : ''; twoAxis = cfg.series.length > 1; legendDisplay = twoAxis;
+    }
     var labels = periods.map(function(p) { return sensorPeriodLabel(p, range); });
     if (SENSOR_CHARTS[sid]) SENSOR_CHARTS[sid].destroy();
     var scales = {
       x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
-      y: { position: 'left', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + (cfg.series[0].unit || ''); } }, grid: { color: CHART_GRID } }
+      y: { position: 'left', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + yUnit; } }, grid: { color: CHART_GRID } }
     };
-    if (twoAxis) scales.y1 = { position: 'right', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + (cfg.series[1].unit || ''); } }, grid: { display: false } };
+    if (twoAxis) scales.y1 = { position: 'right', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + y1Unit; } }, grid: { display: false } };
     SENSOR_CHARTS[sid] = new Chart(canvas, {
       type: 'line', data: { labels: labels, datasets: datasets },
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: twoAxis, labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label: function(c) { var s = cfg.series[c.datasetIndex]; return c.dataset.label + ': ' + c.parsed.y + ' ' + (s ? s.unit : ''); } } } },
+        plugins: { legend: { display: legendDisplay, labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + c.parsed.y + ' ' + (c.dataset._unit || ''); } } } },
         scales: scales
       }
     });
@@ -243,10 +262,11 @@ function paintSensorGrid(grid, cards) {
   grid._sig = sig;
   grid.innerHTML = cards.map(sensorCard).join('');
   cards.forEach(function(c) {
-    if (!c.chart || !SENSOR_OPEN[c.id]) return;
+    if ((!c.chart && !c.expand) || !SENSOR_OPEN[c.id]) return;
     var col = document.getElementById('scol-' + c.id); if (!col) return;
     col.classList.add('open');
     var chev = document.getElementById('scv-' + c.id); if (chev) chev.style.transform = 'rotate(180deg)';
+    if (!c.chart) return;
     var bar = col.querySelector('.sensor-ranges');
     if (bar) { bar.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); }); var a = bar.querySelector('[data-r="' + SENSOR_OPEN[c.id] + '"]'); if (a) a.classList.add('active'); }
     drawSensorChart(c.id, SENSOR_OPEN[c.id]);

@@ -49,20 +49,39 @@ function esphomeCards(rows, editable) {
       }).join('') + '</div>';
   }).join('');
 }
-// Thuis-pagina: elke ESPHome-sensor een eigen uniforme sensorkaart (met uitklapbare grafiek).
-function esphomeSensorCardCfg(r) {
-  var numeric = r.value != null;
-  var valStr = numeric ? nlNum(r.value, 1) + (r.unit ? ' ' + r.unit : '') : escHtml(r.value_text || '—');
+// Thuis-pagina: één uniforme kaart per ESPHome-device. Alle sensoren van dat device staan als rijen in
+// de kaart, met een uitklapbare grafiek die elke numerieke sensor als lijn toont (max 2 assen per eenheid).
+function esphomeDeviceCardCfg(device, list) {
+  var newest = Math.max.apply(null, list.map(function(r) { return new Date(r.received_at).getTime(); }));
+  var rows = list.map(function(r) {
+    var valStr = r.value != null ? nlNum(r.value, 1) + (r.unit ? ' ' + r.unit : '') : escHtml(r.value_text || '—');
+    var pen = '<button class="icon-btn icon-btn-sm" aria-label="Naam wijzigen" title="Naam wijzigen" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"><i class="fa-solid fa-pen"></i></button>';
+    return '<div class="esp-row"><span class="esp-name"><span>' + escHtml(r.display_name || r.sensor_name) + '</span>' + pen + '</span><span class="esp-val">' + valStr + '</span></div>';
+  }).join('');
   var cfg = {
-    id: 'esp-' + sensorSlug((r.device || '') + '-' + r.sensor_name),
-    icon: 'fa-microchip', name: r.display_name || r.sensor_name, sub: r.device,
-    meta: sensorAge(r.received_at), values: [valStr], sig: valStr,
-    headExtra: '<button class="icon-btn icon-btn-sm" aria-label="Naam wijzigen" title="Naam wijzigen" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"><i class="fa-solid fa-pen"></i></button>'
+    id: 'esp-' + sensorSlug(device), icon: 'fa-microchip', name: device,
+    meta: sensorAge(newest), values: [], controls: rows,
+    sig: list.map(function(r) { return r.sensor_name + '=' + (r.value != null ? r.value : r.value_text); }).join('|')
   };
-  if (numeric) cfg.chart = { url: '/api/esphome/history?sensor=' + encodeURIComponent(r.sensor_name), key: 'sensor_name', val: r.sensor_name, series: [{ field: 'avg_value', unit: r.unit || '', color: '#8DB255', decimals: 1, label: r.display_name || r.sensor_name, axis: 'y' }] };
+  var numeric = list.filter(function(r) { return r.value != null; });
+  if (numeric.length) {
+    var units = []; numeric.forEach(function(s) { var u = s.unit || ''; if (units.indexOf(u) === -1) units.push(u); });
+    cfg.chart = {
+      url: '/api/esphome/history', groupBy: 'sensor_name', valueField: 'avg_value',
+      names: numeric.map(function(s) { return s.sensor_name; }),
+      labelByName: numeric.reduce(function(m, s) { m[s.sensor_name] = s.display_name || s.sensor_name; return m; }, {}),
+      unitByName: numeric.reduce(function(m, s) { m[s.sensor_name] = s.unit || ''; return m; }, {}),
+      units: units
+    };
+  }
   return cfg;
 }
-function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (grid) paintSensorGrid(grid, (rows || []).map(esphomeSensorCardCfg)); }).catch(function(){}); }
+function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) {
+  var grid = document.getElementById('esphome-grid'); if (!grid) return;
+  var byDevice = {}, order = [];
+  (rows || []).forEach(function(r) { var d = r.device || '?'; if (!byDevice[d]) { byDevice[d] = []; order.push(d); } byDevice[d].push(r); });
+  paintSensorGrid(grid, order.map(function(d) { return esphomeDeviceCardCfg(d, byDevice[d]); }));
+}).catch(function(){}); }
 // ── Layout system ──
 var layoutConfig = {};
 var layoutEditMode = false;

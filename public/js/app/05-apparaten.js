@@ -151,9 +151,31 @@ function dishClearAlerts(btn) {
   if (btn) btn.disabled = true;
   fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); }).catch(actionFailed('Wissen lukte niet'));
 }
+// Statistiek-inhoud voor het uitklapmenu van de vaatwasserkaart (week/maand/duur + recente beurten).
+function dishStatsHtml(s) {
+  if (!s) return '';
+  function pct(v) { return v != null ? Math.round(v) + '%' : '—'; }
+  var grid = '<div class="fridge-row">' +
+    '<div class="fridge-cell"><div class="fridge-label">Week</div><div class="fridge-temp">' + (s.this_week || 0) + '</div></div>' +
+    '<div class="fridge-cell"><div class="fridge-label">Maand</div><div class="fridge-temp">' + (s.this_month || 0) + '</div></div>' +
+    '<div class="fridge-cell"><div class="fridge-label">Gem. duur</div><div class="fridge-temp">' + dishDuration(s.avg_duration) + '</div></div>' +
+    '<div class="fridge-cell"><div class="fridge-label">Meest gebruikt</div><div class="fridge-temp">' + (s.programs && s.programs.length ? dishProgram(s.programs[0].program) : '—') + '</div></div></div>';
+  var forecast = (s.avg_energy != null ? 'gem. energie ' + Math.round(s.avg_energy) + '% · water ' + Math.round(s.avg_water) + '%' : '') +
+    (s.avg_kwh != null ? ' · ±' + num(s.avg_kwh, 2) + ' kWh' + (s.avg_cost != null ? ' (' + eur(s.avg_cost) + ')' : '') + ' per beurt' : '');
+  var rowsHtml = (s.recent && s.recent.length) ? s.recent.map(function(r) {
+    var extras = (r.options || '').split(',').filter(Boolean).map(function(x) { return (s.extras && s.extras[x]) || x; }).join(', ');
+    return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + dishProgram(r.program) + (extras ? '<span class="esp-sub"> · ' + escHtml(extras) + '</span>' : '') + '</td><td>' + dishDuration(r.duration_min) + '</td><td>' + pct(r.energy_pct) + '</td><td>' + pct(r.water_pct) + '</td><td>' + (r.est_kwh != null ? '±' + num(r.est_kwh, 2) + ' kWh' + (r.est_cost != null ? ' · ' + eur(r.est_cost) : '') : '—') + '</td></tr>';
+  }).join('') : '<tr><td colspan="6" class="table-empty">Nog geen beurten gelogd</td></tr>';
+  return grid + '<div class="log-card"><div class="log-header"><span class="section-title">Recente vaatwasbeurten</span>' + (forecast ? '<span class="power-sub">' + forecast + '</span>' : '') + '</div>' +
+    '<div class="log-table-wrap"><table class="log-table"><thead><tr><th>Klaar</th><th>Programma</th><th>Duur</th><th>Energie</th><th>Water</th><th>Stroom</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>';
+}
 function refreshVaatwasser() {
   var grid = document.getElementById('dish-grid');
-  fetch('/api/vaatwasser').then(function(r){return r.json();}).then(function(d) {
+  Promise.all([
+    fetch('/api/vaatwasser').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/vaatwasser/stats').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(res) {
+    var d = res[0] || {}, stats = res[1] || {};
     if (!grid) return;
     var s = d.state || {};
     var view = !d.linked ? ['idle','fa-link-slash','Niet gekoppeld'] : s.reachable === false ? ['idle','fa-plug-circle-xmark','Offline'] : DISH_STATES[s.operation] || ['idle','fa-moon', s.operation || 'Onbekend'];
@@ -173,7 +195,8 @@ function refreshVaatwasser() {
       : '';
     var cfg = {
       id: 'dish', icon: 'fa-soap', name: 'Vaatwasser', badge: badge, values: values, sub: sub, controls: controls,
-      sig: values.join(',') + '|' + badge.text + '|' + alerts.join('~')
+      expand: dishStatsHtml(stats),
+      sig: values.join(',') + '|' + badge.text + '|' + alerts.join('~') + '|' + (stats.this_week || 0) + '/' + (stats.this_month || 0) + '/' + ((stats.recent && stats.recent.length) || 0)
     };
     paintSensorGrid(grid, [cfg]);
   }).catch(function(){});
@@ -277,8 +300,7 @@ function renderTado(d) {
   var meta = document.getElementById('tado-meta');
   if (meta) {
     if (d.linked && d.zones && d.zones.length) {
-      meta.innerHTML = '<span>' + escHtml(tadoAgo(d.updated)) + '</span>' +
-        '<button class="btn btn-quiet btn-sm" id="tado-refresh-btn" onclick="refreshTadoNow(this)"><i class="fa-solid fa-rotate"></i> Ververs</button>';
+      meta.innerHTML = '<span>' + escHtml(tadoAgo(d.updated)) + '</span>';
     } else meta.innerHTML = '';
   }
   showTadoStatus(d);
