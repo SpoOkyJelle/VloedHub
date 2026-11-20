@@ -290,7 +290,29 @@ document.addEventListener('click', function(e) {
 
 // ── Live refresh ──
 var lastPowerVal = null;
+var lastGasHeroFetch = 0;
+// Gasverbruik van vandaag naast het live wattage in het "Huidig verbruik"-blok. Gas verandert traag
+// (meterstand per uur), dus throttlen we naar elke 60s i.p.v. de 3s-lus van refresh().
+function refreshHeroGas() {
+  var el = document.getElementById('hero-gas');
+  if (!el || !moduleOn('gas')) return;
+  var nowMs = Date.now();
+  if (nowMs - lastGasHeroFetch < 60000) return;
+  lastGasHeroFetch = nowMs;
+  Promise.all([
+    fetch('/api/day-comparison').then(function(r) { return r.json(); }),
+    fetch('/api/costs').then(function(r) { return r.json(); }).catch(function() { return {}; })
+  ]).then(function(res) {
+    var e = document.getElementById('hero-gas'); if (!e) return;
+    var m3 = res[0].today ? res[0].today.gas_used : null;
+    var cost = res[1].day ? res[1].day.gas_cost : null;
+    e.innerHTML = m3 != null
+      ? 'Gas vandaag ' + nlNum(m3, 2) + '<span class="unit">m³</span>' + (cost != null ? ' · €' + nlNum(cost, 2) : '')
+      : 'Gas vandaag —';
+  }).catch(function() {});
+}
 function refresh() {
+  refreshHeroGas();
   fetch('/api/latest').then(function(r) {
     if (r.status === 401) { location.href = '/pin'; return Promise.reject(new Error('niet ingelogd')); }
     connOk();
