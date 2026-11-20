@@ -105,7 +105,9 @@ module.exports = function(req, res) {
     var sensor = params.sensor ? decodeURIComponent(params.sensor) : null;
 
     var fmt, where, paramList;
-    if (range === "week") {
+    if (range === "hour") {
+      fmt = "'%Y-%m-%d %H:%M'"; where = "received_at >= ?"; paramList = [time.cutoff(3600000)];
+    } else if (range === "week") {
       fmt = "'%Y-%m-%d'"; where = "received_at >= ?"; paramList = [time.effectiveCutoff(604800000)];
     } else if (range === "month") {
       fmt = "'%Y-%m-%d'"; where = "received_at >= ?"; paramList = [time.effectiveCutoff(2592000000)];

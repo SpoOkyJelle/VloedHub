@@ -52,7 +52,9 @@ module.exports = function(req, res) {
     if (tqs !== -1) trange = req.url.slice(tqs + 7).split("&")[0];
 
     var tfmt, twhere, tparam;
-    if (trange === "week") {
+    if (trange === "hour") {
+      tfmt = "'%Y-%m-%d %H:%M'"; twhere = "received_at >= ?"; tparam = time.cutoff(3600000);
+    } else if (trange === "week") {
       tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparam = time.effectiveCutoff(604800000);
     } else if (trange === "month") {
       tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparam = time.effectiveCutoff(2592000000);

@@ -87,7 +87,7 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
-    if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); loadWashWeekdayChart(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); loadTempChart('day', document.querySelector('[data-temprange="day"]')); loadHumChart('day', document.querySelector('[data-humrange="day"]')); loadWashPowerChart('day', document.querySelector('[data-washpowerrange="day"]')); lampsRefresh(); }
+    if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); lampsRefresh(); }
     if (n === 5) { refreshSettingsNames(); }
   }
 }

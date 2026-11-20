@@ -1,7 +1,33 @@
 // ── Wasmachine ──
-var chartWashWeekday = null;function loadWashWeekdayChart() { fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TEXT, font: { size: 11, weight: '600' } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, precision: 0 }, grid: { color: CHART_GRID }, beginAtZero: true } } } }); }).catch(function(){}); }
+var chartWashWeekday = null;function loadWashWeekdayChart() { if (!document.getElementById('chart-wash-weekday')) return; fetch('/api/wasmachine/weekday').then(function(r){return r.json();}).then(function(rows) { var dayNames = ['Zo','Ma','Di','Wo','Do','Vr','Za']; var byDow = {}; rows.forEach(function(r){ byDow[parseInt(r.dow,10)] = r; }); var labels = [], data = []; for (var d = 0; d < 7; d++) { labels.push(dayNames[d]); var r = byDow[d]; data.push(r ? r.n : 0); } if (chartWashWeekday) chartWashWeekday.destroy(); chartWashWeekday = new Chart(document.getElementById('chart-wash-weekday'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Aantal wasbeurten', data: data, backgroundColor: 'rgba(141,178,85,0.55)', borderColor: '#8DB255', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: CHART_TEXT, font: { size: 11, weight: '600' } }, grid: { color: CHART_GRID } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, precision: 0 }, grid: { color: CHART_GRID }, beginAtZero: true } } } }); }).catch(function(){}); }
 
-function refreshWasmachine() { fetch('/api/wasmachine/stats').then(function(r){return r.json();}).then(function(s) { setEl('wash-total', s.total != null ? s.total : '—'); var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = s.total != null ? s.total : '—'; setEl('wash-today', s.today != null ? s.today : 0); setEl('wash-week', s.this_week != null ? s.this_week : 0); setEl('wash-month', s.this_month != null ? s.this_month : 0); var lastEl = document.getElementById('wash-last'); if (lastEl) lastEl.textContent = 'Laatste was: ' + (s.last_finished_at ? shortWhen(s.last_finished_at) : '—'); }).catch(function(){}); fetch('/api/wasmachine/recent?limit=25').then(function(r){return r.json();}).then(function(rows) { var html = rows.length ? rows.map(function(r) { return '<tr><td>' + shortWhen(r.finished_at) + '</td><td>' + (r.device || '—') + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="table-empty">Nog geen wasbeurten gelogd</td></tr>'; setEl('wash-rows', html); }).catch(function(){}); refreshWashStatus(); }
+// Wasmachine als minimale uniforme kaart: statusbadge + aantal wasbeurten + uitklapbare vermogensgrafiek.
+function refreshWasmachine() {
+  var grid = document.getElementById('wash-grid');
+  Promise.all([
+    fetch('/api/wasmachine/status').then(function(r){return r.json();}).catch(function(){return {};}),
+    fetch('/api/wasmachine/stats').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(res) {
+    var s = res[0] || {}, st = res[1] || {};
+    var hwt = document.getElementById('home-wash-total'); if (hwt) hwt.textContent = st.total != null ? st.total : '—';
+    if (!grid) return;
+    var state = s.state || 'idle';
+    var badge = state === 'running' ? { cls: 'busy', icon: 'fa-rotate', text: 'In gebruik' }
+      : state === 'done' ? { cls: 'busy', icon: 'fa-circle-check', text: 'Klaar' }
+      : { cls: 'idle', icon: 'fa-moon', text: 'Inactief' };
+    var values = [(st.total != null ? st.total : 0) + ' wasbeurten'];
+    if (st.today != null) values.push(st.today + ' vandaag');
+    var sub = s.since && state === 'running' ? 'sinds ' + shortWhen(s.since)
+      : st.last_finished_at ? 'Laatste: ' + shortWhen(st.last_finished_at) : '';
+    var cfg = {
+      id: 'wash', icon: 'fa-shirt', name: 'Wasmachine', badge: badge, values: values, sub: sub,
+      sig: values.join(',') + '|' + badge.text,
+      ranges: [['day', 'Dag'], ['week', 'Week'], ['month', 'Maand']],
+      chart: { url: '/api/tapo/power-history', key: null, series: [{ field: 'watts', unit: 'W', color: '#8DB255', decimals: 1, label: 'Vermogen', axis: 'y' }] }
+    };
+    paintSensorGrid(grid, [cfg]);
+  }).catch(function(){});
+}
 function esphomeCards(rows, editable) {
   if (!rows.length) return '<div class="esp-card"><div class="esp-head">Nog geen data</div></div>';
   var byDevice = {}, order = [];
@@ -23,7 +49,20 @@ function esphomeCards(rows, editable) {
       }).join('') + '</div>';
   }).join('');
 }
-function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (grid) grid.innerHTML = esphomeCards(rows, true); }).catch(function(){}); }
+// Thuis-pagina: elke ESPHome-sensor een eigen uniforme sensorkaart (met uitklapbare grafiek).
+function esphomeSensorCardCfg(r) {
+  var numeric = r.value != null;
+  var valStr = numeric ? nlNum(r.value, 1) + (r.unit ? ' ' + r.unit : '') : escHtml(r.value_text || '—');
+  var cfg = {
+    id: 'esp-' + sensorSlug((r.device || '') + '-' + r.sensor_name),
+    icon: 'fa-microchip', name: r.display_name || r.sensor_name, sub: r.device,
+    meta: sensorAge(r.received_at), values: [valStr], sig: valStr,
+    headExtra: '<button class="icon-btn icon-btn-sm" aria-label="Naam wijzigen" title="Naam wijzigen" onclick="esphomeRename(\'' + encodeURIComponent(r.device) + '\',\'' + encodeURIComponent(r.sensor_name) + '\',this)"><i class="fa-solid fa-pen"></i></button>'
+  };
+  if (numeric) cfg.chart = { url: '/api/esphome/history?sensor=' + encodeURIComponent(r.sensor_name), key: 'sensor_name', val: r.sensor_name, series: [{ field: 'avg_value', unit: r.unit || '', color: '#8DB255', decimals: 1, label: r.display_name || r.sensor_name, axis: 'y' }] };
+  return cfg;
+}
+function refreshEsphome() { fetch('/api/esphome/latest').then(function(r){return r.json();}).then(function(rows) { var grid = document.getElementById('esphome-grid'); if (grid) paintSensorGrid(grid, (rows || []).map(esphomeSensorCardCfg)); }).catch(function(){}); }
 // ── Layout system ──
 var layoutConfig = {};
 var layoutEditMode = false;
@@ -47,7 +86,7 @@ var BLOCKS = {
   'recent_readings':  {label:'Recente metingen',   icon:'fa-table',           dynamic:false},
   'temperature_grid': {label:'Temperatuur',         icon:'fa-temperature-half',dynamic:true,
     render: function(el) { el.innerHTML = '<div class="section-title">Temperatuur</div><div class="temp-grid" id="dyn-temp-grid"></div>'; },
-    refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+r.room+'</div><div class="temp-value">'+(r.temp_c!=null?nlNum(r.temp_c,1):'—')+' °C</div><div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
+    refresh: function() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows){ var g=document.getElementById('dyn-temp-grid'); if(!g) return; if(!rows.length){g.innerHTML='<div class="temp-card"><div class="temp-room">Nog geen data</div></div>';return;} g.innerHTML=rows.map(function(r){var age=Math.round((Date.now()-new Date(r.received_at).getTime())/60000);var ageText=age<60?age+' min geleden':Math.round(age/60)+' uur geleden';var hum=r.humidity!=null?'<div class="temp-age">'+r.humidity+' % vocht</div>':'';return '<div class="temp-card"><i class="fa-solid fa-temperature-half"></i><div class="temp-room">'+escHtml(r.room)+'</div><div class="temp-value">'+(r.temp_c!=null?nlNum(r.temp_c,1):'—')+' °C</div>'+hum+'<div class="temp-age">'+ageText+'</div></div>';}).join('');}).catch(function(){}); }
   },
   'esphome_grid': {label:'ESPHome Sensoren', icon:'fa-microchip', dynamic:true,
     render: function(el) { el.innerHTML = '<div class="section-title">ESPHome Sensoren</div><div class="esp-grid" id="dyn-esphome-grid"></div>'; },

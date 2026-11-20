@@ -3,25 +3,28 @@ function fridgeSkeleton() {
   return '<div class="chart-title">Koelkast</div><div class="fridge-row"><span class="skel-line grow tall"></span><span class="skel-line grow tall"></span></div><div class="power-sub">&nbsp;</div>';
 }
 function fridgeHtml(d) {
-  var head = '<div class="chart-header"><span class="chart-title"><i class="fa-solid fa-snowflake title-icon c-blue"></i>Koelkast</span>';
-  if (!d.configured) return head + '</div><div class="fridge-msg">Nog niet gekoppeld. Zet de databasegegevens op de server (zie <code>services/fridge.js</code>).</div>';
-  if (!d.ok) return head + '</div><div class="fridge-msg">' + (d.error || 'Niet bereikbaar') + '</div>';
-  if (!d.compartments.length) return head + '</div><div class="fridge-msg">Nog geen metingen</div>';
+  // Uniforme sensorkaart-opmaak (binnen de bestaande .card.fridge-card container)
+  function head(status) { return '<div class="sensor-head"><i class="fa-solid fa-snowflake"></i><span class="sensor-name"><span class="sensor-name-text">Koelkast</span></span><span class="sensor-status">' + status + '</span></div>'; }
+  if (!d.configured) return head('') + '<div class="fridge-msg">Nog niet gekoppeld. Zet de databasegegevens op de server (zie <code>services/fridge.js</code>).</div>';
+  if (!d.ok) return head('') + '<div class="fridge-msg">' + escHtml(d.error || 'Niet bereikbaar') + '</div>';
+  if (!d.compartments.length) return head('') + '<div class="fridge-msg">Nog geen metingen</div>';
   var age = d.updated ? Math.round((Date.now() - new Date(d.updated).getTime()) / 60000) : null;
   var ageText = age == null ? '' : age < 1 ? 'zojuist' : age < 60 ? age + ' min geleden' : age < 2880 ? Math.round(age / 60) + ' uur geleden' : Math.round(age / 1440) + ' dagen geleden';
-  head += '<span class="power-sub">' + ageText + '</span></div>';
   function deg(v) { return v != null ? nlNum(v, v % 1 ? 1 : 0) + '°' : '—'; }
-  var cells = d.compartments.map(function(c) {
-    // warmer dan ingesteld valt op: 3 graden of meer boven de ingestelde temperatuur
-    var warm = c.temp != null && c.setpoint != null && c.temp - c.setpoint >= 3;
-    return '<div class="fridge-cell"><div class="fridge-label">' + c.label + '</div>' +
-      '<div class="fridge-temp' + (warm ? ' warm' : '') + '">' + deg(c.temp) + '</div>' +
-      '<div class="fridge-set">' + (c.setpoint != null ? 'ingesteld ' + deg(c.setpoint) : '&nbsp;') + '</div></div>';
-  }).join('');
-  var env = [];
-  if (d.environment && d.environment.temp != null) env.push('Omgeving ' + deg(d.environment.temp));
-  if (d.environment && d.environment.humidity != null) env.push('vocht ' + nlNum(d.environment.humidity, 0) + '%');
-  return head + '<div class="fridge-row">' + cells + '</div>' + (env.length ? '<div class="power-sub">' + env.join(' · ') + '</div>' : '');
+  // warmer dan ingesteld valt op: 3 graden of meer boven de ingestelde temperatuur
+  function isWarm(c) { return c.temp != null && c.setpoint != null && c.temp - c.setpoint >= 3; }
+  var anyWarm = d.compartments.some(isWarm);
+  var badge = anyWarm
+    ? '<span class="wash-status-pill sensor-badge warm"><i class="fa-solid fa-triangle-exclamation"></i> Te warm</span>'
+    : '<span class="wash-status-pill sensor-badge cool"><i class="fa-solid fa-snowflake"></i> Koud</span>';
+  var values = d.compartments.map(function(c) {
+    return '<span class="sensor-value' + (isWarm(c) ? ' warm' : '') + '">' + escHtml(c.label) + ' ' + deg(c.temp) + '</span>';
+  }).join('<span class="sensor-sep">·</span>');
+  var sub = [];
+  if (ageText) sub.push(ageText);
+  if (d.environment && d.environment.temp != null) sub.push('omgeving ' + deg(d.environment.temp));
+  if (d.environment && d.environment.humidity != null) sub.push('vocht ' + nlNum(d.environment.humidity, 0) + '%');
+  return head(badge) + '<div class="sensor-values">' + values + '</div>' + (sub.length ? '<div class="sensor-subline">' + escHtml(sub.join(' · ')) + '</div>' : '');
 }
 function loadFridge() {
   var slots = document.querySelectorAll('.fridge-slot');
@@ -142,39 +145,37 @@ function toggleDishStats() {
   var card = document.querySelector('.dish-card');
   if (card) card.setAttribute('aria-expanded', open);
 }
+// Vaatwasser als minimale uniforme kaart: statusbadge + programma/resterend. Geen tijdreeks → geen
+// grafiek. Waarschuwingen (deur open, zout, enz.) blijven zichtbaar als los regeltje met wis-knop.
+function dishClearAlerts(btn) {
+  if (btn) btn.disabled = true;
+  fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); }).catch(actionFailed('Wissen lukte niet'));
+}
 function refreshVaatwasser() {
-  refreshVaatwasserStats();
+  var grid = document.getElementById('dish-grid');
   fetch('/api/vaatwasser').then(function(r){return r.json();}).then(function(d) {
-    var pill = document.getElementById('dish-status-pill');
-    if (!pill) return;
+    if (!grid) return;
     var s = d.state || {};
     var view = !d.linked ? ['idle','fa-link-slash','Niet gekoppeld'] : s.reachable === false ? ['idle','fa-plug-circle-xmark','Offline'] : DISH_STATES[s.operation] || ['idle','fa-moon', s.operation || 'Onbekend'];
-    pill.className = 'wash-status-pill ' + view[0];
-    document.getElementById('dish-status-icon').className = 'fa-solid ' + view[1];
-    document.getElementById('dish-status-text').textContent = view[2];
-    setEl('dish-last', !d.linked ? 'Koppel bij Instellingen' : d.lastFinished ? 'Laatste: ' + shortWhen(d.lastFinished) : '');
-    var alertsEl = document.getElementById('dish-alerts');
-    alertsEl.textContent = '';
-    (d.alerts || []).forEach(function(a) { var el = document.createElement('span'); el.className = 'hour-exp'; el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> '; el.appendChild(document.createTextNode(a)); alertsEl.appendChild(el); });
-    if ((d.alerts || []).length > 0) {
-      var btn = document.createElement('button');
-      btn.className = 'btn btn-quiet btn-sm';
-      btn.title = 'Meldingen wissen (probleem is verholpen)';
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Wissen';
-      btn.onclick = function(e) {
-        e.stopPropagation();
-        fetch('/api/vaatwasser/alerts/clear', { method: 'POST' }).then(function() { refreshVaatwasser(); }).catch(actionFailed('Wissen lukte niet'));
-      };
-      alertsEl.appendChild(btn);
-    }
+    var running = s.operation === 'Run' || s.operation === 'Pause';
+    var badge = { cls: running || s.operation === 'Finished' ? 'busy' : 'idle', icon: view[1], text: view[2] };
     var mins = s.finishAt ? Math.max(0, Math.round((s.finishAt - Date.now()) / 60000)) : null;
-    refreshVaatwasserAdvies(!d.linked || s.operation === 'Run' || s.operation === 'Pause');
-    setEl('dish-program', dishProgram(s.program));
-    setEl('dish-remaining', dishDuration(mins));
-    setEl('dish-finish', s.finishAt ? shortWhen(s.finishAt) : '—');
-    setEl('dish-door', { Open:'Open', Closed:'Dicht', Locked:'Vergrendeld' }[s.door] || '—');
-    var bar = document.getElementById('dish-progress');
-    bar.style.width = (s.operation === 'Finished' ? 100 : s.progress || 0) + '%';
+    var values = [];
+    if (running && mins != null) values.push(dishDuration(mins) + ' resterend');
+    values.push(dishProgram(s.program));
+    var sub = !d.linked ? 'Koppel bij Instellingen'
+      : running && s.finishAt ? 'klaar om ' + shortWhen(s.finishAt)
+      : d.lastFinished ? 'Laatste: ' + shortWhen(d.lastFinished) : '';
+    var alerts = d.alerts || [];
+    var controls = alerts.length
+      ? '<div class="sensor-alerts">' + alerts.map(function(a) { return '<span class="hour-exp"><i class="fa-solid fa-triangle-exclamation"></i> ' + escHtml(a) + '</span>'; }).join('') +
+        '<button class="btn btn-quiet btn-sm" title="Meldingen wissen" onclick="dishClearAlerts(this)"><i class="fa-solid fa-check"></i> Wissen</button></div>'
+      : '';
+    var cfg = {
+      id: 'dish', icon: 'fa-soap', name: 'Vaatwasser', badge: badge, values: values, sub: sub, controls: controls,
+      sig: values.join(',') + '|' + badge.text + '|' + alerts.join('~')
+    };
+    paintSensorGrid(grid, [cfg]);
   }).catch(function(){});
 }
 var hcPollTimer = null;
@@ -225,28 +226,35 @@ var tadoBusy = {};            // zones met een lopende opdracht; dan niet verver
 var tadoLinkTimer = null;
 function tadoFindZone(id) { return (tadoData && tadoData.zones || []).filter(function(z) { return z.id === id; })[0]; }
 function tadoDeg(v) { return v != null ? nlNum(v, v % 1 ? 1 : 0) + '°' : '—'; }
-function tadoZoneHtml(z) {
-  var flame = !z.online ? '<span class="tado-flame off-air"><i class="fa-solid fa-plug-circle-xmark"></i> Offline</span>'
-    : z.heatingPower > 0 ? '<span class="tado-flame on"><i class="fa-solid fa-fire"></i> ' + Math.round(z.heatingPower) + '%</span>'
-    : '<span class="tado-flame"><i class="fa-regular fa-snowflake"></i> uit</span>';
-  var sub = [];
-  if (z.humidity != null) sub.push(Math.round(z.humidity) + '% vocht');
-  if (z.openWindow) sub.push('<i class="fa-solid fa-window-maximize"></i> raam open');
-  sub.push(z.overlay ? 'handmatig' : 'schema');
+// tado-zone als uniforme sensorkaart: verwarm-badge + huidige temp/vocht + uitklapbare grafiek, met de
+// bestaande +/- / aan-uit / schema-bediening behouden als kaart-controls.
+function tadoZoneCfg(z) {
   var off = z.power === 'OFF';
   var dis = z.online ? '' : ' disabled';
-  var stepDis = dis;
-  return '<div class="card tado-card">' +
-    '<div class="tado-head"><span class="tado-name">' + escHtml(z.name) + '</span>' + flame + '</div>' +
-    '<div class="tado-temp">' + tadoDeg(z.temperature) + '</div>' +
-    '<div class="tado-sub">' + sub.join(' · ') + '</div>' +
+  var badge = !z.online ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Offline' }
+    : z.heatingPower > 0 ? { cls: 'warm', icon: 'fa-fire', text: 'Verwarmt ' + Math.round(z.heatingPower) + '%' }
+    : { cls: 'idle', icon: 'fa-snowflake', text: 'Uit' };
+  var values = [tadoDeg(z.temperature)];
+  if (z.humidity != null) values.push(Math.round(z.humidity) + ' %');
+  var sub = [];
+  if (z.openWindow) sub.push('<i class="fa-solid fa-window-maximize"></i> raam open');
+  sub.push(z.overlay ? 'handmatig' : 'schema');
+  var controls = '<div class="tado-sub">' + sub.join(' · ') + '</div>' +
     '<div class="tado-controls">' +
-      '<button class="tado-step" aria-label="Lager" onclick="tadoStep(' + z.id + ',-0.5)"' + stepDis + '>−</button>' +
+      '<button class="tado-step" aria-label="Lager" onclick="tadoStep(' + z.id + ',-0.5)"' + dis + '>−</button>' +
       '<span class="tado-setpoint' + (off ? ' off' : '') + '">' + (off ? 'Uit' : tadoDeg(z.setpoint)) + '</span>' +
-      '<button class="tado-step" aria-label="Hoger" onclick="tadoStep(' + z.id + ',0.5)"' + stepDis + '>+</button>' +
+      '<button class="tado-step" aria-label="Hoger" onclick="tadoStep(' + z.id + ',0.5)"' + dis + '>+</button>' +
       '<button class="btn btn-quiet btn-sm tado-mode" onclick="' + (off ? 'tadoStep(' + z.id + ',0.5)' : 'tadoOff(' + z.id + ')') + '"' + dis + '>' + (off ? 'Aan' : 'Uit') + '</button>' +
       (z.overlay ? '<button class="btn btn-quiet btn-sm" onclick="tadoAuto(' + z.id + ')"' + dis + '>Schema</button>' : '') +
-    '</div></div>';
+    '</div>';
+  var series = [{ field: 'avg_temp', unit: '°C', color: '#F97316', decimals: 1, label: 'Temp', axis: 'y' }];
+  if (z.humidity != null) series.push({ field: 'avg_humidity', unit: '%', color: '#2DD4BF', decimals: 0, label: 'Vocht', axis: 'y1' });
+  return {
+    id: 'tado-zone-' + z.id, icon: 'fa-temperature-arrow-up', name: z.name,
+    badge: badge, values: values, controls: controls,
+    sig: values.join(',') + '|' + badge.text + '|' + (off ? 'off' : tadoDeg(z.setpoint)) + '|' + z.overlay + '|' + dis,
+    chart: { url: '/api/temperature/history', key: 'room', val: z.name, series: series }
+  };
 }
 function tadoAgo(ms) {
   if (!ms) return '';
@@ -257,12 +265,12 @@ function renderTado(d) {
   tadoData = d;
   var grid = document.getElementById('tado-zones');
   if (grid) {
-    if (!d.linked) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">Nog niet gekoppeld — koppel bij Instellingen → Koppelingen</div></div>';
-    else if (!d.zones || !d.zones.length) grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">' + escHtml(d.error || 'Nog geen kamers ontvangen…') + '</div></div>';
+    if (!d.linked) { grid._sig = 'nolink'; grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">Nog niet gekoppeld — koppel bij Instellingen → Koppelingen</div></div>'; }
+    else if (!d.zones || !d.zones.length) { grid._sig = 'nozones'; grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">' + escHtml(d.error || 'Nog geen kamers ontvangen…') + '</div></div>'; }
     else {
       var shown = d.zones.filter(function(z) { return z.view !== 'home' && z.view !== 'hidden'; });
-      grid.innerHTML = shown.length ? shown.map(tadoZoneHtml).join('')
-        : '<div class="card fridge-card"><div class="fridge-msg">Alle kamers staan ingesteld om hier niet te tonen (zie Instellingen).</div></div>';
+      if (!shown.length) { grid._sig = 'nohidden'; grid.innerHTML = '<div class="card fridge-card"><div class="fridge-msg">Alle kamers staan ingesteld om hier niet te tonen (zie Instellingen).</div></div>'; }
+      else paintSensorGrid(grid, shown.map(tadoZoneCfg));
     }
   }
   buildTadoExtra(d);

@@ -131,64 +131,154 @@ function toggleLedPanel(id, btn) {
   }
 }
 function deviceRename(key, defaultName, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveDeviceName(key, name); }); }
-function esphomeRename(deviceEnc, sensorEnc, iconEl) { inlineRename(iconEl.previousElementSibling, function(name) { saveEsphomeName(decodeURIComponent(deviceEnc), decodeURIComponent(sensorEnc), name); }); }
+function esphomeRename(deviceEnc, sensorEnc, iconEl) {
+  var card = iconEl.closest ? iconEl.closest('.sensor-card') : null;
+  var span = card ? card.querySelector('.sensor-name-text') : iconEl.previousElementSibling;
+  inlineRename(span, function(name) { saveEsphomeName(decodeURIComponent(deviceEnc), decodeURIComponent(sensorEnc), name); });
+}
 function shortWhen(v) {
   var d = new Date(v);
   if (isNaN(d.getTime())) return '—';
   var time = d.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', hour12:false});
   return d.toDateString() === new Date().toDateString() ? time : d.toLocaleDateString('nl-NL', {day:'numeric', month:'short'}) + ' ' + time;
 }
+// ── Uniform sensor-kaart component ──────────────────────────────────────────
+// Eén kaart-opbouw voor ALLE losse sensoren (klimaat/ESP32, ESPHome, Tapo badkamer, tado). Elke kaart
+// toont huidige waarde(n) + een statusbadge (douchen/verwarmen/leeftijd) en is uitklapbaar naar een
+// eigen grafiek met tijd-tabs (Uur/Dag/Week/Maand). De grafiek wordt pas getekend bij openen.
+var SENSOR_CFG = {};     // sid -> grafiekconfig {url, key, val, series:[{field,unit,color,decimals,label,axis}]}
+var SENSOR_OPEN = {};    // sid -> actieve range van een uitgeklapte kaart
+var SENSOR_CHARTS = {};  // sid -> Chart-instantie
+var SENSOR_DEFAULT = {}; // sid -> standaard-range (eerste 'day', anders eerste tab)
+var SENSOR_RANGES_ALL = [['hour', 'Uur'], ['day', 'Dag'], ['week', 'Week'], ['month', 'Maand']];
+
+function sensorSlug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'x'; }
+function sensorAge(ts) {
+  if (ts == null) return '';
+  var t = typeof ts === 'number' ? ts : new Date(ts).getTime();
+  var age = Math.round((Date.now() - t) / 60000);
+  return isNaN(age) ? '' : age < 1 ? 'zojuist' : age < 60 ? age + ' min geleden' : Math.round(age / 60) + ' uur geleden';
+}
+function sensorPeriodLabel(p, range) {
+  p = String(p);
+  if (range === 'hour' || range === 'day') return p.slice(11, 16);
+  return p.slice(8, 10) + '-' + p.slice(5, 7);
+}
+function sensorCard(cfg) {
+  var sid = cfg.id;
+  if (cfg.chart) SENSOR_CFG[sid] = cfg.chart; else delete SENSOR_CFG[sid];
+  var status = '';
+  if (cfg.badge) status = '<span class="wash-status-pill sensor-badge ' + (cfg.badge.cls || '') + '">' + (cfg.badge.icon ? '<i class="fa-solid ' + cfg.badge.icon + '"></i> ' : '') + escHtml(cfg.badge.text) + '</span>';
+  else if (cfg.meta) status = '<span class="sensor-meta">' + escHtml(cfg.meta) + '</span>';
+  var expand = cfg.chart ? '<button class="sensor-expand" aria-label="Grafiek tonen" onclick="toggleSensorCard(\'' + sid + '\')"><i class="fa-solid fa-chevron-down" id="scv-' + sid + '"></i></button>' : '';
+  var sub = cfg.sub ? '<small class="sensor-sub">' + escHtml(cfg.sub) + '</small>' : '';
+  var values = (cfg.values || []).map(function(v) { return '<span class="sensor-value">' + v + '</span>'; }).join('<span class="sensor-sep">·</span>');
+  var chartBlock = '';
+  if (cfg.chart) {
+    var ranges = cfg.ranges || SENSOR_RANGES_ALL;
+    var defRange = null;
+    ranges.forEach(function(r) { if (r[0] === 'day') defRange = 'day'; });
+    if (!defRange) defRange = ranges[0][0];
+    SENSOR_DEFAULT[sid] = defRange;
+    chartBlock = '<div class="sensor-collapse" id="scol-' + sid + '"><div>' +
+      '<div class="tab-bar sensor-ranges">' + ranges.map(function(r) { return '<button class="tab' + (r[0] === defRange ? ' active' : '') + '" data-r="' + r[0] + '" onclick="sensorRange(\'' + sid + '\',\'' + r[0] + '\',this)">' + r[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="chart-wrap h-150"><canvas id="sc-' + sid + '"></canvas></div>' +
+      '</div></div>';
+  }
+  return '<div class="esp-card sensor-card" id="scard-' + sid + '">' +
+    '<div class="sensor-head"><i class="fa-solid ' + cfg.icon + '"></i>' +
+    '<span class="sensor-name"><span class="sensor-name-text">' + escHtml(cfg.name) + '</span>' + sub + '</span>' +
+    '<span class="sensor-status">' + status + '</span>' + (cfg.headExtra || '') + expand + '</div>' +
+    '<div class="sensor-values">' + values + '</div>' + (cfg.controls || '') + chartBlock + '</div>';
+}
+function toggleSensorCard(sid) {
+  var col = document.getElementById('scol-' + sid); if (!col) return;
+  var open = col.classList.toggle('open');
+  var chev = document.getElementById('scv-' + sid); if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  if (open) { if (!SENSOR_OPEN[sid]) SENSOR_OPEN[sid] = SENSOR_DEFAULT[sid] || 'day'; drawSensorChart(sid, SENSOR_OPEN[sid]); }
+  else { delete SENSOR_OPEN[sid]; if (SENSOR_CHARTS[sid]) { SENSOR_CHARTS[sid].destroy(); delete SENSOR_CHARTS[sid]; } }
+}
+function sensorRange(sid, range, btn) {
+  if (btn && btn.parentNode) { btn.parentNode.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); }); btn.classList.add('active'); }
+  SENSOR_OPEN[sid] = range;
+  drawSensorChart(sid, range);
+}
+function drawSensorChart(sid, range) {
+  var cfg = SENSOR_CFG[sid]; if (!cfg) return;
+  var canvas = document.getElementById('sc-' + sid); if (!canvas) return;
+  fetch(cfg.url + (cfg.url.indexOf('?') !== -1 ? '&' : '?') + 'range=' + range).then(function(r) { return r.json(); }).then(function(rows) {
+    var mine = cfg.key ? (rows || []).filter(function(r) { return String(r[cfg.key]) === String(cfg.val); }) : (rows || []);
+    var periods = []; mine.forEach(function(r) { if (periods.indexOf(r.period) === -1) periods.push(r.period); });
+    periods.sort();
+    var twoAxis = cfg.series.length > 1;
+    var datasets = cfg.series.map(function(s) {
+      var byP = {}; mine.forEach(function(r) { if (r[s.field] != null) byP[r.period] = r[s.field]; });
+      var dec = s.decimals != null ? s.decimals : 1;
+      return { label: s.label, data: periods.map(function(p) { var v = byP[p]; return v != null ? Number(Number(v).toFixed(dec)) : null; }), borderColor: s.color, backgroundColor: s.color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true, yAxisID: s.axis || 'y' };
+    });
+    var labels = periods.map(function(p) { return sensorPeriodLabel(p, range); });
+    if (SENSOR_CHARTS[sid]) SENSOR_CHARTS[sid].destroy();
+    var scales = {
+      x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
+      y: { position: 'left', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + (cfg.series[0].unit || ''); } }, grid: { color: CHART_GRID } }
+    };
+    if (twoAxis) scales.y1 = { position: 'right', ticks: { color: CHART_TICK, font: { size: 10 }, callback: function(v) { return v + ' ' + (cfg.series[1].unit || ''); } }, grid: { display: false } };
+    SENSOR_CHARTS[sid] = new Chart(canvas, {
+      type: 'line', data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: twoAxis, labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label: function(c) { var s = cfg.series[c.datasetIndex]; return c.dataset.label + ': ' + c.parsed.y + ' ' + (s ? s.unit : ''); } } } },
+        scales: scales
+      }
+    });
+  }).catch(function() {});
+}
+// Vervangt de inhoud van een grid alleen als er wezenlijk iets veranderde (op basis van cfg.sig), zodat
+// een uitgeklapte grafiek niet elke refresh (3s) wegklapt. Herstelt open kaarten na een herbouw.
+function paintSensorGrid(grid, cards) {
+  if (!grid) return;
+  if (!cards.length) { grid._sig = '__empty__'; if (grid.innerHTML.indexOf('sensor-card') !== -1 || !grid.innerHTML) grid.innerHTML = '<div class="esp-card"><div class="esp-head">Nog geen data</div></div>'; return; }
+  var sig = cards.map(function(c) { return c.id + '=' + (c.sig != null ? c.sig : (c.values || []).join(',') + '|' + (c.badge ? c.badge.text : '')); }).join(';');
+  if (grid._sig === sig) return;
+  grid._sig = sig;
+  grid.innerHTML = cards.map(sensorCard).join('');
+  cards.forEach(function(c) {
+    if (!c.chart || !SENSOR_OPEN[c.id]) return;
+    var col = document.getElementById('scol-' + c.id); if (!col) return;
+    col.classList.add('open');
+    var chev = document.getElementById('scv-' + c.id); if (chev) chev.style.transform = 'rotate(180deg)';
+    var bar = col.querySelector('.sensor-ranges');
+    if (bar) { bar.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); }); var a = bar.querySelector('[data-r="' + SENSOR_OPEN[c.id] + '"]'); if (a) a.classList.add('active'); }
+    drawSensorChart(c.id, SENSOR_OPEN[c.id]);
+  });
+}
+// Bouwt een kaart-config uit één temperature_readings-rij (klimaatsensor). extra = {badge, icon}.
+function climateCardCfg(r, icon, extra) {
+  var values = [(r.temp_c != null ? nlNum(r.temp_c, 1) + ' °C' : '—')];
+  if (r.humidity != null) values.push(r.humidity + ' %');
+  var series = [{ field: 'avg_temp', unit: '°C', color: '#38BDF8', decimals: 1, label: 'Temp', axis: 'y' }];
+  if (r.humidity != null) series.push({ field: 'avg_humidity', unit: '%', color: '#2DD4BF', decimals: 0, label: 'Vocht', axis: 'y1' });
+  var cfg = {
+    id: 'clim-' + sensorSlug(r.room), icon: icon || 'fa-temperature-half', name: r.room, values: values,
+    meta: sensorAge(r.received_at),
+    chart: { url: '/api/temperature/history', key: 'room', val: r.room, series: series }
+  };
+  if (extra && extra.icon) cfg.icon = extra.icon;
+  if (extra && extra.badge) { cfg.badge = extra.badge; cfg.meta = null; }
+  cfg.sig = values.join(',') + '|' + (cfg.badge ? cfg.badge.text : '');
+  return cfg;
+}
+
 function refreshTemperature() { fetch('/api/temperature/latest').then(function(r){return r.json();}).then(function(rows) {
   var grid = document.getElementById('temp-grid');
   if (!grid) return;
-  if (!rows.length) { grid.innerHTML = '<div class="esp-card"><div class="esp-head">Nog geen data</div></div>'; return; }
-  grid.innerHTML = '<div class="esp-card">' + rows.map(function(r) {
-    var age = Math.round((Date.now() - new Date(r.received_at).getTime()) / 60000);
-    var ageText = isNaN(age) ? '' : age < 60 ? age + ' min geleden' : Math.round(age/60) + ' uur geleden';
-    return '<div class="esp-row"><span class="esp-name"><span class="esp-room">' + r.room + '</span><span class="esp-sub">' + ageText + '</span></span>' +
-      '<span class="esp-val">' + (r.temp_c != null ? nlNum(r.temp_c, 1) + ' °C' : '—') +
-      (r.humidity != null ? '<span class="esp-sub"> · ' + r.humidity + ' %</span>' : '') + '</span></div>';
-  }).join('') + '</div>';
+  // Alleen de ESP32-klimaatsensoren hier; tado en Tapo krijgen hun eigen sectie (anders dubbel).
+  var cards = (rows || []).filter(function(r) { return r.device !== 'tado' && r.device !== 'tapo-t310'; })
+    .map(function(r) { return climateCardCfg(r, 'fa-temperature-half'); });
+  paintSensorGrid(grid, cards);
 }).catch(function(){}); }
-// Eén grafiek-bouwer voor alle klimaatsensoren die naar temperature_readings loggen (ESP32, Tapo T310,
-// tado, ...). metric 'temp' of 'hum' kiest de reeks; elke kamer wordt één lijn. Een nieuwe sensor hoeft
-// enkel te loggen — hij verschijnt dan vanzelf in beide grafieken. Zie ook db/logging.js.
-var chartTemp = null, chartHum = null;
-var CLIMATE_METRICS = {
-  temp: { field: 'avg_temp', unit: '°C', decimals: 1, canvas: 'chart-temp', attr: 'temprange' },
-  hum:  { field: 'avg_humidity', unit: '%', decimals: 0, canvas: 'chart-hum', attr: 'humrange' }
-};
-function loadTempChart(range, btn) { loadClimateChart('temp', range, btn); }
-function loadHumChart(range, btn) { loadClimateChart('hum', range, btn); }
-function loadClimateChart(metric, range, btn) {
-  var m = CLIMATE_METRICS[metric];
-  if (!m || !document.getElementById(m.canvas)) return;
-  document.querySelectorAll('[data-' + m.attr + ']').forEach(function(t) { t.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  fetch('/api/temperature/history?range=' + range).then(function(r){return r.json();}).then(function(rows) {
-    var periods = []; var byRoom = {};
-    rows.forEach(function(r) {
-      if (r[m.field] == null) return; // kamers zonder deze meting (bv. geen vochtsensor) overslaan
-      if (periods.indexOf(r.period) === -1) periods.push(r.period);
-      if (!byRoom[r.room]) byRoom[r.room] = {};
-      byRoom[r.room][r.period] = r[m.field];
-    });
-    periods.sort();
-    var palette = ['#8DB255','#38BDF8','#F97316','#22C55E','#FBBF24','#F87171'];
-    var datasets = Object.keys(byRoom).map(function(room, i) {
-      var color = palette[i % palette.length];
-      return { label: room, data: periods.map(function(p) { var v = byRoom[room][p]; return v != null ? Number(v).toFixed(m.decimals) : null; }), borderColor: color, backgroundColor: color + '33', borderWidth: 2, tension: 0.3, pointRadius: 0, fill: false, spanGaps: true };
-    });
-    var labels = periods.map(function(p) { return range === 'day' ? p.slice(11, 16) : p.slice(8, 10) + '-' + p.slice(5, 7); });
-    if (metric === 'temp') { if (chartTemp) chartTemp.destroy(); } else { if (chartHum) chartHum.destroy(); }
-    var chart = new Chart(document.getElementById(m.canvas), {
-      type: 'line',
-      data: { labels: labels, datasets: datasets },
-      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + c.parsed.y + ' ' + m.unit; } } } }, scales: { x: { ticks: { color: CHART_TICK, maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: CHART_TICK, font: { size: 11 }, callback: function(v) { return v + ' ' + m.unit; } }, grid: { color: CHART_GRID } } } }
-    });
-    if (metric === 'temp') chartTemp = chart; else chartHum = chart;
-  }).catch(function(){});
-}
+// (De gedeelde temp/vocht-grafieken zijn vervangen door een eigen uitklapbare grafiek per sensorkaart,
+//  zie het "Uniform sensor-kaart component" hierboven en drawSensorChart.)
 var chartWashPower = null;
 function loadWashPowerChart(range, btn) {
   if (!document.getElementById('chart-wash-power')) return;
@@ -209,21 +299,24 @@ function loadWashPowerChart(range, btn) {
   }).catch(function(){});
 }
 function refreshTapoCard() {
-  if (!document.getElementById('tapo-card') && !document.getElementById('wash-power')) return;
+  var grid = document.getElementById('tapo-grid');
+  if (!grid && !document.getElementById('wash-power')) return;
   fetch('/api/tapo').then(function(r){return r.json();}).then(function(d) {
-    var t = d.t310 || null, el;
-    if ((el = document.getElementById('tapo-card-temp'))) el.textContent = t && t.temp != null ? nlNum(t.temp, 1) + ' °C' : '—';
-    if ((el = document.getElementById('tapo-card-hum'))) el.textContent = t && t.humidity != null ? t.humidity + ' %' : '—';
-    if ((el = document.getElementById('tapo-card-meta'))) el.textContent = d.updated ? tapoAgo(d.updated) : (d.linked ? '' : 'niet gekoppeld');
-    var pill = document.getElementById('tapo-shower-pill');
-    if (pill) {
-      var showering = !!d.showerActive;
-      pill.className = 'wash-status-pill ' + (showering ? 'running' : 'idle');
-      var icon = document.getElementById('tapo-shower-icon'); if (icon) icon.className = showering ? 'fa-solid fa-shower' : 'fa-solid fa-droplet';
-      var txt = document.getElementById('tapo-shower-text');
-      if (txt) txt.textContent = !d.linked ? 'Niet gekoppeld' : !t ? 'Geen sensordata' : showering ? 'Er wordt gedoucht' : 'Rustig';
-    }
+    var el;
     if ((el = document.getElementById('wash-power'))) el.textContent = d.plug && d.plug.watts != null ? nlNum(d.plug.watts, 1) + ' W' : '—';
+    if (!grid) return;
+    if (!d.linked) { grid._sig = 'nolink'; grid.innerHTML = '<div class="esp-card"><div class="esp-head">Niet gekoppeld — koppel bij Instellingen</div></div>'; return; }
+    var t = d.t310 || null;
+    var showering = !!d.showerActive;
+    var room = d.roomName || 'Badkamer';
+    var r = { room: room, temp_c: t ? t.temp : null, humidity: t ? t.humidity : null, received_at: d.updated || null };
+    var badge = !t ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Geen data' }
+      : showering ? { cls: 'cool', icon: 'fa-shower', text: 'Doucht' }
+      : { cls: 'idle', icon: 'fa-droplet', text: 'Rustig' };
+    var cfg = climateCardCfg(r, 'fa-shower', { badge: badge });
+    cfg.id = 'tapo-' + sensorSlug(room);
+    cfg.sig = cfg.values.join(',') + '|' + badge.text;
+    paintSensorGrid(grid, [cfg]);
   }).catch(function(){});
 }
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? shortWhen(s.since) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }

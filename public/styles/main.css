@@ -1303,6 +1303,112 @@ to {
 .esp-sub {
   font-size:var(--fs-2xs);
   color:var(--muted)}
+/* Uniforme sensorkaart (klimaat, ESPHome, Tapo badkamer, tado) */
+.sensor-card {
+  display:flex;
+  flex-direction:column;
+  gap:0.4rem}
+.sensor-head {
+  display:flex;
+  align-items:center;
+  gap:0.5rem}
+.sensor-head > i {
+  font-size:var(--fs-md);
+  color:var(--accent-l);
+  flex-shrink:0}
+.sensor-name {
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  margin-right:auto;
+  font-weight:600;
+  color:var(--text);
+  text-transform:capitalize}
+.sensor-name-text {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap}
+.sensor-sub {
+  font-size:var(--fs-2xs);
+  font-weight:400;
+  color:var(--dim);
+  text-transform:none}
+.sensor-status {
+  display:inline-flex;
+  flex-shrink:0}
+.sensor-meta {
+  font-size:var(--fs-2xs);
+  color:var(--muted)}
+.sensor-badge {
+  padding:0.25rem 0.6rem;
+  font-size:var(--fs-2xs)}
+.sensor-badge.warm {
+  color:var(--orange,#F97316);
+  border-color:rgba(249,115,22,0.4);
+  background:rgba(249,115,22,0.1)}
+.sensor-badge.cool {
+  color:var(--blue,#38BDF8);
+  border-color:rgba(56,189,248,0.4);
+  background:rgba(56,189,248,0.1)}
+.sensor-badge.off {
+  color:var(--muted);
+  opacity:0.8}
+.sensor-expand {
+  flex-shrink:0;
+  background:none;
+  border:none;
+  color:var(--dim);
+  cursor:pointer;
+  padding:0.2rem 0.35rem;
+  font-size:var(--fs-sm)}
+.sensor-expand i {
+  transition:transform 0.3s}
+.sensor-values {
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:0.4rem}
+.sensor-value {
+  font-size:var(--fs-xl);
+  font-weight:700;
+  letter-spacing:-0.02em;
+  font-variant-numeric:tabular-nums}
+.sensor-sep {
+  color:var(--dim)}
+.sensor-collapse {
+  display:grid;
+  grid-template-rows:0fr;
+  overflow:hidden;
+  opacity:0;
+  transition:grid-template-rows 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.25s}
+.sensor-collapse.open {
+  grid-template-rows:1fr;
+  opacity:1;
+  margin-top:0.2rem}
+.sensor-collapse > div {
+  min-height:0;
+  overflow:hidden}
+.sensor-ranges {
+  margin-bottom:0.4rem}
+.sensor-card .tado-controls {
+  margin-top:0.1rem}
+.sensor-badge.busy {
+  color:var(--green-l,#4ADE80);
+  border-color:rgba(74,222,128,0.4);
+  background:rgba(74,222,128,0.1)}
+.sensor-badge.busy i.fa-rotate {
+  animation:wash-spin 1.5s linear infinite}
+.sensor-value.warm {
+  color:var(--red)}
+.sensor-subline {
+  font-size:var(--fs-2xs);
+  color:var(--muted)}
+.sensor-alerts {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:0.4rem;
+  margin-top:0.2rem}
 .wash-card .fridge-temp {
   color:var(--text)}
 .wash-card #wash-total {
