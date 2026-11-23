@@ -51,15 +51,17 @@ module.exports = function(req, res) {
     var tqs = req.url.indexOf("?range=");
     if (tqs !== -1) trange = req.url.slice(tqs + 7).split("&")[0];
 
-    var tfmt, twhere, tparam;
+    var tfmt, twhere, tparams;
     if (trange === "hour") {
-      tfmt = "'%Y-%m-%d %H:%M'"; twhere = "received_at >= ?"; tparam = time.cutoff(3600000);
+      tfmt = "'%Y-%m-%d %H:%M'"; twhere = "received_at >= ?"; tparams = [time.cutoff(3600000)];
     } else if (trange === "week") {
-      tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparam = time.effectiveCutoff(604800000);
+      tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparams = [time.effectiveCutoff(604800000)];
     } else if (trange === "month") {
-      tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparam = time.effectiveCutoff(2592000000);
+      tfmt = "'%Y-%m-%d'"; twhere = "received_at >= ?"; tparams = [time.effectiveCutoff(2592000000)];
     } else {
-      tfmt = "'%Y-%m-%d %H:00'"; twhere = "date(received_at) = ?"; tparam = time.todayAms();
+      // "vandaag" als index-vriendelijke range i.p.v. date(received_at) = ? (zie utils/time.dayRange)
+      var tday = time.dayRange(time.todayAms());
+      tfmt = "'%Y-%m-%d %H:00'"; twhere = "received_at >= ? AND received_at < ?"; tparams = [tday.start, tday.end];
     }
 
     db.all(
@@ -67,7 +69,7 @@ module.exports = function(req, res) {
       " FROM temperature_readings" +
       " WHERE " + twhere +
       " GROUP BY period, room ORDER BY period ASC",
-      [tparam],
+      tparams,
       function(err, rows) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows || []));

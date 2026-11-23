@@ -200,12 +200,14 @@ function sumDays(rows) {
 
 // Verbruik van één kalenderdag, optioneel alleen tot een kloktijd ("HH:MM:SS")
 function dayUsage(date, untilClock, cb) {
+  // dag als index-vriendelijke range i.p.v. date(received_at) = ? (zie utils/time.dayRange)
+  var day = time.dayRange(date);
   db.get(
     "SELECT AVG(power_delivered_total_kw) as avg_kw," +
     " (julianday(MAX(received_at)) - julianday(MIN(received_at)))*24 as hours," +
     " MAX(gas_m3)-MIN(gas_m3) as gas_used, COUNT(*) as n" +
-    " FROM readings WHERE date(received_at) = ?" + (untilClock ? " AND time(received_at) <= ?" : ""),
-    untilClock ? [date, untilClock] : [date],
+    " FROM readings WHERE received_at >= ? AND received_at < ?" + (untilClock ? " AND time(received_at) <= ?" : ""),
+    untilClock ? [day.start, day.end, untilClock] : [day.start, day.end],
     function(err, row) {
       var ok = row && row.n > 1;
       cb({

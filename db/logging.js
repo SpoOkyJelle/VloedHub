@@ -1,7 +1,8 @@
 var db = require("./setup");
+var time = require("../utils/time");
 
 function logReading(data, callback) {
-  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var received_at = time.now();
   var n = function(v) { return v != null ? v : null; };
 
   db.run(
@@ -44,7 +45,7 @@ function logReading(data, callback) {
 // (/api/temperature/history → loadTempChart/loadHumChart). Geef humidity mee als de sensor het heeft; laat
 // hem weg (of null) als niet. Niks anders nodig om een nieuwe sensor te laten loggen én graferen.
 function logTemperatureReadings(data, callback) {
-  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var received_at = time.now();
   var readings = Array.isArray(data.readings) ? data.readings : [];
   var valid = readings.filter(function(r) { return r && typeof r.room === "string" && r.room.length > 0 && typeof r.temp_c === "number" && isFinite(r.temp_c); });
 
@@ -65,7 +66,7 @@ function logTemperatureReadings(data, callback) {
 }
 
 function setWashStatus(state, device, callback) {
-  var since = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var since = time.now();
   db.run(
     "INSERT INTO wasmachine_status (id, state, since, device) VALUES (1, ?, ?, ?)" +
     " ON CONFLICT(id) DO UPDATE SET state = excluded.state, since = excluded.since, device = excluded.device",
@@ -77,7 +78,7 @@ function setWashStatus(state, device, callback) {
 }
 
 function logWashCycle(data, callback) {
-  var finished_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var finished_at = time.now();
   db.run(
     "INSERT INTO wasmachine_cycles (finished_at, device) VALUES (?,?)",
     [finished_at, data.device || null],
@@ -91,7 +92,7 @@ function logWashCycle(data, callback) {
 
 function logTapoPower(watts, device, callback) {
   if (typeof watts !== "number" || !isFinite(watts)) { if (callback) callback(new Error("invalid watts")); return; }
-  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var received_at = time.now();
   db.run(
     "INSERT INTO tapo_power (received_at, device, watts) VALUES (?,?,?)",
     [received_at, device || null, watts],
@@ -100,7 +101,7 @@ function logTapoPower(watts, device, callback) {
 }
 
 function logEsphomeReadings(data, callback) {
-  var received_at = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  var received_at = time.now();
   var sensors = Array.isArray(data.sensors) ? data.sensors : [];
   var valid = sensors.filter(function(s) {
     return s && typeof s.name === "string" && s.name.length > 0 && s.value != null;

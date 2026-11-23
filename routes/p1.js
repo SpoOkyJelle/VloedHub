@@ -1,4 +1,5 @@
 var db = require("../db/setup");
+var dbp = require("../db/promises");
 var logging = require("../db/logging");
 var time = require("../utils/time");
 
@@ -35,15 +36,20 @@ module.exports = function(req, res) {
   }
 
   if (req.method === "GET" && req.url === "/api/latest") {
-    db.get("SELECT * FROM readings ORDER BY id DESC LIMIT 1", function(err, latest) {
-      db.all(
-        "SELECT received_at, power_delivered_total_kw, power_returned_total_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 20",
-        function(err2, recent) {
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ latest: latest || null, recent: recent || [] }));
-        }
-      );
-    });
+    // twee onafhankelijke queries parallel i.p.v. genest
+    (async function() {
+      try {
+        var out = await Promise.all([
+          dbp.get("SELECT * FROM readings ORDER BY id DESC LIMIT 1"),
+          dbp.all("SELECT received_at, power_delivered_total_kw, power_returned_total_kw, gas_m3 FROM readings ORDER BY id DESC LIMIT 20")
+        ]);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ latest: out[0] || null, recent: out[1] || [] }));
+      } catch (e) {
+        console.error("[p1] latest:", e.message);
+        if (!res.headersSent) { res.writeHead(500, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "latest mislukt" })); }
+      }
+    })();
     return true;
   }
 
@@ -115,6 +121,8 @@ module.exports = function(req, res) {
   }
 
   if (req.method === "GET" && req.url === "/api/stats") {
+    // "vandaag" als index-vriendelijke range i.p.v. date(received_at) = ? (zie utils/time.dayRange)
+    var statsDay = time.dayRange(time.todayAms());
     db.get(
       "SELECT" +
       " AVG(power_delivered_total_kw) as avg_del," +
@@ -129,9 +137,9 @@ module.exports = function(req, res) {
       " MIN(voltage_l3) as min_v3, MAX(voltage_l3) as max_v3," +
       " AVG(voltage_l1) as avg_v1, AVG(voltage_l2) as avg_v2, AVG(voltage_l3) as avg_v3" +
       " FROM readings" +
-      " WHERE date(received_at) = ?" +
+      " WHERE received_at >= ? AND received_at < ?" +
       " AND power_delivered_total_kw IS NOT NULL",
-      [time.todayAms()],
+      [statsDay.start, statsDay.end],
       function(err, row) {
         if (row) {
           // fasen zonder spanning (enkelfase-aansluiting) tellen niet mee

@@ -1,4 +1,7 @@
 var state   = require('../utils/state');
+var time    = require('../utils/time');
+var color   = require('../utils/color');
+var defaults = require('./flowrunner-defaults');
 var dbModule = require('../db/setup');
 var discord = require('./discord');
 var weather = require('./weather');
@@ -31,63 +34,15 @@ var TRIGGERS = {
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function hexToRgb(hex) {
-  hex = (hex || '#ffffff').replace('#', '');
-  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-  return {
-    r: parseInt(hex.slice(0,2), 16) || 255,
-    g: parseInt(hex.slice(2,4), 16) || 255,
-    b: parseInt(hex.slice(4,6), 16) || 255
-  };
-}
-
-// Tanner Helland algorithm: Kelvin (1000–40000) → {r,g,b} (0–255)
-function kelvinToRgb(kelvin) {
-  var temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
-  var r, g, b;
-
-  // Red
-  if (temp <= 66) {
-    r = 255;
-  } else {
-    r = temp - 60;
-    r = 329.698727446 * Math.pow(r, -0.1332047592);
-    r = Math.max(0, Math.min(255, r));
-  }
-
-  // Green
-  if (temp <= 66) {
-    g = temp;
-    g = 99.4708025861 * Math.log(g) - 161.1195681661;
-  } else {
-    g = temp - 60;
-    g = 288.1221695283 * Math.pow(g, -0.0755148492);
-  }
-  g = Math.max(0, Math.min(255, g));
-
-  // Blue
-  if (temp >= 66) {
-    b = 255;
-  } else if (temp <= 19) {
-    b = 0;
-  } else {
-    b = temp - 10;
-    b = 138.5177312231 * Math.log(b) - 305.0447927307;
-    b = Math.max(0, Math.min(255, b));
-  }
-
-  return { r: Math.round(r), g: Math.round(g), b: Math.round(b) };
-}
+// Kleur-wiskunde (hex/kelvin → rgb) staat in utils/color.js.
 
 function amsHour() {
-  var t = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' });
-  var hm = t.slice(11, 16);
-  var parts = hm.split(':');
+  var parts = time.clock().split(':');
   return parseInt(parts[0]) + parseInt(parts[1]) / 60;
 }
 
 function amsTime() {
-  return new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).slice(11, 16);
+  return time.clock();
 }
 
 // Last known sun times — refreshed every checkAll cycle
@@ -127,7 +82,7 @@ function executeNode(node, ctx) {
     ls = state.getLedState(device);
     ls.on = true;
     if (node.data.brightness != null) ls.brightness = Math.max(0, Math.min(255, parseInt(node.data.brightness) || 180));
-    if (node.data.color) ls.color = hexToRgb(node.data.color);
+    if (node.data.color) ls.color = color.hexToRgb(node.data.color);
     console.log('[Flow] LED aan:', device, ls);
     return { action: 'led_on', device: device };
   }
@@ -142,7 +97,7 @@ function executeNode(node, ctx) {
     ls = state.getLedState(device);
     ls.effect = parseInt(node.data.effect) || 0;
     if (node.data.brightness != null) ls.brightness = Math.max(0, Math.min(255, parseInt(node.data.brightness) || ls.brightness));
-    if (node.data.color) ls.color = hexToRgb(node.data.color);
+    if (node.data.color) ls.color = color.hexToRgb(node.data.color);
     ls.on = true;
     console.log('[Flow] LED effect:', device, 'effect=' + ls.effect);
     return { action: 'led_effect', device: device, effect: ls.effect };
@@ -228,7 +183,7 @@ function executeNode(node, ctx) {
     var ctDevice = node.data.device || 'default';
     var ctKelvin = Math.max(2000, Math.min(6500, parseInt(node.data.kelvin) || 3000));
     var ctLs     = state.getLedState(ctDevice);
-    ctLs.color   = kelvinToRgb(ctKelvin);
+    ctLs.color   = color.kelvinToRgb(ctKelvin);
     ctLs.on      = true;
     console.log('[Flow] color_temp:', ctDevice, ctKelvin + 'K', ctLs.color);
     return { action: 'color_temp', device: ctDevice, kelvin: ctKelvin };
@@ -249,7 +204,7 @@ function executeNode(node, ctx) {
       alBrightness = 20;  alKelvin = 2000; // Very dim warm
     }
     alLs.brightness = alBrightness;
-    alLs.color      = kelvinToRgb(alKelvin);
+    alLs.color      = color.kelvinToRgb(alKelvin);
     alLs.on         = true;
     console.log('[Flow] adaptive_light:', alDevice, alBrightness, alKelvin + 'K');
     return { action: 'adaptive_light', device: alDevice, brightness: alBrightness, kelvin: alKelvin };
@@ -478,7 +433,7 @@ function traverseOutputs(startNode, allNodes, ctx, flowId) {
 
   // Record run in flow_runs and update last_run on flows
   if (flowId != null) {
-    var nowTs = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+    var nowTs = time.now();
     var actionsJson = JSON.stringify(results);
     dbModule.run(
       'INSERT INTO flow_runs (flow_id, triggered_at, actions) VALUES (?,?,?)',
@@ -533,8 +488,7 @@ function gatherContext(db, callback) {
       }
 
       // Latest temp per room (last 15 min)
-      var cutoff = new Date(Date.now() - 15 * 60 * 1000)
-        .toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+      var cutoff = time.cutoff(15 * 60 * 1000);
 
       db.all('SELECT room, temp_c FROM temperature_readings WHERE received_at >= ? ORDER BY received_at DESC', [cutoff], function(err3, tempRows) {
         (tempRows || []).forEach(function(r) {
@@ -629,42 +583,7 @@ function addCostVars(vars, o) {
 }
 
 // ── Standaardflows ─────────────────────────────────────────────────────────
-// Worden één keer aangemaakt; welke er al zijn geweest staat in de configuratie, zodat een flow die je
-// weggooit niet bij de volgende herstart terugkomt.
-var DEFAULT_FLOWS = [{
-  key: 'kostenoverzicht',
-  name: 'Kostenoverzicht (elke maand)',
-  // timer (08:00 op de eerste van de maand) → melding
-  data: { drawflow: { Home: { data: {
-    '1': { id: 1, name: 'timer', data: { time: '08:00', days: 'month_first' }, class: 'timer', html: '', typenode: false,
-           inputs: {}, outputs: { output_1: { connections: [{ node: '2', output: 'input_1' }] } }, pos_x: 80, pos_y: 120 },
-    '2': { id: 2, name: 'notify', data: { webhook: '', message:
-             '**Kostenoverzicht {vorige_maand}**\n' +
-             'Totaal: {kosten_vorige_maand} (stroom {stroom_vorige_maand}, gas {gas_vorige_maand})\n' +
-             'Gemiddeld per dag nu: {kosten_dag}\n' +
-             'Sluipverbruik: {sluipkosten} per jaar\n' +
-             'Op jaarbasis: {kosten_jaar}' },
-           class: 'notify', html: '', typenode: false,
-           inputs: { input_1: { connections: [{ node: '1', input: 'output_1' }] } }, outputs: {}, pos_x: 380, pos_y: 120 }
-  } } } }
-}];
-
-function ensureDefaultFlows(db) {
-  var cfg = auth.readConfig();
-  var done = cfg.defaultFlows || [];
-  var todo = DEFAULT_FLOWS.filter(function(f) { return done.indexOf(f.key) === -1; });
-  if (!todo.length) return;
-  var now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
-  todo.forEach(function(f) {
-    db.run('INSERT INTO flows (name, enabled, data, created_at) VALUES (?,1,?,?)', [f.name, JSON.stringify(f.data), now], function(err) {
-      if (err) return console.error('[Flow] standaardflow', f.key, err.message);
-      var c = auth.readConfig();
-      c.defaultFlows = (c.defaultFlows || []).concat(f.key);
-      auth.writeConfig(c);
-      console.log('[Flow] standaardflow aangemaakt:', f.name);
-    });
-  });
-}
+// De seed-data en het eenmalig aanmaken staan in flowrunner-defaults.js (defaults.ensureDefaultFlows).
 
 // ── Manual run (async, uses real context) ─────────────────────────────────
 function runFlow(flow, db, callback) {
@@ -965,9 +884,8 @@ function checkAfvalTriggers(rows, dateStr, timeStr) {
 
 // ── Main check (every 30 s) ────────────────────────────────────────────────
 function checkAll(db) {
-  var amsNow    = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' });
-  var dateStr   = amsNow.slice(0, 10);
-  var timeStr   = amsNow.slice(11, 16);
+  var dateStr   = time.todayAms();
+  var timeStr   = time.clock();
   var dayAbbr   = new Date().toLocaleDateString('en-US', { timeZone: 'Europe/Amsterdam', weekday: 'short' }).toLowerCase();
   var isWeekday = !['sat', 'sun'].includes(dayAbbr);
 
@@ -1040,7 +958,7 @@ module.exports = {
   runFlow: runFlow,
   triggerWebhook: triggerWebhook,
   start: function(db) {
-    ensureDefaultFlows(db);
+    defaults.ensureDefaultFlows(db);
     startMqttTriggers(db);
     setInterval(function() { checkAll(db); }, 30000);
     checkAll(db);

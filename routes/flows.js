@@ -1,6 +1,7 @@
 var fs   = require('fs');
 var path = require('path');
 var db   = require('../db/setup');
+var time = require('../utils/time');
 
 var HTML = fs.readFileSync(path.join(__dirname, '../public/flows.html'), 'utf8');
 
@@ -13,7 +14,7 @@ function readBody(req, cb) {
 }
 
 function nowAms() {
-  return new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  return time.now();
 }
 
 module.exports = function(req, res) {

@@ -1,5 +1,6 @@
 var tapo = require("../services/tapo");
 var db = require("../db/setup");
+var dbp = require("../db/promises");
 var time = require("../utils/time");
 
 function json(res, status, data) {
@@ -29,21 +30,23 @@ module.exports = function(req, res) {
     var qs = req.url.indexOf("?range=");
     if (qs !== -1) range = req.url.slice(qs + 7).split("&")[0];
 
-    var sql, param;
+    var sql, params;
     if (range === "week") {
       sql = "SELECT strftime('%Y-%m-%d %H:00', received_at) as period, MAX(watts) as watts FROM tapo_power" +
             " WHERE received_at >= ? GROUP BY period ORDER BY period ASC";
-      param = time.effectiveCutoff(604800000);
+      params = [time.effectiveCutoff(604800000)];
     } else if (range === "month") {
       sql = "SELECT strftime('%Y-%m-%d', received_at) as period, MAX(watts) as watts FROM tapo_power" +
             " WHERE received_at >= ? GROUP BY period ORDER BY period ASC";
-      param = time.effectiveCutoff(2592000000);
+      params = [time.effectiveCutoff(2592000000)];
     } else {
+      // "vandaag" als index-vriendelijke range i.p.v. date(received_at) = ? (zie utils/time.dayRange)
+      var tday = time.dayRange(time.todayAms());
       sql = "SELECT received_at as period, watts FROM tapo_power" +
-            " WHERE date(received_at) = ? ORDER BY period ASC";
-      param = time.todayAms();
+            " WHERE received_at >= ? AND received_at < ? ORDER BY period ASC";
+      params = [tday.start, tday.end];
     }
-    db.all(sql, [param], function(err, rows) {
+    db.all(sql, params, function(err, rows) {
       json(res, 200, rows || []);
     });
     return true;
@@ -58,26 +61,33 @@ module.exports = function(req, res) {
     if (!(days >= 1 && days <= 90)) days = 7;
     var cutoff = time.effectiveCutoff(days * 86400000);
 
-    db.all("SELECT received_at as at, watts FROM tapo_power WHERE received_at >= ? ORDER BY received_at ASC", [cutoff], function(e1, power) {
-      db.all("SELECT received_at as at, temp_c, humidity FROM temperature_readings WHERE device = 'tapo-t310' AND received_at >= ? ORDER BY received_at ASC", [cutoff], function(e2, climate) {
-        db.all("SELECT finished_at FROM wasmachine_cycles WHERE finished_at >= ? ORDER BY finished_at ASC", [cutoff], function(e3, cycles) {
-          var out = {
-            exported_at: new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T'),
-            range_days: days,
-            note: "Ruwe Tapo-metingen om de wasmachine- en douche-drempels af te stellen. power=stekker (W), climate=T310 (temp/vocht), wash_cycles=gedetecteerd klaar.",
-            tuning: tapo.getTuning(),
-            power: power || [],
-            climate: climate || [],
-            wash_cycles: cycles || []
-          };
-          res.writeHead(200, {
-            "Content-Type": "application/json",
-            "Content-Disposition": 'attachment; filename="vloedhub-tapo-export.json"'
-          });
-          res.end(JSON.stringify(out, null, 2));
+    // De drie queries zijn onafhankelijk: parallel via Promise.all i.p.v. drie geneste callbacks
+    (async function() {
+      try {
+        var results = await Promise.all([
+          dbp.all("SELECT received_at as at, watts FROM tapo_power WHERE received_at >= ? ORDER BY received_at ASC", [cutoff]),
+          dbp.all("SELECT received_at as at, temp_c, humidity FROM temperature_readings WHERE device = 'tapo-t310' AND received_at >= ? ORDER BY received_at ASC", [cutoff]),
+          dbp.all("SELECT finished_at FROM wasmachine_cycles WHERE finished_at >= ? ORDER BY finished_at ASC", [cutoff])
+        ]);
+        var out = {
+          exported_at: time.now(),
+          range_days: days,
+          note: "Ruwe Tapo-metingen om de wasmachine- en douche-drempels af te stellen. power=stekker (W), climate=T310 (temp/vocht), wash_cycles=gedetecteerd klaar.",
+          tuning: tapo.getTuning(),
+          power: results[0],
+          climate: results[1],
+          wash_cycles: results[2]
+        };
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Content-Disposition": 'attachment; filename="vloedhub-tapo-export.json"'
         });
-      });
-    });
+        res.end(JSON.stringify(out, null, 2));
+      } catch (e) {
+        console.error("[tapo] export:", e.message);
+        if (!res.headersSent) json(res, 500, { error: "export mislukt" });
+      }
+    })();
     return true;
   }
 

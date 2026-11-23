@@ -112,7 +112,9 @@ module.exports = function(req, res) {
     } else if (range === "month") {
       fmt = "'%Y-%m-%d'"; where = "received_at >= ?"; paramList = [time.effectiveCutoff(2592000000)];
     } else {
-      fmt = "'%Y-%m-%d %H:00'"; where = "date(received_at) = ?"; paramList = [time.todayAms()];
+      // "vandaag" als index-vriendelijke range i.p.v. date(received_at) = ? (zie utils/time.dayRange)
+      var eday = time.dayRange(time.todayAms());
+      fmt = "'%Y-%m-%d %H:00'"; where = "received_at >= ? AND received_at < ?"; paramList = [eday.start, eday.end];
     }
 
     var sensorWhere = sensor ? " AND sensor_name = ?" : "";

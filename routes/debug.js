@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var db = require("../db/setup");
+var dbp = require("../db/promises");
 var time = require("../utils/time");
 var state = require("../utils/state");
 
@@ -11,41 +12,38 @@ module.exports = function(req, res) {
     var dbPath = path.join(__dirname, "../p1_data.db");
     var dbSize = 0;
     try { dbSize = fs.statSync(dbPath).size; } catch(e) {}
-    db.get(
-      "SELECT COUNT(*) as total, MIN(received_at) as first_entry, MAX(received_at) as last_entry," +
-      " COUNT(DISTINCT date(received_at)) as days_with_data" +
-      " FROM readings",
-      function(err, row) {
-        db.get(
-          "SELECT COUNT(*) as today FROM readings WHERE date(received_at) = ?",
-          [time.todayAms()],
-          function(err2, today) {
-            db.get(
-              "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= ?",
-              [time.cutoff(3600000)],
-              function(err3, hour) {
-                db.get(
-                  "SELECT AVG(cnt) as avg_per_day FROM (SELECT COUNT(*) as cnt FROM readings GROUP BY date(received_at))",
-                  function(err4, avg) {
-                    res.writeHead(200, { "Content-Type": "application/json" });
-                    res.end(JSON.stringify({
-                      total: row ? row.total : 0,
-                      first_entry: row ? row.first_entry : null,
-                      last_entry: row ? row.last_entry : null,
-                      days_with_data: row ? row.days_with_data : 0,
-                      today: today ? today.today : 0,
-                      last_hour: hour ? hour.last_hour : 0,
-                      avg_per_day: avg ? avg.avg_per_day : 0,
-                      db_size_mb: (dbSize / 1024 / 1024).toFixed(2)
-                    }));
-                  }
-                );
-              }
-            );
-          }
-        );
+    // async/await i.p.v. vier geneste db.get-callbacks; handler blijft synchroon true teruggeven
+    (async function() {
+      try {
+        var dbgDay = time.dayRange(time.todayAms());
+        var row = await dbp.get(
+          "SELECT COUNT(*) as total, MIN(received_at) as first_entry, MAX(received_at) as last_entry," +
+          " COUNT(DISTINCT date(received_at)) as days_with_data" +
+          " FROM readings");
+        var today = await dbp.get(
+          "SELECT COUNT(*) as today FROM readings WHERE received_at >= ? AND received_at < ?",
+          [dbgDay.start, dbgDay.end]);
+        var hour = await dbp.get(
+          "SELECT COUNT(*) as last_hour FROM readings WHERE received_at >= ?",
+          [time.cutoff(3600000)]);
+        var avg = await dbp.get(
+          "SELECT AVG(cnt) as avg_per_day FROM (SELECT COUNT(*) as cnt FROM readings GROUP BY date(received_at))");
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          total: row ? row.total : 0,
+          first_entry: row ? row.first_entry : null,
+          last_entry: row ? row.last_entry : null,
+          days_with_data: row ? row.days_with_data : 0,
+          today: today ? today.today : 0,
+          last_hour: hour ? hour.last_hour : 0,
+          avg_per_day: avg ? avg.avg_per_day : 0,
+          db_size_mb: (dbSize / 1024 / 1024).toFixed(2)
+        }));
+      } catch (e) {
+        console.error("[debug] stats:", e.message);
+        if (!res.headersSent) { res.writeHead(500, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "stats mislukt" })); }
       }
-    );
+    })();
     return true;
   }
 

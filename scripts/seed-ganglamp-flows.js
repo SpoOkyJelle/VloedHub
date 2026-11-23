@@ -1,7 +1,8 @@
 var db = require('../db/setup');
+var time = require('../utils/time');
 
 function nowAms() {
-  return new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Amsterdam' }).replace(' ', 'T');
+  return time.now();
 }
 
 // Flow 1: Ganglamp aan bij zonsondergang
