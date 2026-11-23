@@ -4,10 +4,14 @@
 function hexToRgb(hex) {
   hex = (hex || '#ffffff').replace('#', '');
   if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  // Per kanaal parsen; alleen bij een ONgeldige hex terugvallen op 0 (niet op 255).
+  // NB: niet "parseInt(..) || 255" gebruiken — parseInt("00") is 0 en dus falsy, waardoor
+  // elk nul-kanaal onbedoeld op 255 zou springen (bv. #0000ff werd wit).
+  function ch(h) { var n = parseInt(h, 16); return isNaN(n) ? 0 : n; }
   return {
-    r: parseInt(hex.slice(0,2), 16) || 255,
-    g: parseInt(hex.slice(2,4), 16) || 255,
-    b: parseInt(hex.slice(4,6), 16) || 255
+    r: ch(hex.slice(0,2)),
+    g: ch(hex.slice(2,4)),
+    b: ch(hex.slice(4,6))
   };
 }
 
