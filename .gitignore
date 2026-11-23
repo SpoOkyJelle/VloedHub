@@ -1,5 +1,7 @@
 node_modules/
 p1_data.db
+p1_data.db-wal
+p1_data.db-shm
 data/fridge.json
 data/discord.json
 data/camera.json

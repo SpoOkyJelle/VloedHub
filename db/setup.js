@@ -4,6 +4,12 @@ var sqlite3 = require("sqlite3");
 var db = new sqlite3.Database(path.join(__dirname, "../p1_data.db"));
 
 db.serialize(function() {
+  // WAL: lezers (de grafiek-/stat-queries van de pagina's) worden niet meer geblokkeerd door de
+  // constante P1-logging die eroverheen schrijft. synchronous=NORMAL is veilig onder WAL en scheelt
+  // schrijf-latency. Dit maakt de dashboards merkbaar sneller op een draaiende server.
+  db.run("PRAGMA journal_mode = WAL");
+  db.run("PRAGMA synchronous = NORMAL");
+
   db.run(
     "CREATE TABLE IF NOT EXISTS readings (" +
     "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -112,6 +118,30 @@ db.serialize(function() {
     "  actions TEXT NOT NULL DEFAULT '[]'" +
     ")"
   );
+
+  // ── Indexen ─────────────────────────────────────────────────────────────────
+  // Afgestemd op de werkelijke WHERE/ORDER BY/GROUP BY van de routes. Eerste aanmaak op een al
+  // volle readings-tabel kost eenmalig wat tijd bij het opstarten; daarna slaat IF NOT EXISTS over.
+
+  // readings: vrijwel elke grafiek/stat filtert op "received_at >= ?" (costs, insights, p1, party,
+  // homeconnect, heatmap, voltage-dips). Zonder index = full scan over miljoenen rijen.
+  db.run("CREATE INDEX IF NOT EXISTS idx_readings_received ON readings (received_at)", function() {});
+
+  // temperature_readings: laatste-per-kamer (MAX(id) GROUP BY room), historie-range, en de
+  // tapo-klimaatreeks (device + range).
+  db.run("CREATE INDEX IF NOT EXISTS idx_temp_room_id ON temperature_readings (room, id)", function() {});
+  db.run("CREATE INDEX IF NOT EXISTS idx_temp_received ON temperature_readings (received_at)", function() {});
+  db.run("CREATE INDEX IF NOT EXISTS idx_temp_device_received ON temperature_readings (device, received_at)", function() {});
+
+  // esphome_readings: laatste-per-sensor (MAX(id) GROUP BY device, sensor_name) en historie-range.
+  db.run("CREATE INDEX IF NOT EXISTS idx_esphome_dev_sensor_id ON esphome_readings (device, sensor_name, id)", function() {});
+  db.run("CREATE INDEX IF NOT EXISTS idx_esphome_received ON esphome_readings (received_at)", function() {});
+
+  // flow_runs: lijst per flow (WHERE flow_id = ? ORDER BY id DESC) en de opschoon-query (bewaar 100).
+  db.run("CREATE INDEX IF NOT EXISTS idx_flow_runs_flow_id ON flow_runs (flow_id, id)", function() {});
+
+  // Laat de query-planner de nieuwe indexen meteen goed inzetten.
+  db.run("PRAGMA optimize");
 });
 
 module.exports = db;
