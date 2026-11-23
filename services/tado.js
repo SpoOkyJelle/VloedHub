@@ -264,7 +264,10 @@ function parseRoom(r) {
     heatingPower: heat.percentage != null ? heat.percentage : null,
     openWindow: !!(r.openWindow && r.openWindow.activated !== false),
     overlay: !!r.manualControlTermination,                     // handmatig gezet, schema onderbroken
-    online: !r.connection || r.connection.state !== "OFFLINE"
+    // tado° X meldt via de cloud geregeld kort connection.state "OFFLINE" terwijl het apparaat in de
+    // tado-app gewoon online staat (wifi-hik, geen echte storing). Dat liet de kaart elk kwartier
+    // omklappen en spamde offline/online-meldingen, dus we vertrouwen die staat niet meer: altijd online.
+    online: true
   };
 }
 
@@ -391,21 +394,14 @@ function patchZone(id, changes) {
   lastUpdate = Date.now();
 }
 
-// Meldingen: een kamer offline, of onder de vorstgrens. Beide melden één keer bij de overgang en opnieuw
-// als het probleem weg is en terugkomt; een herstart van de server meldt een lopende storing opnieuw.
+// Meldingen: een kamer onder de vorstgrens. Meldt één keer bij de overgang en opnieuw als het weg is en
+// terugkomt; een herstart van de server meldt een lopende storing opnieuw. (Offline-meldingen zijn eruit:
+// tado° X gaf valse OFFLINE-staten terwijl de tado-app online toonde — zie parseRoom.)
 function checkAlerts() {
   if (!modules.isOn("tado")) return;
   var cfg = load();
   var frost = cfg.frostThreshold != null ? cfg.frostThreshold : DEFAULT_FROST;
   zones.forEach(function(z) {
-    var offKey = z.id + ":offline";
-    if (!z.online) {
-      if (!alerts[offKey]) { alerts[offKey] = true; discord.notify("tado", "⚠️ **tado: " + z.name + " is offline** — de thermostaat of hub reageert niet"); }
-    } else if (alerts[offKey]) {
-      delete alerts[offKey];
-      discord.notify("tado", "✅ **tado: " + z.name + " is weer online**");
-    }
-
     var frostKey = z.id + ":frost";
     if (z.online && z.temperature != null && z.temperature < frost) {
       if (!alerts[frostKey]) { alerts[frostKey] = true; discord.notify("tado", "🥶 **tado: het is koud in " + z.name + "** — " + z.temperature.toFixed(1) + "°C (grens " + frost + "°C)"); }
