@@ -52,6 +52,7 @@ var routes = [
   require("./routes/meldingen"),
   require("./routes/temperature"),
   require("./routes/gas"),
+  require("./routes/heating"),
   require("./routes/costs"),
   require("./routes/weather"),
   require("./routes/afval"),

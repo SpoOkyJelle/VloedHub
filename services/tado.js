@@ -43,6 +43,10 @@ var DEFAULT_FROST = 5;             // °C: onder deze kamertemperatuur komt er e
 var FROST_RELEASE = 1;             // pas weer opnieuw melden als het een graad boven de grens is (hysterese)
 var MIN_SET = 5, MAX_SET = 25;     // tado staat instellen toe tussen 5 en 25 °C
 var RATE_MSG = "tado API-limiet bereikt (100 verzoeken/dag op het gratis plan) — VloedHub probeert het later opnieuw";
+// De maatgevende kamer voor de stookefficiëntie: de ketel stuurt op de thermostaat in de woonkamer, dus
+// zetten we het gasverbruik tegen de warmtevraag van die ene kamer af (zie routes/heating.js). Instelbaar,
+// zodat het blijft kloppen als de kamer anders heet of je later een andere referentie kiest.
+var DEFAULT_REF_ROOM = "Woonkamer";
 
 var pending = null;                // lopende koppeling: { user_code, url, expires }
 var linkError = null;
@@ -184,6 +188,7 @@ function unlink() {
   if (cfg.frostThreshold != null) keep.frostThreshold = cfg.frostThreshold;
   if (cfg.pollMinutes != null) keep.pollMinutes = cfg.pollMinutes;
   if (cfg.heatingSeconds != null) keep.heatingSeconds = cfg.heatingSeconds;
+  if (cfg.heatingReferenceRoom != null) keep.heatingReferenceRoom = cfg.heatingReferenceRoom;
   save(keep);
   zones = []; lastUpdate = null; alerts = {};
 }
@@ -513,6 +518,19 @@ function setPollMinutes(v) {
   return true;
 }
 
+function getHeatingReferenceRoom() {
+  var r = load().heatingReferenceRoom;
+  return (typeof r === "string" && r.trim().length) ? r.trim() : DEFAULT_REF_ROOM;
+}
+
+function setHeatingReferenceRoom(name) {
+  if (typeof name !== "string" || !name.trim()) return false;
+  var cfg = load();
+  cfg.heatingReferenceRoom = name.trim();
+  save(cfg);
+  return true;
+}
+
 function setHeatingSeconds(v) {
   v = Math.round(Number(v));
   if (!(v >= MIN_HEATING_SEC && v <= MAX_HEATING_SEC)) return false;
@@ -551,6 +569,7 @@ function getStatus() {
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
     heatingSeconds: (cfg.heatingSeconds >= MIN_HEATING_SEC && cfg.heatingSeconds <= MAX_HEATING_SEC) ? cfg.heatingSeconds : DEFAULT_HEATING_SEC,
     heatingSecMin: MIN_HEATING_SEC, heatingSecMax: MAX_HEATING_SEC,
+    heatingReferenceRoom: getHeatingReferenceRoom(),
     heating: anyHeating(),
     presenceSeconds: effectivePresenceSec(cfg),
     presenceSecMin: MIN_PRESENCE_SEC, presenceSecMax: MAX_PRESENCE_SEC,
@@ -568,6 +587,7 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
   setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, setHeatingSeconds: setHeatingSeconds, setPresenceSeconds: setPresenceSeconds, refreshNow: refreshNow,
+  getHeatingReferenceRoom: getHeatingReferenceRoom, setHeatingReferenceRoom: setHeatingReferenceRoom,
   setHome: setHome, setRoomView: setRoomView, getPresence: getPresence,
   _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };

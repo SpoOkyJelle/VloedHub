@@ -63,8 +63,38 @@ function fetchWeather(callback) {
   }).on("error", callback);
 }
 
+// Dag-gemiddelde buitentemperatuur van de afgelopen periode (voor de stookefficiëntie: gas corrigeren voor
+// hoe koud het was). Open-Meteo's forecast-endpoint geeft met past_days tot 92 dagen terug het dag-gemiddelde,
+// zonder API-key. cb(err, map) met map { "YYYY-MM-DD": meanTempC }. Gecachet, want het verandert maar traag.
+var dailyTempCache = { data: null, fetchedAt: 0 };
+function fetchDailyMeanTemps(callback) {
+  var now = Date.now();
+  if (dailyTempCache.data && now - dailyTempCache.fetchedAt < 3 * 3600000) {
+    return callback(null, dailyTempCache.data);
+  }
+  var url = "https://api.open-meteo.com/v1/forecast?latitude=" + WEATHER_LAT +
+    "&longitude=" + WEATHER_LON +
+    "&daily=temperature_2m_mean&past_days=92&forecast_days=1&timezone=Europe%2FAmsterdam";
+  https.get(url, function(res) {
+    var chunks = "";
+    res.on("data", function(c) { chunks += c; });
+    res.on("end", function() {
+      try {
+        var json = JSON.parse(chunks);
+        var d = json.daily || {};
+        var times = d.time || [], means = d.temperature_2m_mean || [];
+        var map = {};
+        times.forEach(function(t, i) { if (means[i] != null) map[t] = means[i]; });
+        dailyTempCache = { data: map, fetchedAt: now };
+        callback(null, map);
+      } catch (e) { callback(e); }
+    });
+  }).on("error", callback);
+}
+
 module.exports = {
   fetchWeather: fetchWeather,
+  fetchDailyMeanTemps: fetchDailyMeanTemps,
   get weatherCache() { return weatherCache; },
   WEATHER_CODES: WEATHER_CODES,
   WEATHER_LAT: WEATHER_LAT,
