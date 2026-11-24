@@ -63,20 +63,43 @@ function post(webhook, message, cb) {
   req.end();
 }
 
+// Leesbare uitleg bij een mislukte aflevering (voor logs en het flow-run-log)
+function describeFail(r) {
+  if (!r || r.ok) return null;
+  switch (r.reason) {
+    case "module_off": return "Discord-module staat uit";
+    case "no_webhook": return "geen webhook ingesteld";
+    case "http":       return "Discord weigerde het bericht (status " + r.status + (r.status === 404 ? ", onbekende webhook" : "") + ")";
+    case "network":    return "Discord niet bereikbaar (" + (r.error || "netwerkfout") + ")";
+    default:           return "onbekende fout";
+  }
+}
+
 // otherWebhook: een andere Discord-webhook voor dit ene bericht (bijv. vanuit een flow)
-function sendDiscord(message, otherWebhook) {
+// cb(result) met result = { ok, reason, status?, error? } — zodat de aanroeper (bijv. een flow) kan
+// zien of het echt is aangekomen. Een mislukte aflevering wordt ook gelogd (behalve als de module uitstaat).
+function sendDiscord(message, otherWebhook, cb) {
+  function done(r) {
+    if (r && !r.ok && r.reason !== "module_off") console.warn("[Discord] bericht niet afgeleverd —", describeFail(r));
+    if (cb) cb(r);
+    return r;
+  }
   // uit te zetten bij Instellingen > Modules
-  if (!modules.isOn("discord")) return;
+  if (!modules.isOn("discord")) return done({ ok: false, reason: "module_off" });
   var webhook = (otherWebhook && validWebhook(otherWebhook)) ? otherWebhook : getWebhook();
-  if (!webhook) return;
-  post(webhook, message);
+  if (!webhook) return done({ ok: false, reason: "no_webhook" });
+  post(webhook, message, function(err, status) {
+    if (err) return done({ ok: false, reason: "network", error: String((err && err.message) || err) });
+    var ok = status >= 200 && status < 300;
+    done({ ok: ok, reason: ok ? null : "http", status: status });
+  });
 }
 
 // Een melding: komt in het meldingenoverzicht van VloedHub en gaat naar Discord (als dat aan staat).
 // category bepaalt het icoon: weer, storing, apparaat, wasmachine, vaatwasser, afval, eten, deurbel, nlalert, p2000, ziggo, flow, systeem.
-function notify(category, message, otherWebhook) {
+function notify(category, message, otherWebhook, cb) {
   notifications.add(category, message);
-  sendDiscord(message, otherWebhook);
+  sendDiscord(message, otherWebhook, cb);
 }
 
 // Een melding met een foto erbij (bijv. van de deurbel). Het meldingenoverzicht krijgt alleen de tekst.
@@ -147,6 +170,7 @@ module.exports = {
   get LOCAL_IP() { return LOCAL_IP; },
   get WAN_IP() { return WAN_IP; },
   sendTest: sendTest,
+  describeFail: describeFail,
   setWebhook: setWebhook,
   getStatus: getStatus,
   init: init

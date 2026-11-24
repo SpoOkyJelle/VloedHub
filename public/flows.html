@@ -82,6 +82,12 @@
         <div class="node-palette">
           <div class="palette-no-results" id="palette-no-results">Geen resultaten</div>
 
+          <div class="palette-group-label" data-group="triggers-handmatig">Triggers — Handmatig<i class="fa-solid fa-chevron-down chevron"></i></div>
+          <div class="palette-node" draggable="true" data-node="manual_trigger" data-tooltip="Doet niets vanzelf. Start de flow met de knop ▶ Nu uitvoeren bovenaan." ondragstart="drag(event)">
+            <i class="fa-solid fa-hand-pointer" style="color:var(--accent)"></i>
+            <div><div class="palette-node-name">Handmatige trigger</div><div class="palette-node-desc">Zelf starten met de knop</div></div>
+          </div>
+
           <div class="palette-group-label" data-group="triggers-tijd">Triggers — Tijd<i class="fa-solid fa-chevron-down chevron"></i></div>
           <div class="palette-node" draggable="true" data-node="timer" data-tooltip="Triggert de flow op een vast tijdstip elke dag of op werkdagen/weekend." ondragstart="drag(event)">
             <i class="fa-solid fa-clock" style="color:var(--blue)"></i>
@@ -304,6 +310,10 @@
           <div class="palette-node" draggable="true" data-node="webhook" data-tooltip="Stuur een HTTP POST naar een externe URL met optionele body." ondragstart="drag(event)">
             <i class="fa-solid fa-globe" style="color:var(--green)"></i>
             <div><div class="palette-node-name">Webhook</div><div class="palette-node-desc">HTTP POST naar externe URL</div></div>
+          </div>
+          <div class="palette-node" draggable="true" data-node="webhook_message" data-tooltip="Stuur een tekstbericht naar een webhook-URL (Discord/Slack/Mattermost)." ondragstart="drag(event)">
+            <i class="fa-solid fa-comment-dots" style="color:var(--green)"></i>
+            <div><div class="palette-node-name">Webhook-bericht</div><div class="palette-node-desc">Tekst naar een webhook-URL</div></div>
           </div>
 
         </div>
@@ -673,6 +683,9 @@
         f('Ander kanaal (optioneel)','<input type="text" df-webhook placeholder="Webhook-URL, leeg = standaard">') +
         hint('Komt ook bij de meldingen onder de bel. Kosten: {kosten_maand} {kosten_verwacht} {kosten_dag} {kosten_jaar} {sluipkosten} \u00b7 afgelopen maand: {vorige_maand} {kosten_vorige_maand} {stroom_vorige_maand} {gas_vorige_maand}')),
 
+    manual_trigger: t('df-node-title--timer','fa-hand-pointer','Handmatige trigger') +
+      b(hint('Doet niets vanzelf. Start deze flow met de knop ▶ “Nu uitvoeren” bovenaan (of POST naar /api/flows/{id}/run).')),
+
     webhook_trigger: t('df-node-title--timer','fa-globe','Webhook trigger') +
       b(f('Token','<input type="text" df-token placeholder="mijn-geheime-token">') +
         hint('POST naar /api/webhook/{token} om deze flow te starten.')),
@@ -686,6 +699,11 @@
     webhook: t('df-node-title--action','fa-globe','Webhook') +
       b(f('URL','<input type="text" df-url placeholder="https://...">') +
         f('Body','<textarea df-body rows="2"></textarea>')),
+
+    webhook_message: t('df-node-title--action','fa-comment-dots','Webhook-bericht') +
+      b(f('Webhook-URL','<input type="text" df-url placeholder="https://discord.com/api/webhooks/...">') +
+        f('Bericht','<textarea df-message rows="2" placeholder="Flow getriggerd!"></textarea>') +
+        hint('Stuurt de tekst als JSON ({content}/{text}) naar de webhook — werkt met Discord, Slack en Mattermost. Ondersteunt {plaatsvervangers} zoals {afval}, {prijs}. Mislukt afleveren verschijnt in het run-log.')),
 
     dim_to: t('df-node-title--action','fa-sliders','Dim naar') +
       b(f('Apparaat','<select df-device><option value="default">Woonkamer</option><option value="keuken">Keuken</option><option value="gang">Gang</option><option value="tv-meubel">TV Meubel</option></select>') +
@@ -812,9 +830,11 @@
     led_off:         { device: 'default' },
     led_effect:      { device: 'default', effect: '0', brightness: '180', color: '#ffffff' },
     notify:          { message: 'Flow getriggerd!', webhook: '' },
+    manual_trigger:  {},
     webhook_trigger: { token: '' },
     mqtt_trigger:    { broker: 'mqtt://localhost:1883', topic: '', username: '', password: '' },
     webhook:         { url: '', body: '' },
+    webhook_message: { url: '', message: 'Flow getriggerd!' },
     dim_to:          { device: 'default', brightness: '180', seconds: '5' },
     dim_relative:    { device: 'default', delta: '20' },
     color_temp:      { device: 'default', kelvin: '3000' },
@@ -828,8 +848,8 @@
   };
 
   // triggers: 0 inputs, 1 output — logic: 1 in, 1 out — condition: 1 in, 2 out — actions: 1 in, 0 out
-  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, shower_started:0, humidity_above:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, person_home:0, person_away:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, webhook_trigger:0, mqtt_trigger:0, webhook:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1, tado_set:1 };
-  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, shower_started:1, humidity_above:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, person_home:1, person_away:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, webhook_trigger:1, mqtt_trigger:1, webhook:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0, tado_set:0 };
+  var NODE_INPUTS  = { price_below:0, price_above:0, afval_pickup:0, fridge_temp_above:0, device_offline:0, scene:1, timer:0, sunrise:0, sunset:0, power_above:0, power_below:0, solar_above:0, solar_below:0, voltage_dip:0, phase_imbalance:0, gas_above:0, temp_above:0, temp_below:0, weather_rain:0, shower_started:0, humidity_above:0, wash_started:0, wash_done:0, dish_started:0, dish_done:0, dish_alert:0, person_home:0, person_away:0, delay:1, time_window:1, condition:1, relay_on:1, relay_off:1, led_on:1, led_off:1, led_effect:1, notify:1, manual_trigger:0, webhook_trigger:0, mqtt_trigger:0, webhook:1, webhook_message:1, dim_to:1, dim_relative:1, color_temp:1, adaptive_light:1, wake_light:1, flash:1, telegram:1, mqtt_publish:1, tapo_bell:1, tado_set:1 };
+  var NODE_OUTPUTS = { price_below:1, price_above:1, afval_pickup:1, fridge_temp_above:1, device_offline:1, scene:0, timer:1, sunrise:1, sunset:1, power_above:1, power_below:1, solar_above:1, solar_below:1, voltage_dip:1, phase_imbalance:1, gas_above:1, temp_above:1, temp_below:1, weather_rain:1, shower_started:1, humidity_above:1, wash_started:1, wash_done:1, dish_started:1, dish_done:1, dish_alert:1, person_home:1, person_away:1, delay:1, time_window:1, condition:2, relay_on:0, relay_off:0, led_on:0, led_off:0, led_effect:0, notify:0, manual_trigger:1, webhook_trigger:1, mqtt_trigger:1, webhook:0, webhook_message:0, dim_to:0, dim_relative:0, color_temp:0, adaptive_light:0, wake_light:0, flash:0, telegram:0, mqtt_publish:0, tapo_bell:0, tado_set:0 };
 
   // ── Init Drawflow ──────────────────────────────────────────────────────
   var editor = new Drawflow(document.getElementById('drawflow'));
@@ -971,6 +991,7 @@
   var REQUIRED_FIELDS = {
     webhook_trigger: [{ key: 'token',  label: 'Token' }],
     webhook:         [{ key: 'url',    label: 'URL' }],
+    webhook_message: [{ key: 'url',    label: 'Webhook-URL' }],
     mqtt_trigger:    [{ key: 'broker', label: 'Broker' }, { key: 'topic', label: 'Topic' }],
     mqtt_publish:    [{ key: 'broker', label: 'Broker' }, { key: 'topic', label: 'Topic' }],
     timer:           [{ key: 'time',   label: 'Tijd' }],
@@ -1312,9 +1333,17 @@
         var actions = [];
         try { actions = JSON.parse(r.actions || '[]'); } catch(e) {}
         var ts = r.triggered_at ? r.triggered_at.replace('T', ' ').slice(0, 16) : '—';
+        function isFail(a) { return a.action && /_failed$/.test(a.action); }
+        var failed = actions.filter(isFail);
+        var normal = actions.filter(function(a) { return !isFail(a); });
+        var line = normal.length ? normal.length + ' actie(s): ' + normal.map(function(a) { return esc(a.action || '?'); }).join(', ')
+                 : (failed.length ? '' : 'Geen acties');
+        var fails = failed.map(function(a) {
+          return '<div style="color:var(--red);margin-top:0.25rem">⚠️ Bericht niet afgeleverd — ' + esc(a.error || 'onbekende fout') + '</div>';
+        }).join('');
         return '<div class="log-entry">' +
           '<div class="log-entry-time"><i class="fa-solid fa-clock" style="margin-right:0.35rem;color:var(--accent)"></i>' + esc(ts) + '</div>' +
-          '<div class="log-entry-actions">' + (actions.length ? actions.length + ' actie(s): ' + actions.map(function(a) { return a.action || '?'; }).join(', ') : 'Geen acties') + '</div>' +
+          '<div class="log-entry-actions">' + line + fails + '</div>' +
           '</div>';
       }).join('');
     });
@@ -1686,6 +1715,9 @@
   // ── Mobile Node Palette ────────────────────────────────────────────────
   // Palette definition: same nodes as the sidebar
   var MOBILE_PALETTE = [
+    { group: 'Triggers — Handmatig', nodes: [
+      { type:'manual_trigger',  icon:'fa-hand-pointer',             color:'var(--accent)', name:'Handmatige trigger',  desc:'Zelf starten met de knop' }
+    ]},
     { group: 'Triggers — Tijd', nodes: [
       { type:'timer',           icon:'fa-clock',                    color:'var(--blue)',   name:'Timer',               desc:'Op een vast tijdstip' },
       { type:'sunrise',         icon:'fa-sun',                      color:'var(--yellow)', name:'Zonsopgang',          desc:'Bij zonsopkomst (± offset)' },
@@ -1758,7 +1790,8 @@
       { type:'tapo_bell',       icon:'fa-bell',                     color:'var(--accent)', name:'Tapo hub-bel',        desc:'Laat de hub-sirene klinken' }
     ]},
     { group: 'Acties — Integraties', nodes: [
-      { type:'webhook',         icon:'fa-globe',                    color:'var(--green)',  name:'Webhook',             desc:'HTTP POST naar externe URL' }
+      { type:'webhook',         icon:'fa-globe',                    color:'var(--green)',  name:'Webhook',             desc:'HTTP POST naar externe URL' },
+      { type:'webhook_message', icon:'fa-comment-dots',             color:'var(--green)',  name:'Webhook-bericht',     desc:'Tekst naar een webhook-URL' }
     ]}
   ];
 

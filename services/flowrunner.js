@@ -28,7 +28,7 @@ var TRIGGERS = {
   sunrise: 1, sunset: 1, webhook_trigger: 1, mqtt_trigger: 1,
   afval_pickup: 1, price_below: 1, price_above: 1, fridge_temp_above: 1, device_offline: 1,
   dish_started: 1, dish_done: 1, dish_alert: 1, person_home: 1, person_away: 1,
-  shower_started: 1, humidity_above: 1
+  shower_started: 1, humidity_above: 1, manual_trigger: 1
 };
 
 var LOGIC = { delay: 1, time_window: 1, condition: 1 };
@@ -117,7 +117,14 @@ function executeNode(node, ctx) {
 
   if (node.name === 'notify') {
     var msg = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
-    discord.notify('flow', '\uD83D\uDD14 ' + msg, (node.data.webhook || '').trim());
+    var fid = ctx.flowId; // nu vastleggen; ctx kan tegen de tijd dat de async-callback terugkomt hergebruikt zijn
+    discord.notify('flow', '\uD83D\uDD14 ' + msg, (node.data.webhook || '').trim(), function(r) {
+      // Lukte het afleveren niet (bv. 404 onbekende webhook), dan verschijnt dat in het flow-run-log,
+      // zodat je het terugziet bij de flow i.p.v. dat het stil mislukt. Module bewust uit = geen melding.
+      if (r && !r.ok && r.reason !== 'module_off') {
+        flowNote(fid, { action: 'notify_failed', message: msg, error: discord.describeFail(r) });
+      }
+    });
     console.log('[Flow] Melding:', msg);
     return { action: 'notify', message: msg };
   }
@@ -146,6 +153,36 @@ function executeNode(node, ctx) {
     }
     console.log('[Flow] Webhook POST:', webhookUrl);
     return { action: 'webhook', url: webhookUrl };
+  }
+
+  if (node.name === 'webhook_message') {
+    var wmUrl = (node.data.url || '').trim();
+    var wmMsg = fillMessage((node.data.message || 'VloedHub flow getriggerd').trim(), ctx);
+    var wmFid = ctx.flowId;
+    if (wmUrl) {
+      // content (Discord) én text (Slack/Mattermost), zodat het met de gangbare webhooks werkt
+      var wmPayload = JSON.stringify({ content: wmMsg, text: wmMsg });
+      function wmFail(reason) { flowNote(wmFid, { action: 'webhook_failed', message: wmMsg, error: reason }); }
+      try {
+        var wmMod = wmUrl.indexOf('https') === 0 ? https : http;
+        var wmParsed = require('url').parse(wmUrl);
+        var wmReq = wmMod.request({
+          hostname: wmParsed.hostname, port: wmParsed.port, path: wmParsed.path || '/',
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(wmPayload) }
+        }, function(r) {
+          r.resume(); // body weggooien
+          if (!(r.statusCode >= 200 && r.statusCode < 300)) {
+            console.warn('[Flow] webhook-bericht geweigerd — status', r.statusCode);
+            wmFail('webhook weigerde het bericht (status ' + r.statusCode + (r.statusCode === 404 ? ', onbekende webhook' : '') + ')');
+          }
+        });
+        wmReq.on('error', function(e) { console.error('[Flow] webhook-bericht error:', e.message); wmFail('webhook niet bereikbaar (' + e.message + ')'); });
+        wmReq.write(wmPayload);
+        wmReq.end();
+      } catch(e) { console.error('[Flow] webhook-bericht error:', e.message); wmFail('ongeldige URL (' + e.message + ')'); }
+    }
+    console.log('[Flow] Webhook-bericht:', wmUrl);
+    return { action: 'webhook_message', url: wmUrl, message: wmMsg };
   }
 
   if (node.name === 'dim_to') {
@@ -422,9 +459,22 @@ function traverseFrom(allNodes, nodeId, ctx, visited, results) {
   followAll();
 }
 
+// Schrijft een losse regel in het flow-run-log (bijv. een mislukte Discord-aflevering die pas
+// later binnenkomt). Telt niet als 'run' en raakt last_run niet aan — puur een logregel.
+function flowNote(flowId, action) {
+  if (flowId == null) return;
+  dbModule.run(
+    'INSERT INTO flow_runs (flow_id, triggered_at, actions) VALUES (?,?,?)',
+    [flowId, time.now(), JSON.stringify([action])],
+    function() {}
+  );
+}
+
 function traverseOutputs(startNode, allNodes, ctx, flowId) {
   var results = [];
   var visited = {};
+  ctx = ctx || {};
+  ctx.flowId = flowId; // zodat een actie (zoals 'notify') een eigen logregel kan terugschrijven
   Object.values(startNode.outputs || {}).forEach(function(out) {
     (out.connections || []).forEach(function(conn) {
       traverseFrom(allNodes, conn.node, ctx || {}, visited, results);
