@@ -96,6 +96,21 @@ db.serialize(function() {
   db.run("ALTER TABLE esphome_readings ADD COLUMN value_text TEXT", function() {});
   db.run("ALTER TABLE esphome_readings ADD COLUMN host TEXT", function() {});
 
+  // Stookhistorie per kamer: gevraagde temperatuur (setpoint), actuele temperatuur en het stookpercentage,
+  // fijnmazig gelogd tijdens het opwarmen (zie services/tado.js logHeating). Hiermee reken je uit hoelang
+  // een kamer erover doet om op peil te komen, en combineer je dat met het gasverbruik uit `readings`.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS heating_readings (" +
+    "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+    "  received_at TEXT NOT NULL," +
+    "  room TEXT NOT NULL," +
+    "  setpoint_c REAL," +
+    "  temp_c REAL," +
+    "  heating_power REAL," +
+    "  device TEXT" +
+    ")"
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS flows (" +
     "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -136,6 +151,10 @@ db.serialize(function() {
   // esphome_readings: laatste-per-sensor (MAX(id) GROUP BY device, sensor_name) en historie-range.
   db.run("CREATE INDEX IF NOT EXISTS idx_esphome_dev_sensor_id ON esphome_readings (device, sensor_name, id)", function() {});
   db.run("CREATE INDEX IF NOT EXISTS idx_esphome_received ON esphome_readings (received_at)", function() {});
+
+  // heating_readings: laatste-per-kamer (MAX(id) GROUP BY room) en historie-range voor de opwarmcurve.
+  db.run("CREATE INDEX IF NOT EXISTS idx_heating_room_id ON heating_readings (room, id)", function() {});
+  db.run("CREATE INDEX IF NOT EXISTS idx_heating_received ON heating_readings (received_at)", function() {});
 
   // flow_runs: lijst per flow (WHERE flow_id = ? ORDER BY id DESC) en de opschoon-query (bewaar 100).
   db.run("CREATE INDEX IF NOT EXISTS idx_flow_runs_flow_id ON flow_runs (flow_id, id)", function() {});

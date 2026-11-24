@@ -65,6 +65,29 @@ function logTemperatureReadings(data, callback) {
   });
 }
 
+// Stookhistorie per kamer: { device, readings: [{ room, setpoint_c, temp_c, heating_power }] }. temp_c is
+// verplicht (de actuele kamertemperatuur); setpoint_c en heating_power mogen null zijn (bv. als de kamer uit
+// staat of de bron geen stookpercentage geeft). Zie services/tado.js logHeating voor de aanroep.
+function logHeatingReadings(data, callback) {
+  var received_at = time.now();
+  var readings = Array.isArray(data.readings) ? data.readings : [];
+  var valid = readings.filter(function(r) { return r && typeof r.room === "string" && r.room.length > 0 && typeof r.temp_c === "number" && isFinite(r.temp_c); });
+
+  if (valid.length === 0) {
+    return callback(new Error("no valid readings"));
+  }
+
+  var num = function(v) { return typeof v === "number" && isFinite(v) ? v : null; };
+  var stmt = db.prepare("INSERT INTO heating_readings (received_at, room, setpoint_c, temp_c, heating_power, device) VALUES (?,?,?,?,?,?)");
+  valid.forEach(function(r) {
+    stmt.run([received_at, r.room, num(r.setpoint_c), r.temp_c, num(r.heating_power), data.device || null]);
+  });
+  stmt.finalize(function(err) {
+    if (err) return callback(err);
+    callback(null, received_at);
+  });
+}
+
 function setWashStatus(state, device, callback) {
   var since = time.now();
   db.run(
@@ -120,4 +143,4 @@ function logEsphomeReadings(data, callback) {
   });
 }
 
-module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle, logTapoPower: logTapoPower, logEsphomeReadings: logEsphomeReadings };
+module.exports = { logReading: logReading, logTemperatureReadings: logTemperatureReadings, logHeatingReadings: logHeatingReadings, setWashStatus: setWashStatus, logWashCycle: logWashCycle, logTapoPower: logTapoPower, logEsphomeReadings: logEsphomeReadings };

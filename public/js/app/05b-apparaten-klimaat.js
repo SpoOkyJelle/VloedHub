@@ -58,7 +58,8 @@ function renderTado(d) {
   var meta = document.getElementById('tado-meta');
   if (meta) {
     if (d.linked && d.zones && d.zones.length) {
-      meta.innerHTML = '<span>' + escHtml(tadoAgo(d.updated)) + '</span>';
+      meta.innerHTML = '<span>' + escHtml(tadoAgo(d.updated)) + (d.heating ? ' · 🔥 stookt (snel loggen)' : '') + '</span>' +
+        '<button class="btn btn-quiet btn-sm" onclick="refreshTadoNow(this)"><i class="fa-solid fa-rotate"></i> Ververs nu</button>';
     } else meta.innerHTML = '';
   }
   showTadoStatus(d);

@@ -99,6 +99,15 @@ module.exports = function(req, res) {
     return true;
   }
 
+  // Snelle poll-snelheid tijdens het stoken (seconden), voor de fijnmazige opwarmcurve: { seconds }
+  if (req.method === "POST" && req.url === "/api/tado/heating-interval") {
+    readBody(req, function(data) {
+      if (!data || !tado.setHeatingSeconds(data.seconds)) return json(res, 400, { ok: false, error: "Kies tussen 5 en 600 seconden" });
+      json(res, 200, Object.assign({ ok: true }, tado.getStatus()));
+    });
+    return true;
+  }
+
   // Hoe vaak alleen de presence (wie-thuis-is) ververst wordt (seconden): { seconds }
   if (req.method === "POST" && req.url === "/api/tado/presence-interval") {
     readBody(req, function(data) {

@@ -27,6 +27,12 @@ var CONFIG_FILE = path.join(__dirname, "../data/tado.json");
 
 var DEFAULT_POLL_MIN = 30;         // zuinig i.v.m. de limiet van 100 verzoeken/dag op het gratis plan
 var MIN_POLL_MIN = 10, MAX_POLL_MIN = 360;
+// Opwarmanalyse: zolang een kamer actief stookt pollen we veel sneller (standaard elke 15 s), zodat de
+// opwarmcurve fijnmazig in heating_readings komt (hoelang tot op peil?). Staat niets te stoken, dan valt
+// de poll terug op de rustige kamer-cadans hierboven. Met Auto-Assist (20.000 verzoeken/dag) kan dat ruim:
+// 15 s tijdens het stoken is ~240 verzoeken/uur, en buiten het stoken kost het niets extra.
+var DEFAULT_HEATING_SEC = 15;
+var MIN_HEATING_SEC = 5, MAX_HEATING_SEC = 600;
 // presence (wie-thuis-is) heeft een eigen, snellere pollcyclus dan de kamers: zo verschijnt "thuis" sneller
 // zonder de kamers vaker (en dus duurder) op te halen. In seconden, want dit mag veel sneller dan de kamers.
 // Niet ingesteld = volgt de kamersnelheid, zodat een bestaande koppeling niet ongevraagd extra verbruikt.
@@ -72,6 +78,22 @@ function effectivePresenceSec(cfg) {
 }
 
 function presenceMs() { return effectivePresenceSec(load()) * 1000; }
+
+// Snelle poll-interval tijdens het stoken, in ms.
+function heatingMs() {
+  var s = load().heatingSeconds;
+  if (!(s >= MIN_HEATING_SEC && s <= MAX_HEATING_SEC)) s = DEFAULT_HEATING_SEC;
+  return s * 1000;
+}
+
+// Een kamer "stookt" als hij aan staat en warmte vraagt: stookpercentage > 0, of — als dat onbekend is —
+// de kamer nog onder zijn setpoint zit. Zolang één kamer stookt pollen we op de snelle cadans.
+function isHeating(z) {
+  if (!z || z.power !== "ON") return false;
+  if (z.heatingPower != null) return z.heatingPower > 0;
+  return z.setpoint != null && z.temperature != null && z.temperature < z.setpoint;
+}
+function anyHeating() { return zones.some(isHeating); }
 
 function form(obj) {
   return Object.keys(obj).filter(function(k) { return obj[k]; })
@@ -161,6 +183,7 @@ function unlink() {
   var keep = {};
   if (cfg.frostThreshold != null) keep.frostThreshold = cfg.frostThreshold;
   if (cfg.pollMinutes != null) keep.pollMinutes = cfg.pollMinutes;
+  if (cfg.heatingSeconds != null) keep.heatingSeconds = cfg.heatingSeconds;
   save(keep);
   zones = []; lastUpdate = null; alerts = {};
 }
@@ -328,7 +351,8 @@ function poll() {
   if (!load().tokens) return;
   getRooms(function(err) {
     if (gen !== generation) return;
-    schedule(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : pollMs());
+    // tijdens het stoken snel verder (fijnmazige opwarmcurve), anders terug naar de rustige cadans
+    schedule(gen, err === "limiet" ? RATE_RETRY_MS : err ? RETRY_MS : (anyHeating() ? heatingMs() : pollMs()));
   });
 }
 
@@ -371,20 +395,39 @@ function applyZones(list) {
   zones = list;
   lastUpdate = Date.now();
   logZones(list);
+  logHeating(list);
   checkAlerts();
 }
 
 // Temperatuur én luchtvochtigheid per kamer wegschrijven naar de geschiedenis (zelfde tabel als de
-// ESP-sensoren), zodat je er een trend van kunt zien. Draait op de kamer-pollcyclus, niet op de snelle
-// presence-poll, dus geen logspam. device "tado" onderscheidt de bron van de losse sensoren.
+// ESP-sensoren), zodat je er een trend van kunt zien. device "tado" onderscheidt de bron van de losse
+// sensoren. Deze klimaat-historie blijft op de rustige cadans (pollMs), óók als de stook-poll elke paar
+// seconden draait: anders zou de temp-/vochtgrafiek vollopen. De fijnmazige opwarmdata gaat naar logHeating.
+var lastClimateLog = 0;
 function logZones(list) {
   if (!modules.isOn("tado")) return;
+  if (Date.now() - lastClimateLog < pollMs()) return;
   var readings = list
     .filter(function(z) { return z.online && z.temperature != null; })
     .map(function(z) { return { room: z.name, temp_c: z.temperature, humidity: z.humidity != null ? z.humidity : null }; });
   if (!readings.length) return;
+  lastClimateLog = Date.now();
   logging.logTemperatureReadings({ device: "tado", readings: readings }, function(err) {
     if (err) console.error("[tado] loggen mislukt:", err.message);
+  });
+}
+
+// Stookhistorie: gevraagde temperatuur (setpoint), actuele temperatuur en stookpercentage per kamer.
+// Schrijft bij élke poll weg (dus snel tijdens het opwarmen), zodat je kunt uitrekenen hoelang een kamer
+// erover doet om op peil te komen en dat tegen het gasverbruik (tabel readings) kunt afzetten.
+function logHeating(list) {
+  if (!modules.isOn("tado")) return;
+  var readings = list
+    .filter(function(z) { return z.online && z.temperature != null; })
+    .map(function(z) { return { room: z.name, setpoint_c: z.setpoint, temp_c: z.temperature, heating_power: z.heatingPower }; });
+  if (!readings.length) return;
+  logging.logHeatingReadings({ device: "tado", readings: readings }, function(err) {
+    if (err) console.error("[tado] stook loggen mislukt:", err.message);
   });
 }
 
@@ -470,6 +513,16 @@ function setPollMinutes(v) {
   return true;
 }
 
+function setHeatingSeconds(v) {
+  v = Math.round(Number(v));
+  if (!(v >= MIN_HEATING_SEC && v <= MAX_HEATING_SEC)) return false;
+  var cfg = load();
+  cfg.heatingSeconds = v;
+  save(cfg);
+  if (cfg.tokens) poll(); // meteen met de nieuwe snelheid verder
+  return true;
+}
+
 function setPresenceSeconds(v) {
   v = Math.round(Number(v));
   if (!(v >= MIN_PRESENCE_SEC && v <= MAX_PRESENCE_SEC)) return false;
@@ -496,6 +549,9 @@ function getStatus() {
     homes: cfg.homes || [],
     frostThreshold: cfg.frostThreshold != null ? cfg.frostThreshold : DEFAULT_FROST,
     pollMinutes: cfg.pollMinutes != null ? cfg.pollMinutes : DEFAULT_POLL_MIN,
+    heatingSeconds: (cfg.heatingSeconds >= MIN_HEATING_SEC && cfg.heatingSeconds <= MAX_HEATING_SEC) ? cfg.heatingSeconds : DEFAULT_HEATING_SEC,
+    heatingSecMin: MIN_HEATING_SEC, heatingSecMax: MAX_HEATING_SEC,
+    heating: anyHeating(),
     presenceSeconds: effectivePresenceSec(cfg),
     presenceSecMin: MIN_PRESENCE_SEC, presenceSecMax: MAX_PRESENCE_SEC,
     minSet: MIN_SET, maxSet: MAX_SET,
@@ -511,7 +567,7 @@ function start() {
 
 module.exports = {
   start: start, getStatus: getStatus, startLink: startLink, unlink: unlink,
-  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, setPresenceSeconds: setPresenceSeconds, refreshNow: refreshNow,
+  setZone: setZone, resumeZone: resumeZone, setFrost: setFrost, setPollMinutes: setPollMinutes, setHeatingSeconds: setHeatingSeconds, setPresenceSeconds: setPresenceSeconds, refreshNow: refreshNow,
   setHome: setHome, setRoomView: setRoomView, getPresence: getPresence,
   _parseRoom: parseRoom, _checkAlerts: checkAlerts
 };
