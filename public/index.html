@@ -309,6 +309,33 @@
 <div id='settings-modules'></div>
 </div>
 <div class='set-section'>
+<div class='section-title'>Energietarieven</div>
+<div class='setting-card'>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Vast tarief gebruiken</div><div class='setting-desc'>Reken kosten met je eigen contractprijs i.p.v. de dynamische day-ahead-prijzen.</div></div>
+    <button class='mod-switch' role='switch' aria-checked='false' aria-label='Vast tarief gebruiken' id='tariff-fixed' onclick='toggleTariffFixed(this)'></button>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-title'>Stroom</div><div class='setting-desc'>All-in prijs per kWh (incl. energiebelasting en btw)</div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tariff-elec' type='number' min='0' max='5' step='0.0001' inputmode='decimal' aria-label='Stroomprijs per kWh'>
+      <span class='power-sub'>€/kWh</span>
+    </div>
+  </div>
+  <div class='setting-row' data-module='gas'>
+    <div class='setting-text'><div class='setting-title'>Gas</div><div class='setting-desc'>All-in prijs per m³ (incl. energiebelasting en btw)</div></div>
+    <div class='tado-frost-form'>
+      <input class='field' id='tariff-gas' type='number' min='0' max='10' step='0.0001' inputmode='decimal' aria-label='Gasprijs per m³'>
+      <span class='power-sub'>€/m³</span>
+    </div>
+  </div>
+  <div class='setting-row'>
+    <div class='setting-text'><div class='setting-desc'>Vaste kosten (vastrecht/netbeheer) blijven hier buiten — dit is de variabele prijs per eenheid. Het overzicht kan tot 15 min duren voor het is bijgewerkt.</div></div>
+    <button class='btn btn-ghost' onclick='saveTariffs(this)'>Opslaan</button>
+  </div>
+</div>
+</div>
+<div class='set-section'>
 <div class='section-title'>Feest</div>
 <div class='setting-card'>
   <div class='setting-row'>

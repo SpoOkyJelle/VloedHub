@@ -88,7 +88,7 @@ function showScreen(n, btn, fromSwipe) {
     if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); loadHeatingEff(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
     if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); lampsRefresh(); }
-    if (n === 5) { refreshSettingsNames(); }
+    if (n === 5) { refreshSettingsNames(); loadTariffs(); }
   }
 }
 

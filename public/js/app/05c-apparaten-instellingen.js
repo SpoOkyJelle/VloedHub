@@ -80,6 +80,37 @@ function toggleModule(btn) {
     }).catch(function() { btn.disabled = false; show(!enabled); toast('Module omzetten lukte niet', 'error'); });
 }
 
+// ── Energietarieven (vast contract i.p.v. dynamische prijzen) ──
+function tariffSwitch(on) {
+  var btn = document.getElementById('tariff-fixed');
+  if (btn) { btn.classList.toggle('on', !!on); btn.setAttribute('aria-checked', !!on); }
+}
+function loadTariffs() {
+  if (!document.getElementById('tariff-fixed')) return;
+  fetch('/api/tariffs').then(function(r){return r.json();}).then(function(t) {
+    tariffSwitch(t.fixed);
+    var e = document.getElementById('tariff-elec');
+    if (e && document.activeElement !== e && t.elec_kwh != null) e.value = t.elec_kwh;
+    var g = document.getElementById('tariff-gas');
+    if (g && document.activeElement !== g && t.gas_m3 != null) g.value = t.gas_m3;
+  }).catch(function(){});
+}
+function toggleTariffFixed(btn) { tariffSwitch(btn.getAttribute('aria-checked') !== 'true'); }
+function saveTariffs(btn) {
+  var fixed = document.getElementById('tariff-fixed').getAttribute('aria-checked') === 'true';
+  var elec = document.getElementById('tariff-elec').value;
+  var gas = document.getElementById('tariff-gas').value;
+  btn.disabled = true;
+  fetch('/api/tariffs', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fixed: fixed, elec_kwh: elec, gas_m3: gas })})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast(d.fixed ? 'Vaste tarieven opgeslagen' : 'Terug naar dynamische prijzen', 'ok');
+      loadTariffs();
+      if (screenLoaded[1]) loadCostsDaily();
+    }).catch(function() { btn.disabled = false; toast('Verbindingsfout', 'error'); });
+}
+
 // ── Apparaatstatus ──
 function loadDeviceStatus() {
   fetch('/api/monitor').then(function(r){return r.json();}).then(function(list) {

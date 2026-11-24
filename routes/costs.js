@@ -269,6 +269,24 @@ module.exports = function(req, res) {
     return true;
   }
 
+  if (req.method === "GET" && req.url === "/api/tariffs") {
+    json(res, prices.getTariffs());
+    return true;
+  }
+
+  if (req.method === "POST" && req.url === "/api/tariffs") {
+    var tbody = "";
+    req.on("data", function(c) { tbody += c; });
+    req.on("end", function() {
+      var data;
+      try { data = JSON.parse(tbody); } catch (e) { data = null; }
+      var ok = data && prices.setTariffs(data);
+      res.writeHead(ok ? 200 : 400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(ok ? Object.assign({ ok: true }, prices.getTariffs()) : { ok: false, error: "Vul een geldige prijs in (stroom €/kWh, gas €/m³)" }));
+    });
+    return true;
+  }
+
   if (req.method === "GET" && req.url === "/api/costs-daily") {
     dailyCosts(30, function(days) {
       json(res, days.map(function(d) { return { day: d.day, elec_cost: d.elec_cost, gas_cost: d.gas_cost }; }));

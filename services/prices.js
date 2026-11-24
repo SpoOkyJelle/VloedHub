@@ -1,6 +1,35 @@
 var https = require("https");
 var db = require("../db/setup");
 var time = require("../utils/time");
+var auth = require("./auth");
+
+// Vast tarief: wie een vast energiecontract heeft, rekent kosten met de eigen contractprijs i.p.v. de
+// dynamische day-ahead-prijzen. Staat het aan, dan leveren fetchPrices/priceMaps overal het vaste tarief,
+// zodat de kosten niet van de marktprijs (of van Frank Energie's beschikbaarheid) afhangen.
+function fixedTariffs() {
+  var t = auth.readConfig().tariffs;
+  if (t && t.fixed && t.elec_kwh > 0 && t.gas_m3 > 0) return { elec: t.elec_kwh, gas: t.gas_m3 };
+  return null;
+}
+function getTariffs() {
+  var t = auth.readConfig().tariffs || {};
+  return { fixed: !!t.fixed, elec_kwh: t.elec_kwh != null ? t.elec_kwh : null, gas_m3: t.gas_m3 != null ? t.gas_m3 : null };
+}
+function setTariffs(obj) {
+  if (!obj) return false;
+  var cfg = auth.readConfig();
+  if (!cfg.tariffs) cfg.tariffs = {};
+  if (obj.fixed) {
+    var elec = Number(obj.elec_kwh), gas = Number(obj.gas_m3);
+    if (!(elec > 0 && elec < 5) || !(gas > 0 && gas < 10)) return false;
+    cfg.tariffs = { fixed: true, elec_kwh: Math.round(elec * 10000) / 10000, gas_m3: Math.round(gas * 10000) / 10000 };
+  } else {
+    cfg.tariffs.fixed = false;
+  }
+  auth.writeConfig(cfg);
+  dayCache.fetchedAt = 0; // forceer een verse prijsberekening
+  return true;
+}
 
 // Uurprijzen worden bewaard, zodat kosten over eerdere dagen met de prijs van dat uur gerekend worden.
 // hour = lokale tijd "YYYY-MM-DD HH"
@@ -72,6 +101,7 @@ function fetchPrices(callback) {
   var today = time.todayAms();
 
   function result() {
+    var fixed = fixedTariffs();
     var hours = dayCache.hours;
     var now = nowHour();
     var cur = hours.filter(function(h) { return h.hour === now; })[0];
@@ -79,9 +109,10 @@ function fetchPrices(callback) {
     var withElec = hours.filter(function(h) { return h.elec != null; });
     var withGas  = hours.filter(function(h) { return h.gas != null; });
     return {
-      electricity_eur_kwh: cur && cur.elec != null ? cur.elec : (withElec.length ? withElec[withElec.length - 1].elec : null),
-      gas_eur_m3: cur && cur.gas != null ? cur.gas : (withGas.length ? withGas[withGas.length - 1].gas : null),
-      electricity_label: "current hour (day-ahead)", gas_label: "today (daily)",
+      electricity_eur_kwh: fixed ? fixed.elec : (cur && cur.elec != null ? cur.elec : (withElec.length ? withElec[withElec.length - 1].elec : null)),
+      gas_eur_m3: fixed ? fixed.gas : (cur && cur.gas != null ? cur.gas : (withGas.length ? withGas[withGas.length - 1].gas : null)),
+      electricity_label: fixed ? "vast tarief" : "current hour (day-ahead)", gas_label: fixed ? "vast tarief" : "today (daily)",
+      fixed: !!fixed,
       hours: hours
     };
   }
@@ -90,7 +121,8 @@ function fetchPrices(callback) {
     return callback(null, result());
   }
   fetchDay(today, function(err, hours) {
-    if (err) return callback(err);
+    // op een vast tarief draaien de kosten op de contractprijs; een mislukte marktophaal mag ze niet blokkeren
+    if (err) return fixedTariffs() ? callback(null, result()) : callback(err);
     dayCache = { date: today, hours: hours, fetchedAt: Date.now() };
     callback(null, result());
   });
@@ -120,6 +152,9 @@ function upcoming(callback) {
 // Bewaarde prijzen vanaf een dag: { elec: { "YYYY-MM-DD HH": prijs }, gas: { "YYYY-MM-DD": prijs } }
 // De gasprijs van een dag is die van 12:00 (de gasdag wisselt om 06:00).
 function priceMaps(sinceDay, callback) {
+  // Vast tarief: geen bewaarde uurprijzen teruggeven, zodat de kosten overal op de vaste prijs (de fallback
+  // electricity_eur_kwh/gas_eur_m3 uit fetchPrices) uitkomen i.p.v. op de marktprijs van dat uur/die dag.
+  if (fixedTariffs()) return callback({ elec: {}, gas: {} });
   db.all("SELECT hour, elec, gas FROM price_hours WHERE hour >= ?", [sinceDay + " 00"], function(err, rows) {
     var maps = { elec: {}, gas: {} };
     (rows || []).forEach(function(r) {
@@ -155,5 +190,7 @@ module.exports = {
   priceMaps: priceMaps,
   upcoming: upcoming,
   backfill: backfill,
+  getTariffs: getTariffs,
+  setTariffs: setTariffs,
   get priceCache() { return { data: dayCache.hours.length ? dayCache : null, fetchedAt: dayCache.fetchedAt }; }
 };
