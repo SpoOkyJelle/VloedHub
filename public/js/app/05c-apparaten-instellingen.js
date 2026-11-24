@@ -90,16 +90,16 @@ function loadTariffs() {
   fetch('/api/tariffs').then(function(r){return r.json();}).then(function(t) {
     tariffSwitch(t.fixed);
     var e = document.getElementById('tariff-elec');
-    if (e && document.activeElement !== e && t.elec_kwh != null) e.value = t.elec_kwh;
+    if (e && document.activeElement !== e && t.elec_kwh != null) e.value = String(t.elec_kwh).replace('.', ',');
     var g = document.getElementById('tariff-gas');
-    if (g && document.activeElement !== g && t.gas_m3 != null) g.value = t.gas_m3;
+    if (g && document.activeElement !== g && t.gas_m3 != null) g.value = String(t.gas_m3).replace('.', ',');
   }).catch(function(){});
 }
 function toggleTariffFixed(btn) { tariffSwitch(btn.getAttribute('aria-checked') !== 'true'); }
 function saveTariffs(btn) {
   var fixed = document.getElementById('tariff-fixed').getAttribute('aria-checked') === 'true';
-  var elec = document.getElementById('tariff-elec').value;
-  var gas = document.getElementById('tariff-gas').value;
+  var elec = document.getElementById('tariff-elec').value.replace(',', '.').trim();
+  var gas = document.getElementById('tariff-gas').value.replace(',', '.').trim();
   btn.disabled = true;
   fetch('/api/tariffs', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fixed: fixed, elec_kwh: elec, gas_m3: gas })})
     .then(function(r){return r.json();}).then(function(d) {

@@ -20,7 +20,8 @@ function setTariffs(obj) {
   var cfg = auth.readConfig();
   if (!cfg.tariffs) cfg.tariffs = {};
   if (obj.fixed) {
-    var elec = Number(obj.elec_kwh), gas = Number(obj.gas_m3);
+    // komma of punt als decimaalteken toestaan
+    var elec = Number(String(obj.elec_kwh).replace(",", ".")), gas = Number(String(obj.gas_m3).replace(",", "."));
     if (!(elec > 0 && elec < 5) || !(gas > 0 && gas < 10)) return false;
     cfg.tariffs = { fixed: true, elec_kwh: Math.round(elec * 10000) / 10000, gas_m3: Math.round(gas * 10000) / 10000 };
   } else {
