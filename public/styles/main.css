@@ -50,6 +50,11 @@ body {
 .updated-text {
   font-size:var(--fs-2xs);
   color:var(--dim)}
+.header-clock {
+  color:var(--text);
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  margin-right:2px}
 .icon-link {
   position:relative;
   display:flex;

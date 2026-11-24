@@ -24,6 +24,7 @@
 <header class='app-header'>
   <div class='app-title'><img class='app-logo' src='/icons/icon-192.png' alt=''>VloedHub<span class='dot' id='live-dot' title='Live'></span></div>
   <div class='header-right'>
+    <span class='updated-text header-clock' id='header-clock' aria-hidden='true'></span>
     <span class='updated-text' id='updated' role='status'>Wachten op data…</span>
     <button class='icon-link meld-bell' title='Meldingen' aria-label='Meldingen' onclick='toggleMeldPanel(event)'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg><span class='meld-badge'></span></button>
     <button class='icon-link' id='header-settings' title='Instellingen' aria-label='Instellingen' onclick='showScreen(5,null)'><svg class='line-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg></button>

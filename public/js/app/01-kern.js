@@ -363,3 +363,11 @@ function refresh() {
 }
 refresh();
 setInterval(refresh, 3000);
+
+// Kleine klok in de header (HH:MM)
+function updateClock() {
+  var el = document.getElementById('header-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 10000);
