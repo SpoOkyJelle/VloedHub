@@ -204,6 +204,16 @@
     <div class='chart-wrap'><canvas id='chart-gas-monthly'></canvas></div>
   </div>
 
+  <div data-module='tado' class='stats-grid'>
+    <div class='stat-card'><div class='stat-label'>Stookefficiëntie (gem.)</div><div class='stat-value' id='heat-eff-avg'>—</div><div class='power-sub' id='heat-eff-room'></div></div>
+    <div class='stat-card'><div class='stat-label'>Laatste dag</div><div class='stat-value' id='heat-eff-last'>—</div><div class='power-sub'>lager = zuiniger</div></div>
+  </div>
+  <div data-module='tado' class='chart-card'>
+    <div class='chart-header'><span class='chart-title'>Stookefficiëntie (30 dgn)</span><span class='power-sub'>gas ÷ graaddagen · buitentemp weggerekend</span></div>
+    <div class='chart-wrap'><canvas id='chart-heating-eff'></canvas></div>
+    <div class='power-sub' id='heat-eff-note' style='padding:0 12px 10px'></div>
+  </div>
+
 </div>
 
 <!-- SCREEN 3: KOSTEN -->

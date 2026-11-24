@@ -85,7 +85,7 @@ function showScreen(n, btn, fromSwipe) {
   if (!screenLoaded[n]) {
     screenLoaded[n] = true;
     if (n === 1) { loadChart('day', document.querySelector('[data-range="day"]')); loadPeaks(); loadWeekdayChart(); loadPhaseChart(); refreshComparison(); refreshStats(); refreshSafety(); loadHeatmap('alltime', document.querySelector('[data-hm="alltime"]')); }
-    if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); }
+    if (n === 2) { refreshGasStats(); loadGasDaily(); loadGasMonthly(); loadHeatingEff(); }
     if (n === 3) { refreshCosts(); loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
     if (n === 4) { refreshVaatwasser(); refreshTado(); refreshWasmachine(); refreshEsphome(); refreshTemperature(); refreshTapoCard(); lampsRefresh(); }
     if (n === 5) { refreshSettingsNames(); }

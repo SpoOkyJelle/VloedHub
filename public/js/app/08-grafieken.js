@@ -206,6 +206,48 @@ function loadGasMonthly() {
   }).catch(function(){});
 }
 
+// ── Stookefficiëntie ──
+// Gas per dag (balk) tegen de efficiëntie m³ per graaddag (lijn). Graaddagen = woonkamer-setpoint boven de
+// buitentemperatuur, dus koude dagen zijn weggerekend: een oplopende lijn = écht minder zuinig stoken.
+var chartHeatingEff = null;
+function loadHeatingEff() {
+  var el = document.getElementById('chart-heating-eff');
+  if (!el) return;
+  fetch('/api/heating/efficiency?days=30').then(function(r){return r.json();}).then(function(res) {
+    var rows = (res && res.days) || [];
+    var labels = rows.map(function(r){ return r.day.slice(5); });
+    var gas = rows.map(function(r){ return r.gas != null ? Number(r.gas).toFixed(2) : null; });
+    var eff = rows.map(function(r){ return r.m3_per_hdd != null ? Number(r.m3_per_hdd).toFixed(3) : null; });
+
+    var effVals = rows.map(function(r){ return r.m3_per_hdd; }).filter(function(v){ return v != null; });
+    var avgEff = effVals.length ? effVals.reduce(function(a,b){ return a+b; }, 0) / effVals.length : null;
+    var lastEff = null;
+    for (var i = rows.length - 1; i >= 0; i--) { if (rows[i].m3_per_hdd != null) { lastEff = rows[i].m3_per_hdd; break; } }
+    function effTxt(v) { return v != null ? nlNum(v, 3) + '<span class="stat-unit">m³/graaddag</span>' : '—'; }
+    setEl('heat-eff-avg', effTxt(avgEff));
+    setEl('heat-eff-last', effTxt(lastEff));
+    setEl('heat-eff-room', res && res.room ? 'referentie: ' + escHtml(res.room) : '');
+    setEl('heat-eff-note', effVals.length ? '' : 'Nog te weinig data — vult zich zodra er gestookt is.');
+
+    if (chartHeatingEff) chartHeatingEff.destroy();
+    chartHeatingEff = new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [
+        { label: 'Gas (m³)', data: gas, backgroundColor: 'rgba(249,115,22,0.45)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'line', label: 'm³ per graaddag', data: eff, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2, pointRadius: 2, tension: 0.3, spanGaps: true, yAxisID: 'y1', order: 1 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } },
+        scales: {
+          x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } },
+          y: { position: 'left', ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true, title: { display: true, text: 'Gas (m³)', color: CHART_TICK } },
+          y1: { position: 'right', ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'm³/graaddag', color: CHART_TICK } }
+        }
+      }
+    });
+  }).catch(function(){});
+}
+
 // ── Periodic refresh for non-active screens ──
 setInterval(function() {
   if (currentScreen === 1) { var a = document.querySelector('[data-range].active'); if(a) loadChart(a.dataset.range, a); refreshComparison(); refreshSafety(); }
@@ -215,7 +257,7 @@ setInterval(function() {
 }, 60000);
 setInterval(function() {
   if (currentScreen === 1) { loadPeaks(); loadWeekdayChart(); loadPhaseChart(); var hb = document.querySelector('[data-hm].active'); loadHeatmap(hb ? hb.dataset.hm : 'alltime', hb || null); }
-  if (currentScreen === 2) { loadGasMonthly(); }
+  if (currentScreen === 2) { loadGasMonthly(); loadHeatingEff(); }
   if (currentScreen === 3) { loadCostsDaily(); loadCostsOverview(); refreshCheapHours(); }
   if (currentScreen === 4) { loadWashWeekdayChart(); }
 }, 300000);
