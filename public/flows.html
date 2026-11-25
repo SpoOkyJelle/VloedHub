@@ -956,6 +956,7 @@
       editor.import(data);
       setTimeout(function() {
         document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+        relabelDeviceSelects();
         refreshSunEsts();
         historyLock = false;
       }, 60);
@@ -1122,6 +1123,7 @@
       renderFlowList();
       setTimeout(function() {
         document.querySelectorAll('.drawflow-node input[type=range]').forEach(updateBrightness);
+        relabelDeviceSelects();
         refreshSunEsts();
         pushHistory(); // initial snapshot
       }, 60);
@@ -1497,6 +1499,7 @@
     setTimeout(function() {
       document.querySelectorAll('.drawflow-node select[df-start-type]').forEach(function(sel) { twToggle(sel, 'start'); });
       document.querySelectorAll('.drawflow-node select[df-end-type]').forEach(function(sel) { twToggle(sel, 'end'); });
+      relabelDeviceSelects();
     }, 30);
   });
 
@@ -1964,6 +1967,31 @@
     compartment:  { label: 'Vak',                 type: 'select', options: [['refrigerator','Koelkast'],['freezer','Vriezer'],['variation','Variabel vak']] },
     scene:        { label: 'Scène',               type: 'select', options: [['all_off','Alles uit'],['evening','Avond'],['all_on','Alles aan'],['disco','Disco']] }
   };
+
+  // ── Eigen apparaatnamen in de dropdowns ─────────────────────────────────
+  // De LED/relais-dropdowns zijn hardgecodeerd (Woonkamer/Keuken/…). Hier halen we de door jou ingestelde
+  // namen op (zelfde bron als het dashboard, /api/device-names) en tonen die in Flows, zodat bv. "LED Strip
+  // kamer Jelle" overal zo heet i.p.v. "Woonkamer". De opgeslagen waarde (de key) blijft ongewijzigd.
+  var DEVICE_NAMES = {};
+  var LED_DEFAULT_LABELS = { 'default': 'Woonkamer', 'keuken': 'Keuken', 'gang': 'Gang', 'tv-meubel': 'TV Meubel' };
+  function ledLabel(key) { return DEVICE_NAMES['led::' + key] || LED_DEFAULT_LABELS[key] || key; }
+  function relayLabel(key) { return DEVICE_NAMES['relay::' + key] || (key.charAt(0).toUpperCase() + key.slice(1)); }
+  // De relais-select heeft alleen 'gang'; een LED-select heeft ook default/keuken/tv-meubel.
+  function isRelaySelect(sel) { return !sel.querySelector('option[value="default"],option[value="keuken"],option[value="tv-meubel"]'); }
+  function relabelDeviceSelects(root) {
+    (root || document).querySelectorAll('select[df-device]').forEach(function(sel) {
+      var relay = isRelaySelect(sel);
+      Array.prototype.forEach.call(sel.options, function(opt) { opt.textContent = relay ? relayLabel(opt.value) : ledLabel(opt.value); });
+    });
+  }
+  function loadDeviceNames() {
+    fetch('/api/device-names').then(function(r) { return r.json(); }).then(function(n) {
+      DEVICE_NAMES = n || {};
+      if (FIELD_META.device) FIELD_META.device.options = ['default', 'keuken', 'gang', 'tv-meubel'].map(function(k) { return [k, ledLabel(k)]; });
+      relabelDeviceSelects();
+    }).catch(function() {});
+  }
+  loadDeviceNames();
 
   // De scènes zijn aan te passen bij Instellingen: haal de actuele lijst op voor de Scène-node
   fetch('/api/scenes').then(function(r) { return r.json(); }).then(function(d) {
