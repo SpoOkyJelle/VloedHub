@@ -595,12 +595,12 @@
       b('<div class="df-node-hint">Triggert als een bewaakt apparaat geen berichten meer stuurt. {apparaat} in een melding toont welk apparaat.</div>'),
 
     person_home: t('df-node-title--wash-start','fa-house','Iemand komt thuis') +
-      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen">') +
-        hint('Triggert zodra de persoon via tado\u00b0-geofencing thuiskomt. Leeg = zodra het huis van AWAY naar HOME gaat. {persoon} toont de naam.')),
+      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen, komma = meerdere">') +
+        hint('Triggert via tado\u00b0-geofencing. Leeg = zodra het huis van AWAY naar HOME gaat. Meerdere namen (komma) = zodra ze \u00e1llemaal thuis zijn. {persoon} toont de naam/namen.')),
 
     person_away: t('df-node-title--wash-start','fa-door-open','Iemand gaat weg') +
-      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen">') +
-        hint('Triggert zodra de persoon via tado\u00b0-geofencing weggaat. Leeg = zodra het huis naar AWAY gaat. {persoon} toont de naam.')),
+      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen, komma = meerdere">') +
+        hint('Triggert via tado\u00b0-geofencing. Leeg = zodra het huis naar AWAY gaat. Meerdere namen (komma) = zodra ze \u00e1llemaal weg zijn. {persoon} toont de naam/namen.')),
 
     scene: t('df-node-title--action','fa-wand-magic-sparkles','Sc\u00e8ne') +
       b(f('Sc\u00e8ne','<select df-scene><option value="all_off">Alles uit</option><option value="evening">Avond</option><option value="all_on">Alles aan</option><option value="disco">Disco</option></select>') +
@@ -645,9 +645,13 @@
           '<option value="price_above">Stroomprijs &gt; X \u20ac/kWh</option>' +
           '<option value="fridge_above">Koelkast &gt; X\u00b0C</option>' +
           '<option value="afval_tomorrow">Morgen afval ophaaldag</option>' +
+          '<option value="person_home">Persoon thuis</option>' +
+          '<option value="everyone_home">Iedereen thuis</option>' +
+          '<option value="nobody_home">Niemand thuis</option>' +
           '<option value="time_between">Tijdstip tussen</option></select>') +
         f('Waarde','<input type="number" df-value>') +
         f('Kamer (temp)','<input type="text" df-room placeholder="bijv. Woonkamer">') +
+        f('Persoon (thuis-check)','<input type="text" df-person placeholder="leeg = iemand, komma = allen">') +
         '<div class="df-field df-field--row"><label>Tijd (van\u2013tot)</label><input type="time" df-timestart><span style="color:var(--dim);font-size:0.7rem">\u2013</span><input type="time" df-timeend></div>' +
         hint('\u25b6\ufe0e Uitgang 1: Waar \u00a0\u00b7\u00a0 \u25b6\ufe0e Uitgang 2: Niet waar')),
 
@@ -823,7 +827,7 @@
     scene:           { scene: 'all_off' },
     delay:           { seconds: '30' },
     time_window:     { 'start-type': 'time', start: '18:00', 'end-type': 'time', end: '23:00' },
-    condition:       { check: 'power_above', value: '1000', room: '', timestart: '18:00', timeend: '23:00' },
+    condition:       { check: 'power_above', value: '1000', room: '', person: '', timestart: '18:00', timeend: '23:00' },
     relay_on:        { device: 'gang' },
     relay_off:       { device: 'gang' },
     led_on:          { device: 'default', brightness: '180', color: '#ffffff' },
@@ -1895,7 +1899,7 @@
     percent:      { label: 'Max. afwijking (%)',   type: 'number', min: 0, max: 100, step: 5 },
     rate:         { label: 'Drempel (m³/uur)',     type: 'number', min: 0, max: 10, step: 0.1 },
     room:         { label: 'Kamer',               type: 'text', placeholder: 'bijv. Woonkamer' },
-    person:       { label: 'Persoon (leeg = iedereen)', type: 'text', placeholder: 'bijv. Jelle' },
+    person:       { label: 'Persoon (leeg = iedereen, komma = meerdere)', type: 'text', placeholder: 'bijv. Jelle, Anne' },
     temp:         { label: 'Drempel (°C)',         type: 'number', min: -30, max: 60, step: 0.5 },
     probability:  { label: 'Drempel (%)',          type: 'number', min: 0, max: 100, step: 5 },
     seconds:      { label: 'Seconden',            type: 'number', min: 1, max: 3600, step: 1 },
@@ -1917,7 +1921,9 @@
       ['solar_above','Teruglevering > X watt'],['solar_below','Teruglevering < X watt'],
       ['temp_above','Temp > X°C'],['temp_below','Temp < X°C'],
       ['rain_above','Regenkanis > X%'],['price_below','Stroomprijs < X €/kWh'],['price_above','Stroomprijs > X €/kWh'],
-      ['fridge_above','Koelkast > X°C'],['afval_tomorrow','Morgen afval ophaaldag'],['time_between','Tijdstip tussen']
+      ['fridge_above','Koelkast > X°C'],['afval_tomorrow','Morgen afval ophaaldag'],
+      ['person_home','Persoon thuis'],['everyone_home','Iedereen thuis'],['nobody_home','Niemand thuis'],
+      ['time_between','Tijdstip tussen']
     ]},
     value:        { label: 'Waarde',              type: 'number' },
     timestart:    { label: 'Tijd van',            type: 'time' },

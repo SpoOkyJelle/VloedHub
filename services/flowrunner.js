@@ -378,6 +378,31 @@ function executeNode(node, ctx) {
 }
 
 // ── Evaluate condition node ────────────────────────────────────────────────
+// Aanwezigheid (tado°-geofencing) voor één of meerdere personen. `whoStr` is leeg (hele huis / iemand) of
+// een komma-gescheiden lijst namen ("Jelle, Anne"). Geeft terug:
+//   ready   — of er genoeg data is om te oordelen (alle genoemde personen herkend, of huis-status bekend)
+//   allHome — iedereen uit de lijst is thuis (bij leeg: iemand/het huis is thuis)
+//   anyHome — minstens één uit de lijst is thuis (bij leeg: iemand/het huis is thuis)
+//   label   — nette naam/namen voor in meldingen ({persoon})
+function presenceOf(pres, whoStr) {
+  pres = pres || {};
+  var devices = pres.devices || [];
+  var who = (whoStr || '').toLowerCase().trim();
+  if (!who) {
+    var homeKnown = pres.home ? pres.home === 'HOME' : (devices.length ? devices.some(function(d) { return d.atHome; }) : null);
+    return { ready: homeKnown != null, allHome: !!homeKnown, anyHome: !!homeKnown, label: 'iemand' };
+  }
+  var names = who.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  var matched = names.map(function(n) { return devices.filter(function(d) { return (d.name || '').toLowerCase().indexOf(n) !== -1; })[0] || null; });
+  var found = matched.filter(Boolean);
+  return {
+    ready: found.length === names.length,            // alle genoemde personen herkend
+    allHome: found.length === names.length && found.every(function(d) { return d.atHome; }),
+    anyHome: found.some(function(d) { return d.atHome; }),
+    label: found.map(function(d) { return d.name; }).join(' & ') || whoStr
+  };
+}
+
 function evaluateCondition(node, ctx) {
   var check = node.data.check || 'power_above';
   var value = parseFloat(node.data.value) || 0;
@@ -396,6 +421,21 @@ function evaluateCondition(node, ctx) {
     case 'fridge_above': return (ctx.fridge || {}).refrigerator != null && ctx.fridge.refrigerator > value;
     case 'afval_tomorrow': return (ctx.afvalTomorrow || []).length > 0;
     case 'time_between': return timeInWindow(node.data.timestart || '00:00', node.data.timeend || '23:59');
+    // Aanwezigheid via tado°-geofencing (ctx.tadoPresence = { home:'HOME'|'AWAY'|null, devices:[{name,atHome}] }).
+    // Leeg = iemand/huis thuis; één naam = die persoon; meerdere (komma-gescheiden) = állen thuis.
+    case 'person_home': return presenceOf(ctx.tadoPresence, node.data.person).allHome;
+    case 'everyone_home': {
+      var presE = ctx.tadoPresence || {};
+      var devsE = presE.devices || [];
+      if (devsE.length) return devsE.every(function(d) { return d.atHome; });
+      return presE.home === 'HOME';
+    }
+    case 'nobody_home': {
+      var presN = ctx.tadoPresence || {};
+      var devsN = presN.devices || [];
+      if (devsN.length) return devsN.every(function(d) { return !d.atHome; });
+      return presN.home === 'AWAY';
+    }
     default: return false;
   }
 }
@@ -767,26 +807,18 @@ function checkSensorTriggers(rows, ctx) {
             break;
           case 'person_home':
           case 'person_away': {
-            // Aanwezigheid via tado°-geofencing. Leeg = het hele huis (HOME/AWAY); anders een naam-match.
-            var pres = ctx.tadoPresence || {};
-            var who = (node.data.person || '').toLowerCase().trim();
-            var personName = 'iemand', atHome;
-            if (who) {
-              var dv = (pres.devices || []).filter(function(d) { return (d.name || '').toLowerCase().indexOf(who) !== -1; })[0];
-              if (!dv) return;                     // onbekende persoon: niets doen
-              personName = dv.name; atHome = dv.atHome;
-            } else {
-              if (!pres.home) return;              // nog geen presence-data
-              atHome = pres.home === 'HOME';
-            }
-            var want = node.name === 'person_away' ? !atHome : atHome;
+            // Aanwezigheid via tado°-geofencing. Leeg = hele huis; één naam = die persoon; meerdere namen
+            // (komma-gescheiden) = állen. person_home vuurt als iedereen thuis is, person_away als iedereen weg is.
+            var p = presenceOf(ctx.tadoPresence, node.data.person);
+            if (!p.ready) return;                  // onbekende persoon of nog geen presence-data: niets doen
+            var want = node.name === 'person_away' ? !p.anyHome : p.allHome;
             // eerste keer na een herstart alleen onthouden, niet meteen vuren
             if (!(key in sensorState)) { sensorState[key] = want; return; }
             var hadPrev = !!sensorState[key];
             sensorState[key] = want;
             if (want && !hadPrev) {
-              var pCtx = Object.assign({}, ctx, { vars: Object.assign({}, ctx.vars, { persoon: personName }) });
-              console.log('[Flow] Trigger "' + node.name + '" (' + personName + ') — flow ' + flow.id + ' "' + flow.name + '"');
+              var pCtx = Object.assign({}, ctx, { vars: Object.assign({}, ctx.vars, { persoon: p.label }) });
+              console.log('[Flow] Trigger "' + node.name + '" (' + p.label + ') — flow ' + flow.id + ' "' + flow.name + '"');
               traverseOutputs(node, nodes, pCtx, flow.id);
             }
             return;
