@@ -197,13 +197,13 @@
           </div>
 
           <div class="palette-group-label" data-group="triggers-aanwezigheid">Triggers — Aanwezigheid<i class="fa-solid fa-chevron-down chevron"></i></div>
-          <div class="palette-node" draggable="true" data-node="person_home" data-tooltip="Triggert zodra iemand thuiskomt (via tado°-geofencing). Leeg = hele huis van weg naar thuis." ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="person_home" data-tooltip="Triggert bij thuiskomst (via tado°-geofencing). Kies Wie: iemand (eerste thuis), iedereen (allen thuis) of een specifieke persoon." ondragstart="drag(event)">
             <i class="fa-solid fa-house" style="color:var(--green)"></i>
-            <div><div class="palette-node-name">Iemand komt thuis</div><div class="palette-node-desc">tado°-geofence: thuis</div></div>
+            <div><div class="palette-node-name">Komt thuis</div><div class="palette-node-desc">tado°: iemand/iedereen/persoon</div></div>
           </div>
-          <div class="palette-node" draggable="true" data-node="person_away" data-tooltip="Triggert zodra iemand weggaat (via tado°-geofencing). Leeg = hele huis van thuis naar weg." ondragstart="drag(event)">
+          <div class="palette-node" draggable="true" data-node="person_away" data-tooltip="Triggert bij weggaan (via tado°-geofencing). Kies Wie: iemand (iemand weg), iedereen (huis leeg) of een specifieke persoon." ondragstart="drag(event)">
             <i class="fa-solid fa-door-open" style="color:var(--orange)"></i>
-            <div><div class="palette-node-name">Iemand gaat weg</div><div class="palette-node-desc">tado°-geofence: weg</div></div>
+            <div><div class="palette-node-name">Gaat weg</div><div class="palette-node-desc">tado°: iemand/iedereen/persoon</div></div>
           </div>
 
           <div class="palette-group-label" data-group="triggers-integraties">Triggers — Integraties<i class="fa-solid fa-chevron-down chevron"></i></div>
@@ -594,13 +594,21 @@
     device_offline: t('df-node-title--wash-start','fa-plug-circle-xmark','Apparaat offline') +
       b('<div class="df-node-hint">Triggert als een bewaakt apparaat geen berichten meer stuurt. {apparaat} in een melding toont welk apparaat.</div>'),
 
-    person_home: t('df-node-title--wash-start','fa-house','Iemand komt thuis') +
-      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen, komma = meerdere">') +
-        hint('Triggert via tado\u00b0-geofencing. Leeg = zodra het huis van AWAY naar HOME gaat. Meerdere namen (komma) = zodra ze \u00e1llemaal thuis zijn. {persoon} toont de naam/namen.')),
+    person_home: t('df-node-title--wash-start','fa-house','Komt thuis') +
+      b(f('Wie','<select df-who>' +
+          '<option value="anyone">Iemand (eerste komt thuis)</option>' +
+          '<option value="everyone">Iedereen (allen thuis)</option>' +
+          '<option value="specific">Specifieke persoon(en)</option></select>') +
+        f('Persoon','<input type="text" df-person placeholder="alleen bij \'specifiek\', komma = meerdere">') +
+        hint('Via tado\u00b0-geofencing. Iemand = zodra de eerste thuiskomt \u00b7 Iedereen = zodra allen thuis zijn \u00b7 Specifiek = de ingevulde persoon/personen (komma = \u00e1llen). {persoon} toont de naam.')),
 
-    person_away: t('df-node-title--wash-start','fa-door-open','Iemand gaat weg') +
-      b(f('Persoon','<input type="text" df-person placeholder="leeg = iedereen, komma = meerdere">') +
-        hint('Triggert via tado\u00b0-geofencing. Leeg = zodra het huis naar AWAY gaat. Meerdere namen (komma) = zodra ze \u00e1llemaal weg zijn. {persoon} toont de naam/namen.')),
+    person_away: t('df-node-title--wash-start','fa-door-open','Gaat weg') +
+      b(f('Wie','<select df-who>' +
+          '<option value="anyone">Iemand (iemand gaat weg)</option>' +
+          '<option value="everyone">Iedereen (huis leeg)</option>' +
+          '<option value="specific">Specifieke persoon(en)</option></select>') +
+        f('Persoon','<input type="text" df-person placeholder="alleen bij \'specifiek\', komma = meerdere">') +
+        hint('Via tado\u00b0-geofencing. Iemand = zodra er iemand weggaat \u00b7 Iedereen = zodra het huis leeg is \u00b7 Specifiek = de ingevulde persoon/personen (komma = \u00e1llen). {persoon} toont de naam.')),
 
     scene: t('df-node-title--action','fa-wand-magic-sparkles','Sc\u00e8ne') +
       b(f('Sc\u00e8ne','<select df-scene><option value="all_off">Alles uit</option><option value="evening">Avond</option><option value="all_on">Alles aan</option><option value="disco">Disco</option></select>') +
@@ -822,8 +830,8 @@
     afval_pickup:    { when: 'before', time: '21:00', kind: 'all' },
     fridge_temp_above: { compartment: 'refrigerator', temp: '8' },
     device_offline:  {},
-    person_home:     { person: '' },
-    person_away:     { person: '' },
+    person_home:     { who: 'anyone', person: '' },
+    person_away:     { who: 'anyone', person: '' },
     scene:           { scene: 'all_off' },
     delay:           { seconds: '30' },
     time_window:     { 'start-type': 'time', start: '18:00', 'end-type': 'time', end: '23:00' },
@@ -1756,8 +1764,8 @@
       { type:'device_offline', icon:'fa-plug-circle-xmark', color:'var(--red)', name:'Apparaat offline', desc:'Sensor of lamp stuurt niets meer' }
     ]},
     { group: 'Triggers — Aanwezigheid', nodes: [
-      { type:'person_home',     icon:'fa-house',                    color:'var(--green)',  name:'Iemand komt thuis',   desc:'tado°-geofence: thuis' },
-      { type:'person_away',     icon:'fa-door-open',                color:'var(--orange)', name:'Iemand gaat weg',     desc:'tado°-geofence: weg' }
+      { type:'person_home',     icon:'fa-house',                    color:'var(--green)',  name:'Komt thuis',          desc:'tado°: iemand/iedereen/persoon' },
+      { type:'person_away',     icon:'fa-door-open',                color:'var(--orange)', name:'Gaat weg',            desc:'tado°: iemand/iedereen/persoon' }
     ]},
     { group: 'Triggers — Integraties', nodes: [
       { type:'webhook_trigger', icon:'fa-globe',                    color:'var(--blue)',   name:'Webhook trigger',     desc:'Starten via HTTP POST' },
@@ -1900,6 +1908,7 @@
     rate:         { label: 'Drempel (m³/uur)',     type: 'number', min: 0, max: 10, step: 0.1 },
     room:         { label: 'Kamer',               type: 'text', placeholder: 'bijv. Woonkamer' },
     person:       { label: 'Persoon (leeg = iedereen, komma = meerdere)', type: 'text', placeholder: 'bijv. Jelle, Anne' },
+    who:          { label: 'Wie', type: 'select', options: [['anyone','Iemand'],['everyone','Iedereen'],['specific','Specifieke persoon(en)']] },
     temp:         { label: 'Drempel (°C)',         type: 'number', min: -30, max: 60, step: 0.5 },
     probability:  { label: 'Drempel (%)',          type: 'number', min: 0, max: 100, step: 5 },
     seconds:      { label: 'Seconden',            type: 'number', min: 1, max: 3600, step: 1 },
