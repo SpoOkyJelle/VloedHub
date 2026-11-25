@@ -66,7 +66,7 @@ module.exports = function(req, res) {
       try {
         var results = await Promise.all([
           dbp.all("SELECT received_at as at, watts FROM tapo_power WHERE received_at >= ? ORDER BY received_at ASC", [cutoff]),
-          dbp.all("SELECT received_at as at, temp_c, humidity FROM temperature_readings WHERE device = 'tapo-t310' AND received_at >= ? ORDER BY received_at ASC", [cutoff]),
+          dbp.all("SELECT received_at as at, room, temp_c, humidity FROM temperature_readings WHERE device = 'tapo-t310' AND received_at >= ? ORDER BY received_at ASC", [cutoff]),
           dbp.all("SELECT finished_at FROM wasmachine_cycles WHERE finished_at >= ? ORDER BY finished_at ASC", [cutoff])
         ]);
         var out = {
@@ -166,6 +166,15 @@ module.exports = function(req, res) {
   if (req.method === "POST" && req.url === "/api/tapo/shower") {
     readBody(req, function(data) {
       if (!data || !tapo.setShower(data)) return json(res, 400, { ok: false, error: "Ongeldige waarde (release moet onder high liggen)" });
+      json(res, 200, Object.assign({ ok: true }, tapo.getStatus()));
+    });
+    return true;
+  }
+
+  // Per-sensor instellingen (T310's): { sensors: { "<deviceId>": { room?, shower? } } }
+  if (req.method === "POST" && req.url === "/api/tapo/sensors") {
+    readBody(req, function(data) {
+      if (!data || !tapo.setSensors(data.sensors || data)) return json(res, 400, { ok: false, error: "Ongeldige sensorinstellingen" });
       json(res, 200, Object.assign({ ok: true }, tapo.getStatus()));
     });
     return true;

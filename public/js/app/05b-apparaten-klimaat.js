@@ -250,19 +250,69 @@ function renderTapo(d) {
   setShV('tapo-shower-release', sh.release); setShV('tapo-shower-cooldown', sh.cooldownMin);
   var shNow = document.getElementById('tapo-shower-now');
   if (shNow && sh.high != null) shNow.textContent = 'Nu: melden bij ≥' + sh.high + '% of een stijging van +' + sh.rise + 'pp, weer rustig onder ' + sh.release + '%, meld-pauze ' + sh.cooldownMin + ' min.';
+  buildTapoSensors(d);
   var ex = document.getElementById('tapo-extra');
   if (!ex) return;
   if (!d.linked) { ex.innerHTML = ''; return; }
   var rows = [];
   if (d.plug) rows.push('<div class="setting-desc">Stekker <b>' + escHtml(d.plug.name || '') + '</b>: ' + nlNum(d.plug.watts, 1) + ' W · wasmachine: ' + escHtml(d.washState || 'idle') + '</div>');
-  if (d.t310) rows.push('<div class="setting-desc">Sensor <b>' + escHtml(d.t310.name || '') + '</b>: ' + (d.t310.temp != null ? nlNum(d.t310.temp, 1) + '°' : '—') + ' · ' + (d.t310.humidity != null ? d.t310.humidity + '%' : '—') + (d.showerActive ? ' · 🚿 doucht' : '') + '</div>');
-  if (d.devices && d.devices.length) rows.push('<div class="setting-desc">Gevonden: ' + d.devices.map(function(x) { return escHtml(x.name || x.model || '?') + ' (' + escHtml(x.model || x.type || '') + ')'; }).join(', ') + '</div>');
+  (d.sensors || []).forEach(function(s) {
+    rows.push('<div class="setting-desc">Sensor <b>' + escHtml(s.name || '') + '</b> (' + escHtml(s.room || '') + '): ' + (s.temp != null ? nlNum(s.temp, 1) + '°' : '—') + ' · ' + (s.humidity != null ? s.humidity + '%' : '—') + (s.shower ? '' : ' · douche uit') + (s.showerActive ? ' · 🚿 doucht' : '') + '</div>');
+  });
   if (d.error) rows.push('<div class="setting-desc">⚠️ ' + escHtml(String(d.error)) + '</div>');
   if (d.raw && Object.keys(d.raw).length) rows.push('<div class="setting-desc">Ruwe uitlezing — ' + Object.keys(d.raw).map(function(k) { return escHtml(k) + ': ' + escHtml(String(d.raw[k])); }).join(' · ') + '</div>');
   rows.push('<div class="tado-meta"><span>' + escHtml(tapoAgo(d.updated)) + '</span>' +
     '<button class="btn btn-quiet btn-sm" onclick="refreshTapoNow(this)"><i class="fa-solid fa-rotate"></i> Ververs nu</button>' +
     '<button class="btn btn-ghost btn-sm" onclick="unlinkTapo()">Ontkoppelen</button></div>');
   ex.innerHTML = rows.join('');
+}
+// Per-sensor kamernaam + douche-vinkje. Alleen herbouwen als de sensorenset/instellingen wijzigen, zodat
+// je niet midden in het typen van een kamernaam wordt onderbroken door een poll-refresh.
+function buildTapoSensors(d) {
+  var el = document.getElementById('tapo-sensors');
+  if (!el) return;
+  var legacyRow = document.getElementById('tapo-room-row');
+  if (!d.linked || !d.sensors || !d.sensors.length) {
+    el._sig = ''; el.innerHTML = '';
+    if (legacyRow) legacyRow.style.display = '';
+    return;
+  }
+  if (legacyRow) legacyRow.style.display = 'none';
+  var sig = d.sensors.map(function(s) { return s.id + '|' + (s.room || '') + '|' + s.shower; }).join('~');
+  if (el._sig === sig) return; // ongewijzigd — niet herbouwen (behoudt focus/typen)
+  el._sig = sig;
+  var html = '<div class="setting-row setting-row-wrap"><div class="setting-text"><div class="setting-title">Sensoren (T310)</div>' +
+    '<div class="setting-desc">Kamernaam per sensor (bepaalt waaronder temperatuur en vocht worden gelogd) en welke sensor douche-detectie doet.</div></div></div>' +
+    '<div class="tapo-sensors-list">' + d.sensors.map(function(s) {
+      var sid = escHtml(s.id);
+      return '<div class="tapo-sensor-row">' +
+        '<span class="tapo-sensor-name">' + escHtml(s.name || s.model || 'T310') + ' <span class="power-sub">' + escHtml(s.model || '') + '</span></span>' +
+        '<input class="field" data-sid="' + sid + '" data-k="room" type="text" maxlength="30" aria-label="Kamernaam" placeholder="Kamernaam" value="' + escHtml(s.room || '') + '">' +
+        '<label class="tapo-sensor-shower"><input type="checkbox" data-sid="' + sid + '" data-k="shower"' + (s.shower ? ' checked' : '') + '> douche</label>' +
+        '</div>';
+    }).join('') + '</div>' +
+    '<div class="tapo-form"><button class="btn btn-ghost" onclick="saveTapoSensors(this)">Sensoren opslaan</button></div>';
+  el.innerHTML = html;
+}
+function saveTapoSensors(btn) {
+  var el = document.getElementById('tapo-sensors');
+  if (!el) return;
+  var map = {};
+  el.querySelectorAll('[data-sid]').forEach(function(inp) {
+    var id = inp.getAttribute('data-sid'), k = inp.getAttribute('data-k');
+    if (!map[id]) map[id] = {};
+    map[id][k] = k === 'shower' ? inp.checked : inp.value.trim();
+  });
+  btn.disabled = true;
+  fetch('/api/tapo/sensors', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({sensors: map})})
+    .then(function(r){return r.json();}).then(function(d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Opslaan mislukt', 'error'); return; }
+      toast('Sensoren opgeslagen', 'ok');
+      el._sig = ''; // forceer herbouw met de nieuwe namen
+      renderTapo(d);
+      setTimeout(refreshTapo, 3000);
+    }).catch(function() { btn.disabled = false; toast('Tapo: verbindingsfout', 'error'); });
 }
 function refreshTapo() {
   if (!document.getElementById('tapo-status')) return;

@@ -19,7 +19,9 @@ var tapoLib = require("tp-link-tapo-connect");
 //
 // Wat we uitlezen:
 //  - P410M (stekker): getEnergyUsage().current_power is in MILLIWATT -> watt = /1000 -> wasmachine-status.
-//  - T310 (onder de H100): getChildDevicesInfo() -> current_temp + current_humidity -> badkamer + douche.
+//  - T310 (onder de H100): getChildDevicesInfo() -> current_temp + current_humidity. Meerdere T310's worden
+//    allemaal uitgelezen; elk krijgt een eigen kamernaam (standaard de in de Tapo-app ingestelde naam) en
+//    kan los douche-detectie doen. Per-sensor instellingen staan in data/tapo.json -> sensors[deviceId].
 
 var CONFIG_FILE = path.join(__dirname, "../data/tapo.json");
 
@@ -48,7 +50,7 @@ var DEFAULT_ROOM = "Badkamer";
 var lastError = null;
 var lastUpdate = null;
 var plug = null;                      // { watts, on, name, updated }
-var t310 = null;                      // { temp, humidity, online, name, updated }
+var sensors = [];                     // T310's onder de hub: [{ id, temp, humidity, online, name, model, room, shower, showerActive, updated }]
 var lastRaw = {};                     // kleine ruwe snippets voor de status (geen geheimen)
 
 var plugSession = null, hubSession = null;  // ingelogde apparaat-objecten, hergebruikt tussen polls
@@ -58,10 +60,8 @@ var washState = "idle";               // idle | running | done
 var washLowSince = 0;
 var washDoneAt = 0;
 
-// douche-detectie
-var lastHumidity = null;
-var showerActive = false;
-var lastShowerNotify = 0;
+// douche-detectie, per sensor: device_id -> { lastHumidity, active, lastNotify }
+var showerState = {};
 
 var pollTimer = null, generation = 0;
 
@@ -94,6 +94,25 @@ function showerCfg() {
 function roomName() {
   var n = load().roomName;
   return (typeof n === "string" && n.trim()) ? n.trim() : DEFAULT_ROOM;
+}
+
+// Per-sensor instellingen: { "<deviceId>": { room: "...", shower: true/false } }. Leeg = standaard.
+function sensorsCfg() {
+  var s = load().sensors;
+  return (s && typeof s === "object") ? s : {};
+}
+
+function isT310(x) {
+  return /T31\d/i.test(String(x.model || "")) || /temp.*hmdt|temp.*hum/i.test(String(x.category || ""));
+}
+
+// Kamernaam van een sensor: expliciet ingesteld > (bij precies één sensor) de oude losse kamernaam, zodat
+// een bestaande opstelling dezelfde historie houdt > de in de Tapo-app ingestelde naam > het model.
+function sensorRoom(c, sc, solo) {
+  if (typeof sc.room === "string" && sc.room.trim()) return sc.room.trim();
+  if (solo) return roomName();
+  if (typeof c.nickname === "string" && c.nickname.trim()) return c.nickname.trim();
+  return c.model || "T310";
 }
 
 function validIp(ip) {
@@ -147,29 +166,42 @@ async function readPlug(ip) {
 async function readHub(ip) {
   var children = await withDevice("hub", ip, function(d) { return d.getChildDevicesInfo(); });
   var list = Array.isArray(children) ? children : [];
-  lastRaw.hub = list.length + " sub-apparaten";
-  var cfg = load();
-  var c = cfg.t310Id ? list.filter(function(x) { return x.device_id === cfg.t310Id; })[0] : null;
-  if (!c) c = list.filter(function(x) { return /T31\d/i.test(String(x.model || "")) || /temp.*hmdt|temp.*hum/i.test(String(x.category || "")); })[0];
-  if (!c) { lastRaw.hub = list.length + " sub-apparaten, geen T310"; return; }
-  recordT310(c);
+  var found = list.filter(isT310);
+  if (!found.length) { sensors = []; lastRaw.hub = list.length + " sub-apparaten, geen T310"; return; }
+  var cfg = sensorsCfg();
+  var solo = found.length === 1;
+  sensors = found.map(function(c) { return recordSensor(c, cfg[c.device_id] || {}, solo); });
+  lastRaw.hub = list.length + " sub-apparaten, " + found.length + " T310";
+  lastRaw.t310 = sensors.map(function(s) {
+    return s.room + " " + (s.temp != null ? s.temp + "°C" : "?") + "/" + (s.humidity != null ? s.humidity + "%" : "?");
+  }).join(" · ");
 }
 
-function recordT310(c) {
+function recordSensor(c, sc, solo) {
   var temp = c.current_temp != null ? c.current_temp : (c.current_temperature != null ? c.current_temperature : null);
   if (temp != null && /fahrenheit/i.test(String(c.temp_unit || ""))) temp = (Number(temp) - 32) * 5 / 9;
   temp = temp != null ? Math.round(Number(temp) * 10) / 10 : null;
   var hum = c.current_humidity != null ? Math.round(Number(c.current_humidity)) : null;
-  t310 = {
+  var room = sensorRoom(c, sc, solo);
+  // Douche-detectie: het per-sensor vinkje (sc.shower) is de harde schakelaar. Zonder instelling staat het
+  // alleen áán bij een enkele sensor (oud gedrag) of een badkamer-achtige naam; een extra sensor blijft uit.
+  var shower = sc.shower != null ? !!sc.shower : (solo || /bad|douche|shower|bath/i.test(room));
+  var s = {
+    id: c.device_id,
     temp: temp,
     humidity: hum,
     online: String(c.status || "online").toLowerCase() === "online",
     name: c.nickname || c.model || "T310",
+    model: c.model || "T310",
+    room: room,
+    shower: shower,
+    showerActive: false,
     updated: Date.now()
   };
-  lastRaw.t310 = (temp != null ? temp + "°C" : "?") + " / " + (hum != null ? hum + "%" : "?");
-  if (temp != null) logging.logTemperatureReadings({ device: "tapo-t310", readings: [{ room: roomName(), temp_c: temp, humidity: hum }] }, function() {});
-  if (hum != null) evaluateShower(hum);
+  if (temp != null) logging.logTemperatureReadings({ device: "tapo-t310", readings: [{ room: room, temp_c: temp, humidity: hum }] }, function() {});
+  if (shower && hum != null) s.showerActive = evaluateShower(c.device_id, room, hum);
+  else if (hum != null) { var st = showerState[c.device_id] || (showerState[c.device_id] = {}); st.lastHumidity = hum; }
+  return s;
 }
 
 // ── Wasmachine-detectie ─────────────────────────────────────────────────────
@@ -195,21 +227,23 @@ function evaluateWash(watts) {
 }
 
 // ── Douche-detectie ──────────────────────────────────────────────────────────
-function evaluateShower(hum) {
+function evaluateShower(id, room, hum) {
   var s = showerCfg();
   var now = Date.now();
-  var delta = lastHumidity != null ? hum - lastHumidity : 0;
+  var st = showerState[id] || (showerState[id] = { lastHumidity: null, active: false, lastNotify: 0 });
+  var delta = st.lastHumidity != null ? hum - st.lastHumidity : 0;
   var trigger = hum >= s.high || delta >= s.rise;
-  if (trigger && !showerActive) {
-    showerActive = true;
-    if (now - lastShowerNotify >= s.cooldownMs) {
-      lastShowerNotify = now;
-      if (modules.isOn("tapo")) discord.notify("temperature", "🚿 **Er wordt gedoucht** — " + roomName() + " " + hum + "% luchtvochtigheid");
+  if (trigger && !st.active) {
+    st.active = true;
+    if (now - st.lastNotify >= s.cooldownMs) {
+      st.lastNotify = now;
+      if (modules.isOn("tapo")) discord.notify("temperature", "🚿 **Er wordt gedoucht** — " + room + " " + hum + "% luchtvochtigheid");
     }
-  } else if (showerActive && hum <= s.release) {
-    showerActive = false;
+  } else if (st.active && hum <= s.release) {
+    st.active = false;
   }
-  lastHumidity = hum;
+  st.lastHumidity = hum;
+  return st.active;
 }
 
 // ── Pollen ──────────────────────────────────────────────────────────────────
@@ -274,11 +308,11 @@ function setDevices(sel) {
 function unlink() {
   stopPolling();
   var cfg = load();
-  ["email", "password", "hubIp", "plugIp", "t310Id"].forEach(function(k) { delete cfg[k]; });
+  ["email", "password", "hubIp", "plugIp", "t310Id", "sensors"].forEach(function(k) { delete cfg[k]; });
   save(cfg);
   plugSession = hubSession = null; lastError = null;
-  plug = null; t310 = null; lastRaw = {};
-  washState = "idle"; lastHumidity = null; showerActive = false;
+  plug = null; sensors = []; lastRaw = {};
+  washState = "idle"; showerState = {};
 }
 
 function setPollMinutes(v) {
@@ -293,6 +327,26 @@ function setRoomName(name) {
   name = String(name == null ? "" : name).trim().slice(0, 30);
   if (!name) return false;
   var cfg = load(); cfg.roomName = name; save(cfg);
+  return true;
+}
+
+// Per-sensor instellingen opslaan: { "<deviceId>": { room?, shower? } }. Lege kamernaam of ontbrekende
+// velden blijven weg (dan geldt de standaard). Past meteen toe via een verse uitlezing.
+function setSensors(map) {
+  if (!map || typeof map !== "object") return false;
+  var cfg = load();
+  var out = {};
+  Object.keys(map).forEach(function(id) {
+    if (!id) return;
+    var e = map[id] || {};
+    var entry = {};
+    if (typeof e.room === "string" && e.room.trim()) entry.room = e.room.trim().slice(0, 30);
+    if (e.shower != null) entry.shower = !!e.shower;
+    if (Object.keys(entry).length) out[id] = entry;
+  });
+  cfg.sensors = out;
+  save(cfg);
+  if (cfg.email && cfg.password && cfg.hubIp) refresh().catch(function() {});
   return true;
 }
 
@@ -330,9 +384,12 @@ function getStatus() {
     hubIp: cfg.hubIp || null,
     plugIp: cfg.plugIp || null,
     plug: plug,
-    t310: t310,
+    sensors: sensors.map(function(s) {
+      return { id: s.id, name: s.name, model: s.model, room: s.room, temp: s.temp, humidity: s.humidity, online: s.online, shower: s.shower, showerActive: s.showerActive, updated: s.updated };
+    }),
+    t310: sensors.filter(function(s) { return s.shower; })[0] || sensors[0] || null,  // compat: eerste (douche)sensor
     washState: washState,
-    showerActive: showerActive,
+    showerActive: sensors.some(function(s) { return s.showerActive; }),
     shower: showerCfg(),
     showerBounds: SHOWER_BOUNDS,
     raw: lastRaw,
@@ -404,6 +461,6 @@ function start() {
 module.exports = {
   start: start, getStatus: getStatus, getTuning: getTuning, refreshNow: refreshNow,
   setCredentials: setCredentials, setDevices: setDevices, unlink: unlink,
-  setPollMinutes: setPollMinutes, setRoomName: setRoomName, setShower: setShower,
+  setPollMinutes: setPollMinutes, setRoomName: setRoomName, setSensors: setSensors, setShower: setShower,
   playAlarm: playAlarm, stopAlarm: stopAlarm, getAlarmTones: getAlarmTones
 };

@@ -326,17 +326,21 @@ function refreshTapoCard() {
     if ((el = document.getElementById('wash-power'))) el.textContent = d.plug && d.plug.watts != null ? nlNum(d.plug.watts, 1) + ' W' : '—';
     if (!grid) return;
     if (!d.linked) { grid._sig = 'nolink'; grid.innerHTML = '<div class="esp-card"><div class="esp-head">Niet gekoppeld — koppel bij Instellingen</div></div>'; return; }
-    var t = d.t310 || null;
-    var showering = !!d.showerActive;
-    var room = d.roomName || 'Badkamer';
-    var r = { room: room, temp_c: t ? t.temp : null, humidity: t ? t.humidity : null, received_at: d.updated || null };
-    var badge = !t ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Geen data' }
-      : showering ? { cls: 'cool', icon: 'fa-shower', text: 'Doucht' }
-      : { cls: 'idle', icon: 'fa-droplet', text: 'Rustig' };
-    var cfg = climateCardCfg(r, 'fa-shower', { badge: badge });
-    cfg.id = 'tapo-' + sensorSlug(room);
-    cfg.sig = cfg.values.join(',') + '|' + badge.text;
-    paintSensorGrid(grid, [cfg]);
+    var list = d.sensors && d.sensors.length ? d.sensors
+      : d.t310 ? [{ id: d.t310.id, room: d.roomName || 'Badkamer', temp: d.t310.temp, humidity: d.t310.humidity, shower: true, showerActive: d.showerActive }] : [];
+    if (!list.length) { grid._sig = 'nodata'; grid.innerHTML = '<div class="esp-card"><div class="esp-head">Nog geen sensordata</div></div>'; return; }
+    var cards = list.map(function(s) {
+      var room = s.room || 'Badkamer';
+      var hasData = s.temp != null || s.humidity != null;
+      var badge = !hasData ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Geen data' }
+        : s.shower ? (s.showerActive ? { cls: 'cool', icon: 'fa-shower', text: 'Doucht' } : { cls: 'idle', icon: 'fa-droplet', text: 'Rustig' })
+        : { cls: 'idle', icon: 'fa-droplet', text: nlNum(s.humidity, 0) + ' %' };
+      var cfg = climateCardCfg({ room: room, temp_c: s.temp, humidity: s.humidity, received_at: d.updated || null }, s.shower ? 'fa-shower' : 'fa-droplet', { badge: badge });
+      cfg.id = 'tapo-' + sensorSlug(room);
+      cfg.sig = cfg.values.join(',') + '|' + badge.text;
+      return cfg;
+    });
+    paintSensorGrid(grid, cards);
   }).catch(function(){});
 }
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? shortWhen(s.since) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
