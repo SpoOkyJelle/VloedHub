@@ -318,29 +318,46 @@ function loadWashPowerChart(range, btn) {
     });
   }).catch(function(){});
 }
+// Tapo-sensoren op de Apparaten-pagina: gegroepeerd PER KAMER, met de kamernaam als sectiekop. Elke kamer
+// krijgt een eigen (stabiele) grid, zodat een uitgeklapte grafiek blijft staan tussen de polls.
 function refreshTapoCard() {
-  var grid = document.getElementById('tapo-grid');
-  if (!grid && !document.getElementById('wash-power')) return;
+  var sec = document.getElementById('tapo-section');
+  if (!sec && !document.getElementById('wash-power')) return;
   fetch('/api/tapo').then(function(r){return r.json();}).then(function(d) {
     var el;
     if ((el = document.getElementById('wash-power'))) el.textContent = d.plug && d.plug.watts != null ? nlNum(d.plug.watts, 1) + ' W' : '—';
-    if (!grid) return;
-    if (!d.linked) { grid._sig = 'nolink'; grid.innerHTML = '<div class="esp-card"><div class="esp-head">Niet gekoppeld — koppel bij Instellingen</div></div>'; return; }
+    if (!sec) return;
+    if (!d.linked) { sec._sig = 'nolink'; sec.innerHTML = '<div class="section-title">Tapo-sensoren</div><div class="esp-grid"><div class="esp-card"><div class="esp-head">Niet gekoppeld — koppel bij Instellingen</div></div></div>'; return; }
     var list = d.sensors && d.sensors.length ? d.sensors
-      : d.t310 ? [{ id: d.t310.id, room: d.roomName || 'Badkamer', temp: d.t310.temp, humidity: d.t310.humidity, shower: true, showerActive: d.showerActive }] : [];
-    if (!list.length) { grid._sig = 'nodata'; grid.innerHTML = '<div class="esp-card"><div class="esp-head">Nog geen sensordata</div></div>'; return; }
-    var cards = list.map(function(s) {
-      var room = s.room || 'Badkamer';
-      var hasData = s.temp != null || s.humidity != null;
-      var badge = !hasData ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Geen data' }
-        : s.shower ? (s.showerActive ? { cls: 'cool', icon: 'fa-shower', text: 'Doucht' } : { cls: 'idle', icon: 'fa-droplet', text: 'Rustig' })
-        : { cls: 'idle', icon: 'fa-droplet', text: nlNum(s.humidity, 0) + ' %' };
-      var cfg = climateCardCfg({ room: room, temp_c: s.temp, humidity: s.humidity, received_at: d.updated || null }, s.shower ? 'fa-shower' : 'fa-droplet', { badge: badge });
-      cfg.id = 'tapo-' + sensorSlug(room);
-      cfg.sig = cfg.values.join(',') + '|' + badge.text;
-      return cfg;
+      : d.t310 ? [{ id: d.t310.id, name: d.t310.name, room: d.roomName || 'Badkamer', temp: d.t310.temp, humidity: d.t310.humidity, shower: true, showerActive: d.showerActive }] : [];
+    if (!list.length) { sec._sig = 'nodata'; sec.innerHTML = '<div class="section-title">Tapo-sensoren</div><div class="esp-grid"><div class="esp-card"><div class="esp-head">Nog geen sensordata</div></div></div>'; return; }
+    // Groepeer op kamer (in volgorde van binnenkomst)
+    var rooms = [], byRoom = {};
+    list.forEach(function(s) { var room = s.room || 'Tapo'; if (!byRoom[room]) { byRoom[room] = []; rooms.push(room); } byRoom[room].push(s); });
+    // Alleen de structuur (koppen + grids) herbouwen als de set kamers wijzigt; anders de grids hergebruiken.
+    var sig = 'rooms:' + rooms.join('|');
+    if (sec._sig !== sig) {
+      sec._sig = sig;
+      sec.innerHTML = rooms.map(function(room) {
+        return '<div class="section-title">' + escHtml(room) + '</div><div class="esp-grid" id="tapo-grid-' + sensorSlug(room) + '"></div>';
+      }).join('');
+    }
+    rooms.forEach(function(room) {
+      var grid = document.getElementById('tapo-grid-' + sensorSlug(room));
+      if (!grid) return;
+      var cards = byRoom[room].map(function(s) {
+        var hasData = s.temp != null || s.humidity != null;
+        var badge = !hasData ? { cls: 'off', icon: 'fa-plug-circle-xmark', text: 'Geen data' }
+          : s.shower ? (s.showerActive ? { cls: 'cool', icon: 'fa-shower', text: 'Doucht' } : { cls: 'idle', icon: 'fa-droplet', text: 'Rustig' })
+          : { cls: 'idle', icon: 'fa-droplet', text: nlNum(s.humidity, 0) + ' %' };
+        var cfg = climateCardCfg({ room: room, temp_c: s.temp, humidity: s.humidity, received_at: d.updated || null }, s.shower ? 'fa-shower' : 'fa-droplet', { badge: badge });
+        cfg.id = 'tapo-' + sensorSlug(s.id || room);
+        cfg.name = s.name || room;   // kop = kamer, kaart = sensornaam
+        cfg.sig = (s.name || room) + '|' + cfg.values.join(',') + '|' + badge.text;
+        return cfg;
+      });
+      paintSensorGrid(grid, cards);
     });
-    paintSensorGrid(grid, cards);
   }).catch(function(){});
 }
 function refreshWashStatus() { fetch('/api/wasmachine/status').then(function(r){return r.json();}).then(function(s) { var pill = document.getElementById('wash-status-pill'); var icon = document.getElementById('wash-status-icon'); var text = document.getElementById('wash-status-text'); if (!pill) return; var state = s.state || 'idle'; pill.className = 'wash-status-pill ' + state; var since = s.since ? shortWhen(s.since) : null; if (state === 'running') { icon.className = 'fa-solid fa-rotate'; text.textContent = 'In gebruik' + (since ? ' sinds ' + since : ''); } else if (state === 'done') { icon.className = 'fa-solid fa-circle-check'; text.textContent = 'Klaar, nog leeghalen' + (since ? ' (' + since + ')' : ''); } else { icon.className = 'fa-solid fa-moon'; text.textContent = 'Inactief'; } }).catch(function(){}); }
