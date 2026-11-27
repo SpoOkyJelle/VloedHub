@@ -218,6 +218,7 @@ function loadHeatingEff() {
     var labels = rows.map(function(r){ return r.day.slice(5); });
     var gas = rows.map(function(r){ return r.gas != null ? Number(r.gas).toFixed(2) : null; });
     var eff = rows.map(function(r){ return r.m3_per_hdd != null ? Number(r.m3_per_hdd).toFixed(3) : null; });
+    var outTemp = rows.map(function(r){ return r.out_temp != null ? Number(r.out_temp).toFixed(1) : null; });
 
     var effVals = rows.map(function(r){ return r.m3_per_hdd; }).filter(function(v){ return v != null; });
     var avgEff = effVals.length ? effVals.reduce(function(a,b){ return a+b; }, 0) / effVals.length : null;
@@ -233,15 +234,26 @@ function loadHeatingEff() {
     chartHeatingEff = new Chart(el, {
       type: 'bar',
       data: { labels: labels, datasets: [
-        { label: 'Gas (m³)', data: gas, backgroundColor: 'rgba(249,115,22,0.45)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, yAxisID: 'y', order: 2 },
-        { type: 'line', label: 'm³ per graaddag', data: eff, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2, pointRadius: 2, tension: 0.3, spanGaps: true, yAxisID: 'y1', order: 1 }
+        { label: 'Gas (m³)', data: gas, backgroundColor: 'rgba(249,115,22,0.45)', borderColor: '#F97316', borderWidth: 1, borderRadius: 3, yAxisID: 'y', order: 3 },
+        { type: 'line', label: 'm³ per graaddag', data: eff, borderColor: '#38BDF8', backgroundColor: '#38BDF8', borderWidth: 2, pointRadius: 2, tension: 0.3, spanGaps: true, yAxisID: 'y1', order: 1 },
+        { type: 'line', label: 'Buitentemp (°C)', data: outTemp, borderColor: '#A78BFA', backgroundColor: '#A78BFA', borderWidth: 2, borderDash: [4, 3], pointRadius: 2, tension: 0.3, spanGaps: true, yAxisID: 'y2', order: 2 }
       ]},
       options: { responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } } },
+        plugins: {
+          legend: { labels: { color: CHART_TEXT, boxWidth: 10, font: { size: 11 } } },
+          tooltip: { callbacks: { label: function(ctx) {
+            var v = ctx.parsed.y;
+            if (v == null) return null;
+            if (ctx.dataset.label === 'Buitentemp (°C)') return 'Buitentemp: ' + nlNum(v, 1) + ' °C';
+            if (ctx.dataset.label === 'm³ per graaddag') return 'm³/graaddag: ' + nlNum(v, 3);
+            return 'Gas: ' + nlNum(v, 2) + ' m³';
+          } } }
+        },
         scales: {
           x: { ticks: { color: CHART_TICK, maxRotation: 45, font: { size: 11 } }, grid: { color: CHART_GRID } },
           y: { position: 'left', ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { color: CHART_GRID }, beginAtZero: true, title: { display: true, text: 'Gas (m³)', color: CHART_TICK } },
-          y1: { position: 'right', ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'm³/graaddag', color: CHART_TICK } }
+          y1: { position: 'right', ticks: { color: CHART_TICK, font: { size: 11 } }, grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'm³/graaddag', color: CHART_TICK } },
+          y2: { position: 'right', display: false, grid: { drawOnChartArea: false } }
         }
       }
     });
